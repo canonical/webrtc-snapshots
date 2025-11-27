@@ -21,6 +21,9 @@ jobs:
       run: |
         set -x
 
+        git config --global user.email "webops+anbox-cloud-ci-bot@canonical.com"
+        git config --global user.name "Anbox Cloud CI Bot"
+
         # We first fetch the latest Chrome release version
         # NOTE: We refer to the Android platform here but actually want Linux. However
         # the version history we see for Linux is incomplete so we track what is being
@@ -31,28 +34,25 @@ jobs:
 
         # From the version we can extract the true branch
         true_branch=$(echo "$version" | cut -d. -f3)
-
         sed -i "s/REVISION =.*/REVISION = $true_branch/g" \
-          debian/scripts/package-webrtc.py
-        sed -i "s/webrtc_branch_head=.*/webrtc_branch_head=$true_branch/g" \
-          debian/rules
+          scripts/fetch-webrtc.py
+
+        # Fetch corresponding version from upstream
+        # and stash fetch-webrtc.py in the main branch
+        ./scripts/fetch-webrtc.py
+        git restore scripts/fetch-webrtc.py
+
+        git fetch origin upstream:upstream
+        git checkout upstream
+        git rm -rf . > /dev/null 2>&1
+        rsync -a --exclude='.git' --exclude='.gitignore' src/ ./ && rm -fr src
+        git add -A
 
         if [ "$(git status --porcelain | wc -l)" -eq 0 ] ; then
           exit 0
         fi
 
-        git config --global user.email "webops+anbox-cloud-ci-bot@canonical.com"
-        git config --global user.name "Anbox Cloud CI Bot"
-        git add debian/scripts/package-webrtc.py \
-          debian/rules
-        branch=bump-to-"$true_branch"
-        # If we already have a branch and PR we can stop here
-        if git branch -a | grep -q "$branch" ; then
-          exit 0
-        fi
-        git checkout -b "$branch"
-        git commit -m "feat: update branch to $true_branch"
-        git push origin "$branch"
-        gh pr create -B main -H "$branch" \
-          --title "Bump WebRTC branch to $true_branch" \
-          --body "See https://webrtc.googlesource.com/src.git/+log/refs/branch-heads/$true_branch for details"
+        # Update upstream branch
+        git commit -m "chore: import webrtc revision to $true_branch" \
+           -m "See https://webrtc.googlesource.com/src.git/+log/refs/branch-heads/$true_branch for details"
+        git push origin upstream
