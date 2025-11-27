@@ -5,6 +5,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE.fetch-webrtc.py file.
 
+import argparse
 import datetime
 import json
 import os
@@ -201,6 +202,15 @@ def git_sync_deps(git, deps_file_path, shallow, verbose):
 
 
 def main(argv):
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      "--generate-tarball",
+      action="store_true",
+      help="Generate the final tarball after fetching source code"
+  )
+  args = parser.parse_args(argv)
+  generate_tarball = args.generate_tarball
+
   src_dir='src'
   git='git'
 
@@ -232,21 +242,22 @@ def main(argv):
     if os.path.isdir(item):
       shutil.rmtree(item)
 
-  bs = subprocess.check_output([git, 'show-ref', '-s', 'HEAD'], cwd=src_dir)
-  gitrev = bs.decode('utf-8').rstrip('\n')
-  timerev = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")
-  version = "%s+%s" % (REVISION, timerev)
-  target_dir='libanbox-webrtc-%s' % version
+  if generate_tarball:
+    bs = subprocess.check_output([git, 'show-ref', '-s', 'HEAD'], cwd=src_dir)
+    gitrev = bs.decode('utf-8').rstrip('\n')
+    timerev = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")
+    version = "%s+%s" % (REVISION, timerev)
+    target_dir='libanbox-webrtc-%s' % version
 
-  sys.stdout.write('Creating archive ...\n')
-  shutil.move(src_dir, target_dir)
+    sys.stdout.write('Creating archive ...\n')
+    shutil.move(src_dir, target_dir)
 
-  with open('%s/git-manifest' % target_dir, 'w') as f:
-    f.write(json.dumps(MANIFEST, sort_keys=True, indent=2))
+    with open('%s/git-manifest' % target_dir, 'w') as f:
+      f.write(json.dumps(MANIFEST, sort_keys=True, indent=2))
 
-  subprocess.check_call(['tar', '--exclude-vcs', '-cJf', 'libanbox-webrtc-%s_%s.orig.tar.xz' % (REVISION, version), target_dir])
+    subprocess.check_call(['tar', '--exclude-vcs', '-cJf', 'libanbox-webrtc-%s_%s.orig.tar.xz' % (REVISION, version), target_dir])
 
-  shutil.rmtree(target_dir)
+    shutil.rmtree(target_dir)
 
   return 0
 
