@@ -1,0 +1,53 @@
+name: Check for new upstream version
+on:
+  workflow_dispatch:
+  schedule:
+  # Run daily after midnight UTC
+  - cron: '0 1 * * *'
+
+jobs:
+  check-for-update:
+    name: Check for update and create PR
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'canonical' }}
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        fetch-depth: 0
+    - name: Check for new upstream branch and update
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -x
+
+        git config --global user.email "webops+anbox-cloud-ci-bot@canonical.com"
+        git config --global user.name "Anbox Cloud CI Bot"
+
+        # We first fetch the latest Chrome release version
+        # NOTE: We refer to the Android platform here but actually want Linux. However
+        # the version history we see for Linux is incomplete so we track what is being
+        # recorded for Android. In case of webrtc it should be irrelevant as both use
+        # the same true branch
+        version="$(curl "https://versionhistory.googleapis.com/v1/chrome/platforms/android/channels/stable/versions/all/releases?filter=endtime=none" | \
+            jq -r '.releases[].version' | sort --version-sort | tail -1)"
+
+        # From the version we can extract the true branch
+        # and fetch corresponding version from upstream
+        true_branch=$(echo "$version" | cut -d. -f3)
+        ./scripts/fetch-webrtc.py --revision "$true_branch"
+
+        git fetch origin upstream:upstream
+        git checkout upstream
+        git rm -rf . > /dev/null 2>&1
+        rsync -a --exclude='.git' --exclude='.gitignore' src/ ./ && rm -fr src
+        git add -A
+
+        if [ "$(git status --porcelain | wc -l)" -eq 0 ] ; then
+          exit 0
+        fi
+
+        # Update upstream branch
+        git commit -m "chore: import webrtc revision to $true_branch" \
+           -m "See https://webrtc.googlesource.com/src.git/+log/refs/branch-heads/$true_branch for details"
+        git push origin upstream
