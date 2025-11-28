@@ -15,7 +15,6 @@ import sys
 import threading
 
 WEBRTC_URL = 'https://webrtc.googlesource.com/src'
-REVISION = 7204
 
 DEFAULT_DEPS_PATH = 'src/DEPS'
 DEPS_TO_USE = [
@@ -208,16 +207,22 @@ def main(argv):
       action="store_true",
       help="Generate the final tarball after fetching source code"
   )
+  parser.add_argument(
+      "--revision",
+      type=str,
+      required=True,
+      help="Specify the WebRTC revision to fetch"
+  )
   args = parser.parse_args(argv)
   generate_tarball = args.generate_tarball
 
   src_dir='src'
   git='git'
-
-  sys.stdout.write('Cloning webrtc repository at revision %s ...\n' % REVISION)
+  revision = args.revision
+  sys.stdout.write('Cloning webrtc repository at revision %s ...\n' % revision)
   subprocess.check_call(
       [git, 'clone', '--quiet', '--depth=1', WEBRTC_URL, src_dir])
-  subprocess.check_call([git, 'fetch', '--quiet', 'origin', 'refs/branch-heads/%s' % REVISION], cwd=src_dir)
+  subprocess.check_call([git, 'fetch', '--quiet', 'origin', 'refs/branch-heads/%s' % revision], cwd=src_dir)
   subprocess.check_call([git, 'checkout', '--quiet', 'FETCH_HEAD'], cwd=src_dir)
 
   bs = subprocess.check_output([git, 'show-ref', '-s', 'HEAD'], cwd=src_dir)
@@ -246,7 +251,7 @@ def main(argv):
     bs = subprocess.check_output([git, 'show-ref', '-s', 'HEAD'], cwd=src_dir)
     gitrev = bs.decode('utf-8').rstrip('\n')
     timerev = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")
-    version = "%s+%s" % (REVISION, timerev)
+    version = "%s+%s" % (revision, timerev)
     target_dir='libanbox-webrtc-%s' % version
 
     sys.stdout.write('Creating archive ...\n')
@@ -255,7 +260,7 @@ def main(argv):
     with open('%s/git-manifest' % target_dir, 'w') as f:
       f.write(json.dumps(MANIFEST, sort_keys=True, indent=2))
 
-    subprocess.check_call(['tar', '--exclude-vcs', '-cJf', 'libanbox-webrtc-%s_%s.orig.tar.xz' % (REVISION, version), target_dir])
+    subprocess.check_call(['tar', '--exclude-vcs', '-cJf', 'libanbox-webrtc-%s_%s.orig.tar.xz' % (revision, version), target_dir])
 
     shutil.rmtree(target_dir)
 

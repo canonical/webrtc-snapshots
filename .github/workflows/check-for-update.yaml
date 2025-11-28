@@ -33,14 +33,9 @@ jobs:
             jq -r '.releases[].version' | sort --version-sort | tail -1)"
 
         # From the version we can extract the true branch
+        # and fetch corresponding version from upstream
         true_branch=$(echo "$version" | cut -d. -f3)
-        sed -i "s/REVISION =.*/REVISION = $true_branch/g" \
-          scripts/fetch-webrtc.py
-
-        # Fetch corresponding version from upstream
-        # and stash fetch-webrtc.py in the main branch
-        ./scripts/fetch-webrtc.py
-        git restore scripts/fetch-webrtc.py
+        ./scripts/fetch-webrtc.py --revision "$true_branch"
 
         git fetch origin upstream:upstream
         git checkout upstream
