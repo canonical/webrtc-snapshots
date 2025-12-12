@@ -23,6 +23,17 @@ PUBLIC_PERF_BUILDERS_PATH = os.path.join(
       "public_builders.json")
 
 
+def EscapeName(name: str) -> str:
+  """Escapes a trace name so it can be stored in a row.
+
+  Args:
+    name: A string representing a name.
+
+  Returns:
+    An escaped version of the name.
+  """
+  return re.sub(r'[\:|=/#&,]', '_', name)
+
 def is_public_builder(builder_name: str) -> bool:
   """Returns whether the builder is public.
 
@@ -96,14 +107,57 @@ def calculate_stats(values):
 
 def extract_subtest_from_stories_tags(stories: List[str],
                                       tags: List[str]) -> Tuple[str, str]:
-  """Extracts two specific values from a given stories and storyTags."""
+  """Extracts sanitized subtest identifiers from stories and tags.
+
+  This function creates up to two subtest identifiers from a combination of
+  story names and tags. This aligns with how the performance dashboard
+  constructs test paths, using tags as a primary grouping label and the story
+  name as a secondary identifier.
+
+  The logic is as follows:
+  1.  `subtest_1` is created from colon-separated tags (e.g., 'group:games').
+      Tags without a colon are ignored.
+  2.  If no colon-separated tags exist, `subtest_1` is created from the
+      first story name. `subtest_2` remains empty.
+  3.  If tags exist AND there is exactly one story, `subtest_2` is created
+      from that story name. Any prefix that matches `subtest_1` is removed
+      to avoid duplication.
+
+  All identifiers are sanitized using EscapeName to replace special
+  characters with underscores, making them safe for URLs and databases.
+
+  Example 1: Tags and a single story
+    stories: ['cct:coldish:bbc']
+    tags: ['group:technical_debt', 'owner:somebody']
+    Returns: ('technical_debt_somebody', 'cct_coldish_bbc')
+
+  Example 2: No tags
+    stories: ['load:search:google']
+    tags: []
+    Returns: ('load_search_google', '')
+
+  Example 3: Tags and multiple stories (story is ignored)
+    stories: ['story_a', 'story_b']
+    tags: ['device:pixel', 'network:4g']
+    Returns: ('pixel_4g', '')
+  """
   tags_to_use = [t.split(":") for t in tags if ":" in t]
+  subtest_1 = "_".join(EscapeName(v) for _, v in sorted(tags_to_use))
+
+  subtest_2 = ''
+
+  # Handle the case where there are no tags, so the story becomes
+  # the primary identifier (subtest_1).
   if not tags_to_use and stories:
-    return stories[0], ""
-  subtest_1 = "_".join(v for _, v in sorted(tags_to_use))
-  array = [t.split(":") for t in stories if ":" in t]
-  stories_parts = [item for sub in array for item in sub]
-  subtest_2 = "_".join(stories_parts)
+    subtest_1 = EscapeName(stories[0])
+    # subtest_2 remains empty in this case.
+    return subtest_1, subtest_2
+
+  # If there are tags AND a single story, that story becomes subtest_2.
+  # It is NOT split by colons.
+  if len(stories) == 1:
+    subtest_2 = EscapeName(stories[0])
+
   return subtest_1, subtest_2
 
 
@@ -271,24 +325,47 @@ class JsonUtil:
         stories = []
         story_tags = []
         for diagnostic_type, guid in item[json_constants.DIAGNOSTICS].items():
-          # diagnostics_map[guid] = diagnostic_type
+          if not isinstance(guid, str) or not isinstance(
+              guid_to_values[guid], list):
+            # guid is expected to be a hashable string.
+            logging.warning(
+                'Expected string or list for diagnostic type "%s" in metric ' \
+                '"%s"but got type %s: %s. Skipping.',
+                diagnostic_type, item.get(json_constants.NAME, "UnknownMetric"),
+                type(guid).__name__,
+                str(guid)[:200])
+            continue
+          if guid not in guid_to_values:
+            logging.warning(
+                'Expected guid "%s" for diagnostic type "%s" in metric "%s", ' \
+                'but it is not in the guid_to_values. Skipping.', guid,
+                diagnostic_type, item.get(json_constants.NAME, "UnknownMetric"))
+            continue
+
           if diagnostic_type == json_constants.BOT_ID:
-            if guid in guid_to_values:
-              bot_ids.update(guid_to_values[guid])
+            bot_ids.update(guid_to_values[guid])
           elif diagnostic_type == json_constants.OS_DETAILED_VERSIONS:
-            if guid in guid_to_values:
-              os_versions.update(guid_to_values[guid])
+            os_versions.update(guid_to_values[guid])
           elif diagnostic_type == json_constants.BENCHMARKS:
             benchmark_key = str(guid_to_values[guid][0])
           elif diagnostic_type == json_constants.STORIES:
             stories.extend(guid_to_values[guid])
           elif diagnostic_type == json_constants.STORY_TAGS:
             story_tags.extend(guid_to_values[guid])
-        subtest_1, subtest_2 = extract_subtest_from_stories_tags(
-            stories, story_tags)
 
         try:
           if json_constants.SAMPLE_VALUES in item:
+            sample_values = item[json_constants.SAMPLE_VALUES]
+            if not isinstance(sample_values, list):
+              logging.warning(
+                  'Expected "sampleValues" to be a list for metric "%s", ' \
+                  'got %s. Skipping sample values.',
+                  item.get(json_constants.NAME, "UnknownMetric"),
+                  type(sample_values).__name__)
+              continue
+
+            subtest_1, subtest_2 = extract_subtest_from_stories_tags(
+                stories, story_tags)
             if subtest_1 or subtest_2:
               merged_results[(
                   test_name,
@@ -296,11 +373,10 @@ class JsonUtil:
                   improvement_direction,
                   subtest_1,
                   subtest_2,
-              )].extend(item["sampleValues"])
+              )].extend(sample_values)
             else:
               merged_results[(test_name, item[json_constants.UNIT],
-                              improvement_direction)].extend(
-                                  item["sampleValues"])
+                              improvement_direction)].extend(sample_values)
           elif json_constants.SUMMARY_OPTIONS in item:
             if (json_constants.COUNT in item[json_constants.SUMMARY_OPTIONS]
                 and item[json_constants.SUMMARY_OPTIONS][json_constants.COUNT]

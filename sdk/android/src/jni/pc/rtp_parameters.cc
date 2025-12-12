@@ -10,9 +10,16 @@
 
 #include "sdk/android/src/jni/pc/rtp_parameters.h"
 
+#include <jni.h>
+
+#include <string>
+
+#include "api/priority.h"
+#include "api/rtp_parameters.h"
+#include "rtc_base/checks.h"
 #include "sdk/android/generated_peerconnection_jni/RtpParameters_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 #include "sdk/android/src/jni/pc/media_stream_track.h"
 
 namespace webrtc {
@@ -25,8 +32,11 @@ DegradationPreference JavaToNativeDegradationPreference(
     const JavaRef<jobject>& j_degradation_preference) {
   std::string enum_name = GetJavaEnumName(jni, j_degradation_preference);
 
-  if (enum_name == "DISABLED")
-    return DegradationPreference::DISABLED;
+  // TODO(webrtc:450044904): Switch downstream projects to
+  // MAINTAIN_FRAMERATE_AND_RESOLUTION and remove DISABLED.
+  if (enum_name == "MAINTAIN_FRAMERATE_AND_RESOLUTION" ||
+      enum_name == "DISABLED")
+    return DegradationPreference::MAINTAIN_FRAMERATE_AND_RESOLUTION;
 
   if (enum_name == "MAINTAIN_FRAMERATE")
     return DegradationPreference::MAINTAIN_FRAMERATE;
@@ -39,7 +49,7 @@ DegradationPreference JavaToNativeDegradationPreference(
 
   RTC_CHECK(false) << "Unexpected DegradationPreference enum_name "
                    << enum_name;
-  return DegradationPreference::DISABLED;
+  return DegradationPreference::MAINTAIN_FRAMERATE_AND_RESOLUTION;
 }
 
 ScopedJavaLocalRef<jobject> NativeToJavaRtpEncodingParameter(

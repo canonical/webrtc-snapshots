@@ -160,7 +160,7 @@ chromium-metrics-reviews@google.com.
   <int value="106" label="ToggleOverview"/>
   <int value="107" label="ToggleProjectorMarker"/>
   <int value="108" label="ToggleResizeLockMenu"/>
-  <int value="109" label="CreateSnapGroup"/>
+  <int value="109" label="ToggleSnapGroup"/>
   <int value="110" label="ToggleSnapGroupWindowsMinimizeAndRestore"/>
   <int value="111" label="ToggleSpokenFeedback"/>
   <int value="112" label="ToggleStylusTools"/>
@@ -451,13 +451,17 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Statistics provider hasn't finished loading data"/>
   <int value="2"
       label="Loaded region is a group and not an individual country"/>
-  <int value="3" label="Region in VPD is too short for country code"/>
+  <int value="3"
+      label="Region in VPD is non-empty but too short for country code"/>
   <int value="4" label="Region in VPD is too long for country code"/>
   <int value="5" label="Valid country code parsed from VPD"/>
-  <int value="6" label="Removed subkey from country information"/>
+  <int value="6" label="[Deprecated] Removed subkey from country information"/>
+  <int value="7" label="Region in VPD is absent"/>
+  <int value="8" label="Region in VPD is empty"/>
+  <int value="9" label="Region in VPD is not a valid country code"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/regional_capabilities/regional_capabilities_service_client.h:ChromeOSFallbackCountry) -->
+<!-- LINT.ThenChange(//chrome/browser/regional_capabilities/regional_capabilities_service_client_chromeos.h:ChromeOSFallbackCountry) -->
 
 <enum name="ChromeOSIioServiceSensorUsage">
   <int value="0" label="ACCEL_base"/>
@@ -1924,6 +1928,22 @@ chromeos/ash/components/language/language_packs/language_pack_manager.h -->
   <int value="7" label="API error: no sync token in Create response."/>
   <int value="8" label="API error: no sync token in Get response."/>
 </enum>
+
+<!-- LINT.IfChange(SamlRedirectEvent) -->
+
+<enum name="SamlRedirectEvent">
+  <summary>
+    Track the usage of /samlredirect Gaia endpoint: whether it is supplied with
+    an SSO profile or only domain at the start of online auth flow, and whether
+    users switch from their default 3P IdP page to the default Google sign-in
+    page during the flow.
+  </summary>
+  <int value="0" label="Start on default 3P IdP page based on an SSO profile."/>
+  <int value="1" label="Start on default 3P IdP page based on a domain."/>
+  <int value="2" label="User switched to the default Google sign-in."/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/resources/chromeos/login/components/online_auth_utils.ts:SamlRedirectEvent, //chrome/browser/ash/login/saml/saml_test_utils.h:SamlRedirectEvent) -->
 
 <enum name="SecagentdAuthFactor">
 <!--

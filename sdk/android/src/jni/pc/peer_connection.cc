@@ -27,37 +27,62 @@
 
 #include "sdk/android/src/jni/pc/peer_connection.h"
 
-#include <limits>
+#include <jni.h>
+#include <stdio.h>
+#include <unistd.h>
+
+#include <cstddef>
+#include <cstdio>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
+#include "api/candidate.h"
+#include "api/data_channel_interface.h"
+#include "api/jsep.h"
+#include "api/make_ref_counted.h"
+#include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/rtc_error.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
 #include "api/rtp_transceiver_interface.h"
+#include "api/scoped_refptr.h"
+#include "api/transport/bitrate_settings.h"
+#include "p2p/base/port.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/rtc_certificate.h"
+#include "rtc_base/ssl_identity.h"
 #include "sdk/android/generated_peerconnection_jni/CandidatePairChangeEvent_jni.h"
 #include "sdk/android/generated_peerconnection_jni/IceCandidateErrorEvent_jni.h"
 #include "sdk/android/generated_peerconnection_jni/PeerConnection_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/jvm.h"
 #include "sdk/android/src/jni/pc/add_ice_candidate_observer.h"
 #include "sdk/android/src/jni/pc/crypto_options.h"
 #include "sdk/android/src/jni/pc/data_channel.h"
 #include "sdk/android/src/jni/pc/ice_candidate.h"
 #include "sdk/android/src/jni/pc/media_constraints.h"
+#include "sdk/android/src/jni/pc/media_stream.h"
 #include "sdk/android/src/jni/pc/media_stream_track.h"
 #include "sdk/android/src/jni/pc/rtc_certificate.h"
 #include "sdk/android/src/jni/pc/rtc_stats_collector_callback_wrapper.h"
+#include "sdk/android/src/jni/pc/rtp_receiver.h"
 #include "sdk/android/src/jni/pc/rtp_sender.h"
+#include "sdk/android/src/jni/pc/rtp_transceiver.h"
 #include "sdk/android/src/jni/pc/sdp_observer.h"
 #include "sdk/android/src/jni/pc/session_description.h"
 #include "sdk/android/src/jni/pc/stats_observer.h"
 #include "sdk/android/src/jni/pc/turn_customizer.h"
+#include "sdk/media_constraints.h"
 #include "third_party/jni_zero/jni_zero.h"
 
 namespace webrtc {
@@ -131,8 +156,11 @@ ScopedJavaLocalRef<jobject> NativeToJavaCandidatePairChange(
     const CandidatePairChangeEvent& event) {
   const auto& selected_pair = event.selected_candidate_pair;
   return Java_CandidatePairChangeEvent_Constructor(
-      env, NativeToJavaCandidate(env, selected_pair.local_candidate()),
-      NativeToJavaCandidate(env, selected_pair.remote_candidate()),
+      env,
+      NativeToJavaIceCandidate(env, event.transport_name,
+                               selected_pair.local_candidate()),
+      NativeToJavaIceCandidate(env, event.transport_name,
+                               selected_pair.remote_candidate()),
       static_cast<int>(event.last_data_received_ms),
       NativeToJavaString(env, event.reason),
       static_cast<int>(event.estimated_disconnected_time_ms));
@@ -270,8 +298,7 @@ void JavaToNativeRTCConfiguration(
   rtc_config->sdp_semantics = JavaToNativeSdpSemantics(jni, j_sdp_semantics);
   rtc_config->active_reset_srtp_params =
       Java_RTCConfiguration_getActiveResetSrtpParams(jni, j_rtc_config);
-  rtc_config->crypto_options =
-      JavaToNativeOptionalCryptoOptions(jni, j_crypto_options);
+  rtc_config->crypto_options = JavaToNativeCryptoOptions(jni, j_crypto_options);
   rtc_config->offer_extmap_allow_mixed =
       Java_RTCConfiguration_getOfferExtmapAllowMixed(jni, j_rtc_config);
   rtc_config->enable_implicit_rollback =
@@ -304,8 +331,7 @@ PeerConnectionObserverJni::PeerConnectionObserverJni(
 
 PeerConnectionObserverJni::~PeerConnectionObserverJni() = default;
 
-void PeerConnectionObserverJni::OnIceCandidate(
-    const IceCandidateInterface* candidate) {
+void PeerConnectionObserverJni::OnIceCandidate(const IceCandidate* candidate) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_Observer_onIceCandidate(env, j_observer_global_,
                                NativeToJavaIceCandidate(env, *candidate));
@@ -326,11 +352,11 @@ void PeerConnectionObserverJni::OnIceCandidateError(
   Java_Observer_onIceCandidateError(env, j_observer_global_, event);
 }
 
-void PeerConnectionObserverJni::OnIceCandidatesRemoved(
-    const std::vector<Candidate>& candidates) {
+void PeerConnectionObserverJni::OnIceCandidateRemoved(
+    const IceCandidate* candidate) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_Observer_onIceCandidatesRemoved(
-      env, j_observer_global_, NativeToJavaCandidateArray(env, candidates));
+      env, j_observer_global_, NativeToJavaCandidateArray(env, candidate));
 }
 
 void PeerConnectionObserverJni::OnSignalingChange(
@@ -522,12 +548,12 @@ JNI_PeerConnection_GetLocalDescription(
   // signaling thread, but `jni` may only be used on the current thread, so we
   // must do this odd dance.
   std::string sdp;
-  std::string type;
+  SdpType type;
   pc->signaling_thread()->BlockingCall([pc, &sdp, &type] {
     const SessionDescriptionInterface* desc = pc->local_description();
     if (desc) {
       RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
-      type = desc->type();
+      type = desc->GetType();
     }
   });
   return sdp.empty() ? nullptr : NativeToJavaSessionDescription(jni, sdp, type);
@@ -542,12 +568,12 @@ JNI_PeerConnection_GetRemoteDescription(
   // signaling thread, but `jni` may only be used on the current thread, so we
   // must do this odd dance.
   std::string sdp;
-  std::string type;
+  SdpType type;
   pc->signaling_thread()->BlockingCall([pc, &sdp, &type] {
     const SessionDescriptionInterface* desc = pc->remote_description();
     if (desc) {
       RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
-      type = desc->type();
+      type = desc->GetType();
     }
   });
   return sdp.empty() ? nullptr : NativeToJavaSessionDescription(jni, sdp, type);
@@ -678,7 +704,7 @@ static jboolean JNI_PeerConnection_AddIceCandidate(
     const jni_zero::JavaParamRef<jstring>& j_candidate_sdp) {
   std::string sdp_mid = JavaToNativeString(jni, j_sdp_mid);
   std::string sdp = JavaToNativeString(jni, j_candidate_sdp);
-  std::unique_ptr<IceCandidateInterface> candidate(
+  std::unique_ptr<IceCandidate> candidate(
       CreateIceCandidate(sdp_mid, j_sdp_mline_index, sdp, nullptr));
   return ExtractNativePC(jni, j_pc)->AddIceCandidate(candidate.get());
 }
@@ -692,7 +718,7 @@ static void JNI_PeerConnection_AddIceCandidateWithObserver(
     const jni_zero::JavaParamRef<jobject>& j_observer) {
   std::string sdp_mid = JavaToNativeString(jni, j_sdp_mid);
   std::string sdp = JavaToNativeString(jni, j_candidate_sdp);
-  std::unique_ptr<IceCandidateInterface> candidate(
+  std::unique_ptr<IceCandidate> candidate(
       CreateIceCandidate(sdp_mid, j_sdp_mline_index, sdp, nullptr));
 
   scoped_refptr<AddIceCandidateObserverJni> observer(
@@ -706,9 +732,16 @@ static jboolean JNI_PeerConnection_RemoveIceCandidates(
     JNIEnv* jni,
     const jni_zero::JavaParamRef<jobject>& j_pc,
     const jni_zero::JavaParamRef<jobjectArray>& j_candidates) {
-  std::vector<Candidate> candidates =
-      JavaToNativeVector<Candidate>(jni, j_candidates, &JavaToNativeCandidate);
-  return ExtractNativePC(jni, j_pc)->RemoveIceCandidates(candidates);
+  std::vector<std::unique_ptr<IceCandidate>> candidates_owned =
+      JavaToNativeVector<std::unique_ptr<IceCandidate>>(jni, j_candidates,
+                                                        &JavaToNativeCandidate);
+  bool ret = false;
+  for (const auto& c : candidates_owned) {
+    if (ExtractNativePC(jni, j_pc)->RemoveIceCandidate(c.get())) {
+      ret = true;
+    }
+  }
+  return ret;
 }
 
 static jboolean JNI_PeerConnection_AddLocalStream(

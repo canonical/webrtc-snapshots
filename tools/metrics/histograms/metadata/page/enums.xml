@@ -31,6 +31,16 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Received activation"/>
 </enum>
 
+<!-- LINT.IfChange(AdvertisedAltSvcState) -->
+
+<enum name="AdvertisedAltSvcState">
+  <int value="0" label="Unknown"/>
+  <int value="1" label="QuicNotBroken"/>
+  <int value="2" label="QuicBroken"/>
+</enum>
+
+<!-- LINT.ThenChange(//services/network/public/mojom/load_timing_internal_info.mojom:AdvertisedAltSvcState) -->
+
 <!-- LINT.IfChange(ConnectionReuseStatus) -->
 
 <enum name="ConnectionReuseStatus">
@@ -89,22 +99,20 @@ chromium-metrics-reviews@google.com.
       label="Ad Creative Origin Differs from Main Frame and Ad Not Throttled"/>
 </enum>
 
-<!-- LINT.IfChange(HeaderMismatchType) -->
+<!-- LINT.IfChange(GwsWarmUpType) -->
 
-<enum name="HeaderMismatchType">
-  <int value="0" label="No mismatch"/>
-  <int value="1" label="Unexpected header found"/>
-  <int value="2" label="Header value mismatch"/>
-  <int value="3" label="Unexpected header found and header value mismatch"/>
-  <int value="4" label="Expected header not found"/>
-  <int value="5" label="Unexpected header found, expected header not found"/>
-  <int value="6" label="Header value mismatch, expected header not found"/>
-  <int value="7"
-      label="Unexpected header found, header value mismatch, expected header
-             not found"/>
+<enum name="GwsWarmUpType">
+  <int value="0" label="RegularSignedIn"/>
+  <int value="1" label="RegularPrewarmed"/>
+  <int value="2" label="ReegularCold"/>
+  <int value="3" label="OffTheRecordSignedIn"/>
+  <int value="4" label="OffTheRecordPrewarmed"/>
+  <int value="5" label="OffTheRecordColdButRegularSignedIn"/>
+  <int value="6" label="OffTheRecordColdButRegularPrewarmed"/>
+  <int value="7" label="OffTheRecordAndRegularCold"/>
 </enum>
 
-<!-- LINT.ThenChange(//components/page_load_metrics/google/browser/gws_page_load_metrics_observer.cc:HeaderMismatchType) -->
+<!-- LINT.ThenChange(//components/page_load_metrics/google/browser/gws_page_load_metrics_observer.cc:WarmUpType) -->
 
 <enum name="HeavyAdStatus2">
   <int value="0" label="Not heavy"/>
@@ -297,8 +305,9 @@ chromium-metrics-reviews@google.com.
   <int value="30" label="Discounts"/>
   <int value="31" label="Optimization Guide"/>
   <int value="32" label="Collaboration Messaging"/>
-  <int value="33" label="Change Password"/>
+  <int value="33" label="(Deprecated) Change Password"/>
   <int value="34" label="Lens Overlay Homework"/>
+  <int value="35" label="AI Mode"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/page_action/page_action_icon_type.h:PageActionIconType) -->
@@ -357,12 +366,6 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//components/page_load_metrics/browser/page_load_metrics_update_dispatcher.h:PageLoadTimingStatus) -->
-
-<enum name="PageLoadTrackerPageType">
-  <int value="0" label="Primary Page"/>
-  <int value="1" label="Prerender Page"/>
-  <int value="2" label="FencedFrames Page"/>
-</enum>
 
 <enum name="PageVisitType">
   <int value="0"

@@ -4,17 +4,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import collections
 from datetime import date
 import re
-import optparse
-import os
 from string import Template
 import sys
 import textwrap
 import zipfile
 
-from util import build_utils
+from util import build_utils  # pylint: disable=unused-import
 from util import java_cpp_utils
 import action_helpers  # build_utils adds //build to sys.path.
 import zip_helpers
@@ -213,12 +212,6 @@ class HeaderParser:
   multi_line_comment_start_re = re.compile(r'\s*/\*')
   enum_line_re = re.compile(r'^\s*(\w+)(\s*\=\s*([^,\n]+))?,?')
   enum_end_re = re.compile(r'^\s*}\s*;\.*$')
-  # Note: For now we only support a very specific `#if` statement to prevent the
-  # possibility of miscalculating whether lines should be ignored when building
-  # for Android.
-  if_buildflag_re = re.compile(
-      r'^#if BUILDFLAG\((\w+)\)(?: \|\| BUILDFLAG\((\w+)\))*$')
-  if_buildflag_end_re = re.compile(r'^#endif.*$')
   generator_error_re = re.compile(r'^\s*//\s+GENERATED_JAVA_(\w+)\s*:\s*$')
   generator_directive_re = re.compile(
       r'^\s*//\s+GENERATED_JAVA_(\w+)\s*:\s*([\.\w]+)$')
@@ -238,25 +231,15 @@ class HeaderParser:
       r'^\s*(?:\[cpp.*\])?\s*enum.*{(?P<enum_entries>.*)}.*$')
 
   def __init__(self, lines, path=''):
-    self._lines = lines
+    self._lines = java_cpp_utils.PreprocessIfBlocks(lines)
     self._path = path
     self._enum_definitions = []
     self._in_enum = False
-    # Indicates whether an #if block was encountered on a previous line (until
-    # an #endif block was seen). When nonzero, `_in_buildflag_android` indicates
-    # whether the blocks were `#if BUILDFLAG(IS_ANDROID)` or not.
-    # Note: Currently only statements like `#if BUILDFLAG(IS_<PLATFORM>)` are
-    # supported.
-    self._in_preprocessor_block = 0
-    self._in_buildflag_android = []
     self._current_definition = None
     self._current_comments = []
     self._generator_directives = DirectiveSet()
     self._multi_line_generator_directive = None
     self._current_enum_entry = ''
-
-  def _ShouldIgnoreLine(self):
-    return self._in_preprocessor_block and not all(self._in_buildflag_android)
 
   def _ApplyGeneratorDirectives(self):
     self._generator_directives.UpdateDefinition(self._current_definition)
@@ -268,19 +251,6 @@ class HeaderParser:
     return self._enum_definitions
 
   def _ParseLine(self, line):
-    if HeaderParser.if_buildflag_re.match(line):
-      self._in_preprocessor_block += 1
-      self._in_buildflag_android.append('BUILDFLAG(IS_ANDROID)' in line)
-      return
-    if self._in_preprocessor_block and HeaderParser.if_buildflag_end_re.match(
-        line):
-      self._in_preprocessor_block -= 1
-      self._in_buildflag_android.pop()
-      return
-
-    if self._ShouldIgnoreLine():
-      return
-
     if self._multi_line_generator_directive:
       self._ParseMultiLineDirectiveLine(line)
       return
@@ -337,7 +307,8 @@ class HeaderParser:
     self._current_enum_entry += ' ' + line.strip()
 
   def _FinalizeCurrentEnumDefinition(self):
-    if self._current_enum_entry:
+    # It has a space as a prefix so strip is needed.
+    if self._current_enum_entry.strip():
       self._ParseCurrentEnumEntry()
     self._ApplyGeneratorDirectives()
     self._current_definition.Finalize()
@@ -412,7 +383,7 @@ def DoGenerate(source_paths):
 
 
 def DoParseHeaderFile(path):
-  with open(path) as f:
+  with open(path, encoding='utf-8') as f:
     return HeaderParser(f.readlines(), path).ParseDefinitions()
 
 
@@ -490,22 +461,20 @@ ${ENUM_ENTRIES}
 
 
 def DoMain(argv):
-  usage = 'usage: %prog [options] [output_dir] input_file(s)...'
-  parser = optparse.OptionParser(usage=usage)
+  parser = argparse.ArgumentParser()
 
-  parser.add_option('--srcjar',
-                    help='When specified, a .srcjar at the given path is '
-                    'created instead of individual .java files.')
+  parser.add_argument('--srcjar',
+                      help='When specified, a .srcjar at the given path is '
+                      'created instead of individual .java files.')
+  parser.add_argument('input_paths',
+                      nargs='+',
+                      help='Path to at least one input file.')
 
-  options, args = parser.parse_args(argv)
-
-  if not args:
-    parser.error('Need to specify at least one input file')
-  input_paths = args
+  options = parser.parse_args(argv)
 
   with action_helpers.atomic_output(options.srcjar) as f:
     with zipfile.ZipFile(f, 'w', zipfile.ZIP_STORED) as srcjar:
-      for output_path, data in DoGenerate(input_paths):
+      for output_path, data in DoGenerate(options.input_paths):
         zip_helpers.add_to_zip_hermetic(srcjar, output_path, data=data)
 
 

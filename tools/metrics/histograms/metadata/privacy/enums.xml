@@ -52,25 +52,6 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="First-party resource Allowed"/>
 </enum>
 
-<enum name="ClearOnExitSyncEvent">
-  <int value="0" label="Profile startup, sync is disabled"/>
-  <int value="1" label="Profile startup, sync is paused"/>
-  <int value="2" label="Profile startup, sync is active"/>
-  <int value="3" label="Re-login to a sync paused account"/>
-  <int value="4" label="Logout of a sync paused account"/>
-  <int value="5"
-      label="Profile shutdown, sync is active, started paused, consent change"/>
-  <int value="6"
-      label="Profile shutdown, sync is active, started paused, no consent
-             change"/>
-  <int value="7"
-      label="Profile shutdown, sync is active, started active, consent change"/>
-  <int value="8"
-      label="Profile shutdown, sync is active, started active, no consent
-             change"/>
-  <int value="9" label="Profile shutdown, sync is paused"/>
-</enum>
-
 <enum name="ConsentAuditorFeature">
   <int value="0" label="CHROME_SYNC"/>
   <int value="1" label="PLAY_STORE"/>
@@ -223,18 +204,6 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Server redirect"/>
 </enum>
 
-<!-- LINT.IfChange(PrivacySandboxActSurveyStatus) -->
-
-<enum name="PrivacySandboxActSurveyStatus">
-  <int value="0" label="Survey was successfully launched"/>
-  <int value="1" label="Feature not enabled"/>
-  <int value="2" label="Failed to fetch HaTS service"/>
-  <int value="3" label="Failed to launch survey"/>
-  <int value="4" label="Not in Incognito profile"/>
-</enum>
-
-<!-- LINT.ThenChange(/chrome/browser/privacy_sandbox/incognito/privacy_sandbox_incognito_survey_service.h:PrivacySandboxActSurveyStatus) -->
-
 <enum name="PrivacySandboxAggregationServiceKeyFetcherStatus">
   <int value="0" label="Success"/>
   <int value="1" label="Download error"/>
@@ -309,22 +278,6 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Downloaded"/>
 </enum>
 
-<!-- LINT.IfChange(PrivacySandboxCctAdsNoticeSurveyFailures) -->
-
-<enum name="PrivacySandboxCctAdsNoticeSurveyFailures">
-  <int value="0" label="Feature not enabled"/>
-  <int value="1" label="App ID mismatch"/>
-  <int value="2" label="No notice interaction found"/>
-  <int value="3" label="Invalid prompt type found"/>
-  <int value="4" label="Failed to find survey config for EEA accepted"/>
-  <int value="5" label="Failed to find survey config for EEA declined"/>
-  <int value="6" label="Failed to find survey config for EEA control"/>
-  <int value="7" label="Failed to find survey config for ROW acknowledged"/>
-  <int value="8" label="Failed to find survey config for ROW control"/>
-</enum>
-
-<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/privacy_sandbox/PrivacySandboxSurveyController.java:PrivacySandboxCctAdsNoticeSurveyFailures) -->
-
 <!-- LINT.IfChange(PrivacySandboxDialogCallbackState) -->
 
 <enum name="PrivacySandboxDialogCallbackState">
@@ -375,16 +328,6 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/privacy_sandbox/notice/notice.mojom:PrivacySandboxNoticeEvent) -->
 
-<enum name="PrivacySandboxPrimaryAccountUserGroups">
-  <int value="0" label="NotSet"/>
-  <int value="1" label="SignedOut"/>
-  <int value="2" label="SignedInCapabilityFalse"/>
-  <int value="3" label="SignedInCapabilityTrue"/>
-  <int value="4" label="SignedInCapabilityUnknown"/>
-</enum>
-
-<!-- LINT.IfChange(PrivacySandboxPrimaryAccountUserGroups) -->
-
 <enum name="PrivacySandboxPrivateAggregationBudgeterBudgetValidityStatus2">
   <int value="0" label="Valid"/>
   <int value="1" label="Valid but empty; no budget data stored"/>
@@ -400,8 +343,6 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="Contains budget data that spans more than a day"/>
   <int value="7" label="Contains an entry with a nonpositive budget value"/>
 </enum>
-
-<!-- LINT.ThenChange(//chrome/browser/privacy_sandbox/privacy_sandbox_service.h:PrimaryAccountUserGroups) -->
 
 <enum name="PrivacySandboxPrivateAggregationBudgeterRequestResult3">
   <int value="0" label="Approved"/>
@@ -467,19 +408,37 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//content/browser/private_aggregation/private_aggregation_pending_contributions.h:TruncationResult) -->
 
-<!-- LINT.IfChange(PrivacySandboxPromptSuppressionReason) -->
+<!-- LINT.IfChange(PrivacySandboxPromptTypeCombination) -->
 
-<enum name="PrivacySandboxPromptSuppressionReason">
-<!-- Used as a bitfield so values must be ascending powers of 2 -->
-
-  <int value="0" label="None"/>
-  <int value="1" label="3PC_Blocked"/>
-  <int value="2" label="CapabilityFalse"/>
-  <int value="4" label="ManagedDevice"/>
-  <int value="8" label="NoticeShownBefore"/>
+<enum name="PrivacySandboxPromptTypeCombination">
+  <int value="0" label="PSNone_NSNone"/>
+  <int value="1" label="PSConsent_NSNone"/>
+  <int value="2" label="PSNoticeROW_NSNone"/>
+  <int value="3" label="PSNoticeEEA_NSNone"/>
+  <int value="4" label="PSNoticeRestricted_NSNone"/>
+  <int value="8" label="PSNone_NSConsent"/>
+  <int value="9" label="PSConsent_NSConsent"/>
+  <int value="10" label="PSNoticeROW_NSConsent"/>
+  <int value="11" label="PSNoticeEEA_NSConsent"/>
+  <int value="12" label="PSNoticeRestricted_NSConsent"/>
+  <int value="16" label="PSNone_NSNoticeROW"/>
+  <int value="17" label="PSConsent_NSNoticeROW"/>
+  <int value="18" label="PSNoticeROW_NSNoticeROW"/>
+  <int value="19" label="PSNoticeEEA_NSNoticeROW"/>
+  <int value="20" label="PSNoticeRestricted_NSNoticeROW"/>
+  <int value="24" label="PSNone_NSNoticeEEA"/>
+  <int value="25" label="PSConsent_NSNoticeEEA"/>
+  <int value="26" label="PSNoticeROW_NSNoticeEEA"/>
+  <int value="27" label="PSNoticeEEA_NSNoticeEEA"/>
+  <int value="28" label="PSNoticeRestricted_NSNoticeEEA"/>
+  <int value="32" label="PSNone_NSNoticeRestricted"/>
+  <int value="33" label="PSConsent_NSNoticeRestricted"/>
+  <int value="34" label="PSNoticeROW_NSNoticeRestricted"/>
+  <int value="35" label="PSNoticeEEA_NSNoticeRestricted"/>
+  <int value="36" label="PSNoticeRestricted_NSNoticeRestricted"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/privacy_sandbox/privacy_sandbox_service.h:FakeNoticePromptSuppressionReason) -->
+<!-- LINT.ThenChange(//chrome/browser/privacy_sandbox/privacy_sandbox_service.h:PrivacySandboxPromptTypeCombination) -->
 
 <!-- LINT.IfChange(PrivacySandboxSentimentSurveyStatus) -->
 
@@ -520,11 +479,6 @@ chromium-metrics-reviews@google.com.
 <enum name="PrivacySandboxSurveyTypes">
   <int value="0" label="Unknown Survey"/>
   <int value="1" label="Sentiment Survey"/>
-  <int value="2" label="Accepted EEA Survey"/>
-  <int value="3" label="Declined EEA Survey"/>
-  <int value="4" label="Control EEA Survey"/>
-  <int value="5" label="Acknowledged ROW Survey"/>
-  <int value="6" label="Control ROW Survey"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/privacy_sandbox/PrivacySandboxSurveyController.java:PrivacySandboxSurveyTypes) -->
@@ -546,6 +500,16 @@ chromium-metrics-reviews@google.com.
   <int value="12" label="last four weeks deletion time range selected"/>
   <int value="13" label="All time deletion time range selected"/>
 </enum>
+
+<!-- LINT.IfChange(RollBack3pcdNoticeAction) -->
+
+<enum name="RollBack3pcdNoticeAction">
+  <int value="0" label="kGotIt"/>
+  <int value="1" label="kSettings"/>
+  <int value="2" label="kClosed"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/privacy_sandbox/roll_back_3pcd_notice_action.h:RollBack3pcdNoticeAction) -->
 
 <enum name="SecCookieDeprecationHeaderStatus">
   <int value="0" label="kSet"/>

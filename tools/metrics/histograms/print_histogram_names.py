@@ -42,7 +42,7 @@ def histogram_xml_files():
   return [open(f, encoding="utf-8") for f in histogram_paths.ALL_XMLS]
 
 
-def _get_diff(revision):
+def get_histogram_diff(revision):
   """Returns the added / removed histogram names relative to git revision
 
   Args:
@@ -80,7 +80,7 @@ def _get_diff(revision):
 
 
 def _print_diff_names(revision):
-  added_names, removed_names = _get_diff(revision)
+  added_names, removed_names = get_histogram_diff(revision)
   print("%d histograms added:" % len(added_names))
   for name in added_names:
     print(name)
@@ -99,7 +99,7 @@ def main(argv):
   if args.diff is not None:
     _print_diff_names(args.diff)
   else:
-    name_set = get_names(_histogram_xml_files())
+    name_set = get_names(histogram_xml_files())
     for name in sorted(list(name_set)):
       print(name)
 

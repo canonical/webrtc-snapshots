@@ -69,12 +69,12 @@ def prep_errorprone_run(enable_annotator, parser):
         _CHROME_JAVA_TURBINE_JAR,
     ]
     classpath += _read_build_config_value(
-        'gen/chrome/android/chrome_java.build_config.json',
+        'gen/chrome/android/chrome_java.javac.build_config.json',
         'javac_full_interface_classpath')
 
     processor_path = [_NULLAWAY_JAR] + _read_build_config_value(
         'gen/tools/android/errorprone_plugin/errorprone_plugin.build_config.json',
-        'host_classpath')
+        'processed_classpath')
     if enable_annotator:
         processor_path.append(_ANNOTATOR_JAR)
 
@@ -99,7 +99,10 @@ def prep_errorprone_run(enable_annotator, parser):
         '-XepOpt:NullAway:OnlyNullMarked',
         '-XepOpt:NullAway:CustomContractAnnotations=' +
         ','.join(contract_annotations),
-        '-XepOpt:NullAway:CastToNonNullMethod=org.chromium.build.NullUtil.assumeNonNull',
+
+        # TODO(agrieve): Re-enable once we sort out nullability of
+        #     ObservableSuppliers. https://crbug.com/430320400
+        #'-XepOpt:NullAway:CastToNonNullMethod=org.chromium.build.NullUtil.assumeNonNull',
         '-XepOpt:NullAway:AssertsEnabled=true',
         '-XepOpt:NullAway:AcknowledgeRestrictiveAnnotations=true',
         '-XepOpt:Nullaway:AcknowledgeAndroidRecent=true',

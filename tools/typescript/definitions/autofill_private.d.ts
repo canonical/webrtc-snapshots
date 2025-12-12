@@ -59,7 +59,6 @@ declare global {
         CREDIT_CARD_TYPE,
         CREDIT_CARD_VERIFICATION_CODE,
         COMPANY_NAME,
-        FIELD_WITH_DEFAULT_VALUE,
         MERCHANT_EMAIL_SIGNUP,
         MERCHANT_PROMO_CODE,
         PASSWORD,
@@ -121,15 +120,51 @@ declare global {
         ADDRESS_HOME_APT_TYPE,
         ADDRESS_HOME_HOUSE_NUMBER_AND_APT,
         SINGLE_USERNAME_WITH_INTERMEDIATE_VALUES,
-        IMPROVED_PREDICTION,
+        PASSPORT_NAME_TAG,
+        PASSPORT_NUMBER,
+        PASSPORT_ISSUING_COUNTRY,
+        PASSPORT_EXPIRATION_DATE,
+        PASSPORT_ISSUE_DATE,
+        LOYALTY_MEMBERSHIP_PROGRAM,
+        LOYALTY_MEMBERSHIP_PROVIDER,
+        LOYALTY_MEMBERSHIP_ID,
+        VEHICLE_OWNER_TAG,
+        VEHICLE_LICENSE_PLATE,
+        VEHICLE_VIN,
+        VEHICLE_MAKE,
+        VEHICLE_MODEL,
+        DRIVERS_LICENSE_NAME_TAG,
+        DRIVERS_LICENSE_REGION,
+        DRIVERS_LICENSE_NUMBER,
+        DRIVERS_LICENSE_EXPIRATION_DATE,
+        DRIVERS_LICENSE_ISSUE_DATE,
+        VEHICLE_YEAR,
+        VEHICLE_PLATE_STATE,
         EMAIL_OR_LOYALTY_MEMBERSHIP_ID,
+        NATIONAL_ID_CARD_NUMBER,
+        NATIONAL_ID_CARD_EXPIRATION_DATE,
+        NATIONAL_ID_CARD_ISSUE_DATE,
+        NATIONAL_ID_CARD_ISSUING_COUNTRY,
+        REDRESS_NUMBER,
+        KNOWN_TRAVELER_NUMBER,
+        KNOWN_TRAVELER_NUMBER_EXPIRATION_DATE,
+        ADDRESS_HOME_ZIP_PREFIX,
+        ADDRESS_HOME_ZIP_SUFFIX,
+        FLIGHT_RESERVATION_FLIGHT_NUMBER,
+        FLIGHT_RESERVATION_TICKET_NUMBER,
+        FLIGHT_RESERVATION_CONFIRMATION_CODE,
+        FLIGHT_RESERVATION_PASSENGER_NAME,
+        FLIGHT_RESERVATION_DEPARTURE_AIRPORT,
+        FLIGHT_RESERVATION_ARRIVAL_AIRPORT,
+        FLIGHT_RESERVATION_DEPARTURE_DATE,
       }
 
       export enum AddressRecordType {
         LOCAL_OR_SYNCABLE = 'LOCAL_OR_SYNCABLE',
         ACCOUNT = 'ACCOUNT',
         ACCOUNT_HOME = 'ACCOUNT_HOME',
-        ACCOUNT_WORK = 'ACCOUNT_WORK'
+        ACCOUNT_WORK = 'ACCOUNT_WORK',
+        ACCOUNT_NAME_EMAIL = "ACCOUNT_NAME_EMAIL"
       }
 
       export enum AttributeTypeDataType {
@@ -219,6 +254,7 @@ declare global {
         addEntityTypeString: string;
         editEntityTypeString: string;
         deleteEntityTypeString: string;
+        supportsWalletStorage: boolean;
       }
 
       export interface DateValue {
@@ -241,8 +277,10 @@ declare global {
 
       export interface EntityInstanceWithLabels {
         guid: string;
+        type: EntityType;
         entityInstanceLabel: string;
         entityInstanceSubLabel: string;
+        storedInWallet: boolean;
       }
 
       export interface PayOverTimeIssuerEntry {
@@ -285,7 +323,7 @@ declare global {
           Promise<EntityInstanceWithLabels[]>;
       export function getEntityInstanceByGuid(guid: string):
           Promise<EntityInstance>;
-      export function getAllEntityTypes(): Promise<EntityType[]>;
+      export function getWritableEntityTypes(): Promise<EntityType[]>;
       export function getAllAttributeTypesForEntityTypeName(
           entityTypeName: number): Promise<AttributeType[]>;
       export function getAutofillAiOptInStatus(): Promise<boolean>;

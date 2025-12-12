@@ -68,19 +68,19 @@ public class PeerConnectionEndToEndTest {
     private int expectedHeight;
     private int expectedFramesDelivered;
     private int expectedTracksAdded;
-    private Queue<SignalingState> expectedSignalingChanges = new ArrayDeque<>();
-    private Queue<IceConnectionState> expectedIceConnectionChanges = new ArrayDeque<>();
-    private Queue<IceConnectionState> expectedStandardizedIceConnectionChanges = new ArrayDeque<>();
-    private Queue<PeerConnectionState> expectedConnectionChanges = new ArrayDeque<>();
-    private Queue<IceGatheringState> expectedIceGatheringChanges = new ArrayDeque<>();
-    private Queue<String> expectedAddStreamLabels = new ArrayDeque<>();
-    private Queue<String> expectedRemoveStreamLabels = new ArrayDeque<>();
+    private final Queue<SignalingState> expectedSignalingChanges = new ArrayDeque<>();
+    private final Queue<IceConnectionState> expectedIceConnectionChanges = new ArrayDeque<>();
+    private final Queue<IceConnectionState> expectedStandardizedIceConnectionChanges = new ArrayDeque<>();
+    private final Queue<PeerConnectionState> expectedConnectionChanges = new ArrayDeque<>();
+    private final Queue<IceGatheringState> expectedIceGatheringChanges = new ArrayDeque<>();
+    private final Queue<String> expectedAddStreamLabels = new ArrayDeque<>();
+    private final Queue<String> expectedRemoveStreamLabels = new ArrayDeque<>();
     private final List<IceCandidate> gotIceCandidates = new ArrayList<>();
-    private Map<MediaStream, WeakReference<VideoSink>> videoSinks = new IdentityHashMap<>();
+    private final IdentityHashMap<MediaStream, WeakReference<VideoSink>> videoSinks = new IdentityHashMap<>();
     private DataChannel dataChannel;
-    private Queue<DataChannel.Buffer> expectedBuffers = new ArrayDeque<>();
-    private Queue<DataChannel.State> expectedStateChanges = new ArrayDeque<>();
-    private Queue<String> expectedRemoteDataChannelLabels = new ArrayDeque<>();
+    private final Queue<DataChannel.Buffer> expectedBuffers = new ArrayDeque<>();
+    private final Queue<DataChannel.State> expectedStateChanges = new ArrayDeque<>();
+    private final Queue<String> expectedRemoteDataChannelLabels = new ArrayDeque<>();
     private int expectedOldStatsCallbacks;
     private int expectedNewStatsCallbacks;
     private List<StatsReport[]> gotStatsReports = new ArrayList<>();
@@ -569,7 +569,7 @@ public class PeerConnectionEndToEndTest {
   // Sets the expected resolution for an ObserverExpectations once a frame
   // has been captured.
   private static class ExpectedResolutionSetter implements VideoSink {
-    private ObserverExpectations observer;
+    private final ObserverExpectations observer;
 
     public ExpectedResolutionSetter(ObserverExpectations observer) {
       this.observer = observer;
@@ -592,7 +592,7 @@ public class PeerConnectionEndToEndTest {
     private boolean success;
     private @Nullable SessionDescription sdp;
     private @Nullable String error;
-    private CountDownLatch latch = new CountDownLatch(1);
+    private final CountDownLatch latch = new CountDownLatch(1);
 
     public SdpObserverLatch() {}
 
@@ -1131,6 +1131,50 @@ public class PeerConnectionEndToEndTest {
 
   @Test
   @MediumTest
+  public void testSetConfigurationUnchangedAfterSetLocalDescription() throws Exception {
+    PeerConnectionFactory factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
+
+    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
+    iceServers.add(
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
+
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+
+    ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
+    PeerConnection offeringPC = factory.createPeerConnection(rtcConfig, offeringExpectations);
+    assertNotNull(offeringPC);
+
+    // Create a data channel and set local description to kick off the ICE candidate gathering.
+    offeringExpectations.expectRenegotiationNeeded();
+    DataChannel offeringDC = offeringPC.createDataChannel("offeringDC", new DataChannel.Init());
+    assertEquals("offeringDC", offeringDC.label());
+
+    offeringExpectations.setDataChannel(offeringDC);
+    SdpObserverLatch sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    SessionDescription offerSdp = sdpLatch.getSdp();
+    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
+    assertFalse(offerSdp.description.isEmpty());
+
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
+    offeringPC.setLocalDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    assertEquals(offeringPC.getLocalDescription().type, offerSdp.type);
+
+    // Wait until we satisfy all expectations in the setup.
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+
+    // Setting the unchanged configuration after setting local offer should work.
+    assertTrue(offeringPC.setConfiguration(rtcConfig));
+  }
+
+  @Test
+  @MediumTest
   public void testSurfaceIceCandidatesBeforeIceGatheringStateComplete() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't
     // have those.
@@ -1242,6 +1286,7 @@ public class PeerConnectionEndToEndTest {
     PeerConnection.RTCConfiguration rtcConfig =
         new PeerConnection.RTCConfiguration(Collections.emptyList());
     rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+    rtcConfig.cryptoOptions = CryptoOptions.builder().createCryptoOptions();
     // NONE would prevent any candidate being signaled to the PC.
     rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.NONE;
     // We must have the continual gathering enabled to allow the surfacing of candidates on the ICE

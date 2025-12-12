@@ -55,8 +55,6 @@ chrome/installer/util/google_update_settings.h
 components/device_event_log/device_event_log_export.h
 components/login/login_export.h
 components/media_router/common/providers/cast/certificate/cast_crl_root_ca_cert_der-inc.h
-components/nacl/browser/nacl_browser_delegate.h
-components/nacl/renderer/ppb_nacl_private.h
 components/policy/core/browser/configuration_policy_handler_parameters.h
 components/policy/proto/policy_proto_export.h
 components/rlz/rlz_tracker_delegate.h
@@ -106,7 +104,6 @@ gpu/config/gpu_lists_version.h
 gpu/gles2_conform_support/gtf/gtf_stubs.h
 gpu/gpu_export.h
 ipc/ipc_channel_proxy_unittest_messages.h
-ipc/ipc_message_null_macros.h
 media/audio/audio_logging.h
 media/cast/common/mod_util.h
 media/cast/net/rtcp/rtcp_session.h
@@ -137,12 +134,6 @@ ppapi/lib/gl/include/GLES2/gl2.h
 ppapi/lib/gl/include/GLES2/gl2ext.h
 ppapi/lib/gl/include/GLES2/gl2platform.h
 ppapi/lib/gl/include/KHR/khrplatform.h
-ppapi/nacl_irt/irt_manifest.h
-ppapi/nacl_irt/public/irt_ppapi.h
-ppapi/native_client/src/shared/ppapi_proxy/ppruntime.h
-ppapi/native_client/src/untrusted/pnacl_irt_shim/irt_shim_ppapi.h
-ppapi/native_client/src/untrusted/pnacl_irt_shim/pnacl_shim.h
-ppapi/native_client/src/untrusted/pnacl_irt_shim/shim_ppapi.h
 ppapi/proxy/dispatch_reply_message.h
 ppapi/proxy/plugin_proxy_delegate.h
 ppapi/proxy/plugin_resource_callback.h
@@ -206,14 +197,11 @@ third_party/woff2/src/port.h
 third_party/yasm/source/config/linux/config.h
 third_party/yasm/source/config/linux/libyasm-stdint.h
 third_party/zlib/contrib/minizip/crypt.h
-tools/ipc_fuzzer/message_lib/all_message_null_macros.h
 ui/base/clipboard/clipboard_test_template.h
 ui/events/keycodes/keyboard_codes_posix.h
 ui/gfx/overlay_transform.h
 ui/gfx/scoped_ns_graphics_context_save_gstate_mac.h
 ui/gfx/swap_result.h
-ui/gfx/sys_color_change_listener.h
-ui/gl/GL/glextchromium.h
 ui/gl/gl_bindings_api_autogen_egl.h
 ui/gl/gl_bindings_api_autogen_gl.h
 ui/gl/gl_bindings_api_autogen_glx.h

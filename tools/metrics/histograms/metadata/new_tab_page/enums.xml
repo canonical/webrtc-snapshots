@@ -26,22 +26,27 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
+<enum name="AimToolState">
+  <int value="0" label="AIM Tool Disabled"/>
+  <int value="1" label="AIM Tool Enabled"/>
+</enum>
+
 <enum name="BooleanFromHTTPCache">
   <int value="0" label="Downloaded from network"/>
   <int value="1" label="HTTP cache hit"/>
 </enum>
 
-<enum name="BottomSheetType">
-  <summary/>
-  <int value="0" label="Main Bottom Sheet"/>
-  <int value="1" label="New Tab Page Cards Bottom Sheet"/>
-  <int value="2" label="Discover Feed Bottom Sheet"/>
+<enum name="ComposeboxFileValidationError">
+  <int value="0" label="No error"/>
+  <int value="1" label="Too many files uploaded"/>
+  <int value="2" label="File is empty"/>
+  <int value="3" label="File size is too large"/>
 </enum>
 
-<enum name="Entry">
-  <summary/>
-  <int value="0" label="App Menu"/>
-  <int value="1" label="Customization button in toolbar"/>
+<enum name="ComposeboxSubmissionType">
+  <int value="0" label="Submission with no tools"/>
+  <int value="1" label="DeepSearch"/>
+  <int value="2" label="CreateImages"/>
 </enum>
 
 <enum name="FailToShowHomeSurfaceReason">
@@ -50,6 +55,31 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Not a native page"/>
   <int value="3" label="Not a NTP native page"/>
   <int value="4" label="The native page is frozen"/>
+</enum>
+
+<enum name="FooterContextMenuItem">
+  <int value="0" label="Hide footer clicked."/>
+  <int value="1" label="Customize chrome clicked."/>
+</enum>
+
+<enum name="FooterCustomizeChromeEntryPoint">
+  <int value="0" label="Customize Chrome button clicked."/>
+  <int value="1" label="NTP URL has customize chrome parameters."/>
+  <int value="2" label="Wallpaper search button clicked."/>
+</enum>
+
+<enum name="FooterElement">
+  <int value="0" label="Other Element"/>
+  <int value="1" label="Customize Chrome Button"/>
+  <int value="2" label="Extension name"/>
+  <int value="3" label="Management notice"/>
+  <int value="4" label="Background name"/>
+  <int value="5" label="Context menu opened"/>
+</enum>
+
+<enum name="FooterNoticeItem">
+  <int value="0" label="Extension name"/>
+  <int value="1" label="Management notice"/>
 </enum>
 
 <enum name="ItemSuggestRequestResult">
@@ -298,6 +328,31 @@ chromium-metrics-reviews@google.com.
   <int value="1967788069" label="solidcolors_for_NTP">Colors for NTP</int>
 </enum>
 
+<enum name="NtpComposeboxMultimodalState">
+  <int value="0" label="Text Only"/>
+  <int value="1" label="File Only"/>
+  <int value="2" label="Text and File"/>
+</enum>
+
+<enum name="NtpCustomizationBottomSheetType">
+  <summary/>
+  <int value="0" label="Main Bottom Sheet"/>
+  <int value="1" label="New Tab Page Cards Bottom Sheet"/>
+  <int value="2" label="Discover Feed Bottom Sheet"/>
+  <int value="3" label="New Tab Page Appearance Bottom Sheet"/>
+  <int value="4" label="Most Visited Tiles Bottom Sheet"/>
+  <int value="5" label="New Tab Page Theme Collections Bottom Sheet"/>
+  <int value="6" label="New Tab Page Single Theme Collection Bottom Sheet"/>
+  <int value="7" label="New Tab Page Chrome Colors Bottom Sheet"/>
+</enum>
+
+<enum name="NtpCustomizationEntryPoint">
+  <summary/>
+  <int value="0" label="App Menu"/>
+  <int value="1" label="Customization button in toolbar"/>
+  <int value="2" label="Customization button on NTP for tablet"/>
+</enum>
+
 <enum name="NTPCustomizeChromeBackgroundAction">
   <int value="0"
       label="Collection selected in the 'Chrome backgrounds' dialog."/>
@@ -313,6 +368,20 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="NTP URL has customize chrome parameters."/>
   <int value="3" label="Wallpaper search button clicked."/>
 </enum>
+
+<!-- LINT.IfChange(NTPCustomizeChromePromoEligibility) -->
+
+<enum name="NTPCustomizeChromePromoEligibility">
+  <int value="0" label="Promo can be shown."/>
+  <int value="1" label="Promo auto-opened maximum number of times."/>
+  <int value="2"
+      label="Promo auto-opened maximum number of times per session."/>
+  <int value="3" label="Chrome customized already."/>
+  <int value="4" label="Customize Chrome closed explicitly by the user."/>
+  <int value="5" label="Customize Chrome opened via button before."/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/webui/new_tab_page/new_tab_page_handler.h:NTPCustomizeChromePromoEligibility) -->
 
 <enum name="NTPCustomizeChromeSidePanelAction">
   <int value="0" label="Button to edit theme selected."/>
@@ -339,10 +408,6 @@ chromium-metrics-reviews@google.com.
   <int value="21" label="Chrome color clicked"/>
   <int value="22" label="Custom color clicked"/>
   <int value="23" label="Show footer toggle clicked"/>
-</enum>
-
-<enum name="NTPCustomizeChromeSidePanelImpression">
-  <int value="0" label="Extensions card section displayed"/>
 </enum>
 
 <enum name="NTPCustomizedFeatures">
@@ -542,6 +607,8 @@ chromium-metrics-reviews@google.com.
   <int value="15" label="[Deprecated] Open History Search Settings"/>
   <int value="16" label="Open Glic"/>
   <int value="17" label="Open Glic settings"/>
+  <int value="18" label="Prewarm Glic FRE"/>
+  <int value="19" label="Open Split View"/>
 </enum>
 
 <!-- LINT.ThenChange(//ui/webui/resources/js/browser_command/browser_command.mojom:Command) -->
@@ -597,7 +664,9 @@ chromium-metrics-reviews@google.com.
   <int value="28" label="From History Navigation Background"/>
   <int value="29" label="From History Navigation Foreground"/>
   <int value="30" label="From Longpress Foreground In Group"/>
-  <int value="31" label="Size"/>
+  <int value="31" label="From Tab List Interface"/>
+  <int value="32" label="From Link, Creating New Window"/>
+  <int value="33" label="Size"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/android/tab_model/tab_model.h:TabLaunchType) -->
@@ -607,7 +676,7 @@ chromium-metrics-reviews@google.com.
     This enum denotes the type of app on the deleted ntp_tile as part of bug fix
     for crbug.com/1250463
   </summary>
-  <int value="0" label="Default App from most visited links"/>
+  <int value="0" label="Default App from top sites links"/>
   <int value="1" label="Default App with custom links"/>
 </enum>
 

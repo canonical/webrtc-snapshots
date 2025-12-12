@@ -105,7 +105,7 @@ void FontIndexer::FontListHasLoaded(base::Value::List list) {
     const base::Value::List& font = i.GetList();
 
     std::string non_localized_name = font[0].GetString();
-    PrintAllFontsWithName(WTF::AtomicString(non_localized_name.c_str()));
+    PrintAllFontsWithName(blink::AtomicString(non_localized_name.c_str()));
   }
 
   has_font_list_loaded_ = true;
@@ -113,7 +113,7 @@ void FontIndexer::FontListHasLoaded(base::Value::List list) {
     std::move(quit_closure_).Run();
 }
 
-bool FontIndexer::DoesFontHaveDigest(WTF::AtomicString name,
+bool FontIndexer::DoesFontHaveDigest(blink::AtomicString name,
                                      blink::FontDescription font_description,
                                      int64_t digest) {
   const blink::SimpleFontData* font_data =
@@ -125,7 +125,7 @@ bool FontIndexer::DoesFontHaveDigest(WTF::AtomicString name,
 }
 
 bool FontIndexer::DoFontsWithNameHaveVaryingWeights(
-    WTF::AtomicString name,
+    blink::AtomicString name,
     int64_t default_font_digest) {
   blink::FontDescription font_description;
 
@@ -138,7 +138,7 @@ bool FontIndexer::DoFontsWithNameHaveVaryingWeights(
 }
 
 bool FontIndexer::DoFontsWithNameHaveVaryingWidths(
-    WTF::AtomicString name,
+    blink::AtomicString name,
     int64_t default_font_digest) {
   blink::FontDescription font_description;
 
@@ -151,7 +151,7 @@ bool FontIndexer::DoFontsWithNameHaveVaryingWidths(
 }
 
 bool FontIndexer::DoFontsWithNameHaveVaryingSlopes(
-    WTF::AtomicString name,
+    blink::AtomicString name,
     int64_t default_font_digest) {
   blink::FontDescription font_description;
 
@@ -163,8 +163,8 @@ bool FontIndexer::DoFontsWithNameHaveVaryingSlopes(
   return (!DoesFontHaveDigest(name, font_description, default_font_digest));
 }
 
-void FontIndexer::PrintAllFontsWithName(WTF::AtomicString name) {
-  WTF::HashSet<int64_t> set_of_digests;
+void FontIndexer::PrintAllFontsWithName(blink::AtomicString name) {
+  blink::HashSet<int64_t> set_of_digests;
 
   // First, we load the font with default selection settings to verify any font
   // exists and for later comparison.
@@ -238,7 +238,7 @@ void FontIndexer::PrintAllFontsWithName(WTF::AtomicString name) {
                   .GetOrComputeTypefaceDigest(font_data->PlatformData())
                   .ToUkmMetricValue();
           if (set_of_digests.insert(typeface_digest).is_new_entry) {
-            WTF::String postscript_name =
+            blink::String postscript_name =
                 font_data->PlatformData().GetPostScriptName();
 
             // Matches behavior in FontMatchingMetrics for lookups using the

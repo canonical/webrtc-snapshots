@@ -133,11 +133,9 @@ _DEVICE_GOLD_DIR = 'skia_gold'
 # A map of Android product models to SDK ints.
 RENDER_TEST_MODEL_SDK_CONFIGS = {
     # Android x86 emulator.
-    'Android SDK built for x86': [26],
-    # We would like this to be supported, but it is currently too prone to
-    # introducing flakiness due to a combination of Gold and Chromium issues.
-    # See crbug.com/1233700 and skbug.com/12149 for more information.
-    # 'Pixel 2': [28],
+    'Android SDK built for x86': [29],
+    # Android x64 emulator.
+    'Android SDK built for x64': [35],
 }
 
 _BATCH_SUFFIX = '_batch'
@@ -812,20 +810,23 @@ class LocalDeviceInstrumentationTestRun(
         else:
           raise Exception('No PackageInfo found but'
                           '--use-apk-under-test-flags-file is specified.')
-      self._flag_changers[str(device)] = flag_changer.FlagChanger(
-          device, cmdline_file)
+      changer = flag_changer.FlagChanger(device, cmdline_file)
+      # Ensure that any existing flags are cleared so that there cannot be any
+      # conflicts with added flags.
+      changer.RemoveFlags(changer.GetCurrentFlags())
+      self._flag_changers[str(device)] = changer
 
   #override
   def _CreateShardsForDevices(self, tests):
     """Create shards of tests to run on devices.
 
     Args:
-      tests: List containing tests or test batches.
+      tests: List containing tests or test groups.
 
     Returns:
-      List of tests or batches.
+      List of tests or groups.
     """
-    # Each test or test batch will be a single shard.
+    # Each test or test group will be a single shard.
     return tests
 
   def _GetTestsFromPickle(self, pickle_extras):
@@ -897,8 +898,6 @@ class LocalDeviceInstrumentationTestRun(
     batched_tests_split = self._SplitBatchesAboveMaxSize(batched_tests)
     all_tests = batched_tests_split + other_tests
 
-    # Sort all tests by hash.
-    # TODO(crbug.com/40200835): Add sorting logic back to _PartitionTests.
     return self._SortTests(all_tests)
 
   def _GroupTestsIntoBatchesAndOthers(self, tests):
@@ -958,17 +957,9 @@ class LocalDeviceInstrumentationTestRun(
     return batched_tests_split
 
   #override
-  def _GroupTestsAfterSharding(self, tests):
-    # pylint: disable=no-self-use
-    batched_tests, other_tests = self._GroupTestsIntoBatchesAndOthers(tests)
-    all_tests = list(batched_tests.values()) + other_tests
-
-    # Sort all tests by hash.
-    # TODO(crbug.com/40200835): Add sorting logic back to _PartitionTests.
-    return self._SortTests(all_tests)
-
-  #override
   def _GetUniqueTestName(self, test):
+    if isinstance(test, list):
+      test = test[-1]
     return instrumentation_test_instance.GetUniqueTestName(test)
 
   #override
@@ -1726,9 +1717,13 @@ class LocalDeviceInstrumentationTestRun(
             should_rewrite = True
             del json_dict['full_test_name']
 
-        running_on_unsupported = (
-            device.build_version_sdk not in RENDER_TEST_MODEL_SDK_CONFIGS.get(
-                device.product_model, []) and not fail_on_unsupported)
+        supported_sdks_for_device = RENDER_TEST_MODEL_SDK_CONFIGS.get(
+            device.product_model, [])
+        is_unsupported_config = (device.build_version_sdk
+                                 not in supported_sdks_for_device
+                                 or self._env.skia_gold_consider_unsupported)
+        running_on_unsupported = (is_unsupported_config
+                                  and not fail_on_unsupported)
         should_ignore_in_gold = running_on_unsupported
         # We still want to fail the test even if we're ignoring the image in
         # Gold if we're running on a supported configuration, so
@@ -1769,20 +1764,22 @@ class LocalDeviceInstrumentationTestRun(
         # the test has explicitly opted in, as it's likely that baselines
         # aren't maintained for that configuration.
         if should_hide_failure:
-          if self._test_instance.skia_gold_properties.local_pixel_tests:
-            _AppendToLog(
-                results, full_test_name,
-                'Gold comparison for %s failed, but model %s with SDK '
-                '%d is not a supported configuration. This failure would be '
-                'ignored on the bots, but failing since tests are being run '
-                'locally.' %
-                (render_name, device.product_model, device.build_version_sdk))
+          message = 'Gold comparison for %s failed, but ' % render_name
+          if self._env.skia_gold_consider_unsupported:
+            message += 'the --skia-gold-consider-unsupported flag was passed'
           else:
-            _AppendToLog(
-                results, full_test_name,
-                'Gold comparison for %s failed, but model %s with SDK '
-                '%d is not a supported configuration, so ignoring failure.' %
-                (render_name, device.product_model, device.build_version_sdk))
+            message += (
+                'model %s with SDK %d is not a supported configuration' %
+                (device.product_model, device.build_version_sdk))
+
+          if self._test_instance.skia_gold_properties.local_pixel_tests:
+            message += (
+                '. This failure would be ignored on the bots, but failing '
+                'since tests are being run locally.')
+            _AppendToLog(results, full_test_name, message)
+          else:
+            message += ', so ignoring failure.'
+            _AppendToLog(results, full_test_name, message)
             continue
 
         _FailTestIfNecessary(results, full_test_name)

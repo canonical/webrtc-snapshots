@@ -45,7 +45,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.CetAvailable" enum="BooleanAvailable"
-    expires_after="2025-09-09">
+    expires_after="2026-09-09">
   <owner>ajgo@chromium.org</owner>
   <owner>wfh@chromium.org</owner>
   <summary>
@@ -56,7 +56,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.CetEnabled" enum="BooleanEnabled"
-    expires_after="2025-09-09">
+    expires_after="2026-09-09">
   <owner>ajgo@chromium.org</owner>
   <owner>wfh@chromium.org</owner>
   <summary>
@@ -90,7 +90,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.Enclave.{Type}.Available" enum="BooleanAvailable"
-    expires_after="2025-10-12">
+    expires_after="2026-02-22">
   <owner>ajgo@chromium.org</owner>
   <owner>wfh@chromium.org</owner>
   <summary>
@@ -114,7 +114,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.FeatureNotificationsSettingChange"
-    enum="BooleanEnabled" expires_after="2025-07-14">
+    enum="BooleanEnabled" expires_after="2026-07-14">
   <owner>davidbienvenu@chromium.org</owner>
   <owner>jessemckenna@google.com</owner>
   <summary>
@@ -124,7 +124,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.HasHighResolutionTimeTicks" enum="Boolean"
-    expires_after="2025-11-16">
+    expires_after="2026-03-22">
   <owner>brucedawson@chromium.org</owner>
   <owner>gab@chromium.org</owner>
   <summary>
@@ -144,7 +144,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.HighResolutionTimerUsage" units="%"
-    expires_after="2025-10-12">
+    expires_after="2026-02-22">
   <owner>olivierli@chromium.org</owner>
   <owner>catan-team@chromium.org</owner>
   <summary>
@@ -165,8 +165,18 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Windows.InstallerDownloader.DestinationMatches" enum="Boolean"
+    expires_after="2026-03-01">
+  <owner>koretadaniel@chromium.org</owner>
+  <owner>top-chrome-desktop-ui@google.com</owner>
+  <summary>
+    Logged once per installer download attempt. True when the DownloaderManager
+    successfully saved the file under the suggested name.
+  </summary>
+</histogram>
+
 <histogram name="Windows.InstallerDownloader.DownloadSucceed" enum="Boolean"
-    expires_after="2025-12-31">
+    expires_after="2026-03-01">
   <owner>koretadaniel@chromium.org</owner>
   <owner>top-chrome-desktop-ui@google.com</owner>
   <summary>
@@ -176,8 +186,19 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Windows.InstallerDownloader.FailureReason"
+    enum="InstallerDownloaderFailureReason" expires_after="2026-03-01">
+  <owner>koretadaniel@chromium.org</owner>
+  <owner>top-chrome-desktop-ui@google.com</owner>
+  <summary>
+    Records the reason why an installer download failed after it had already
+    started. This is recorded when the download enters a terminal state other
+    than COMPLETE.
+  </summary>
+</histogram>
+
 <histogram name="Windows.InstallerDownloader.InfobarShown" enum="Boolean"
-    expires_after="2025-12-31">
+    expires_after="2026-03-01">
   <owner>koretadaniel@chromium.org</owner>
   <owner>top-chrome-desktop-ui@google.com</owner>
   <summary>
@@ -187,8 +208,20 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Windows.InstallerDownloader.InterruptReason"
+    enum="InterruptReason" expires_after="2026-03-01">
+  <owner>koretadaniel@chromium.org</owner>
+  <owner>top-chrome-desktop-ui@google.com</owner>
+  <summary>
+    Records the download interrupt reason when an installer download fails to
+    start. This is recorded when the DownloadManager returns an interrupt reason
+    other than NONE, which can happen for a wide variety of reasons including
+    network errors, file errors, or server issues.
+  </summary>
+</histogram>
+
 <histogram name="Windows.InstallerDownloader.RequestAccepted" enum="Boolean"
-    expires_after="2025-12-31">
+    expires_after="2026-03-01">
   <owner>koretadaniel@chromium.org</owner>
   <owner>top-chrome-desktop-ui@google.com</owner>
   <summary>
@@ -224,34 +257,8 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Windows.LegacyDisplayIdAlgorithm" enum="UsedDisplayIdFallback"
-    expires_after="2025-11-16">
-  <owner>btriebw@google.com</owner>
-  <owner>msw@google.com</owner>
-  <summary>
-    Records when a monitor is missing DISPLAYCONFIG_PATH_INFO to derive a
-    display ID and instead used the fallback legacy algorithm. Recorded once for
-    each monitor detected by the OS during startup of chrome and after any
-    monitor topology changes (addition/removal) thereafter.
-  </summary>
-</histogram>
-
-<histogram name="Windows.LegacyDisplayIdAlgorithm2"
-    enum="UsedDisplayIdFallback" expires_after="2025-07-13">
-  <owner>btriebw@google.com</owner>
-  <owner>msw@google.com</owner>
-  <summary>
-    Records when a monitor is missing DISPLAYCONFIG_PATH_INFO to derive a
-    display ID and instead used the fallback legacy algorithm. Recorded once for
-    each monitor detected by the OS during startup of chrome and after any
-    monitor topology changes (addition/removal) thereafter.
-
-    Subsampled to 1/100.
-  </summary>
-</histogram>
-
 <histogram name="Windows.OneDriveSyncState.{SyncedState}" enum="BooleanEnabled"
-    expires_after="2025-12-31">
+    expires_after="2026-03-01">
   <owner>koretadaniel@chromium.org</owner>
   <owner>iclelland@chromium.org</owner>
   <summary>
@@ -336,8 +343,28 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Windows.PlatformExperienceHelper.InstallerLaunchStatus.System"
+    enum="SystemInstallerLaunchStatus" expires_after="2026-04-05">
+  <owner>alsan@chromium.org</owner>
+  <owner>chrome-desktop-ui-waterloo@google.com</owner>
+  <summary>
+    Records the outcome of attempting to launch the platform experience helper
+    installer via Google Update for system installs.
+  </summary>
+</histogram>
+
+<histogram name="Windows.PlatformExperienceHelper.InstallerLaunchStatus.User"
+    enum="UserInstallerLaunchStatus" expires_after="2026-04-12">
+  <owner>alsan@chromium.org</owner>
+  <owner>chrome-desktop-ui-waterloo@google.com</owner>
+  <summary>
+    Records the outcome of attempting to launch the platform experience helper
+    installer executable directly for user installs.
+  </summary>
+</histogram>
+
 <histogram name="Windows.ProcessorFamily" enum="ProcessorFamily"
-    expires_after="2025-10-12">
+    expires_after="2026-03-22">
   <owner>rkc@chromium.org</owner>
   <owner>vnagarnaik@google.com</owner>
   <owner>rockot@chromium.org</owner>
@@ -361,7 +388,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.ShouldPinToTaskbarResult" enum="TaskbarPinResult"
-    expires_after="2025-12-01">
+    expires_after="2026-04-05">
   <owner>davidbienvenu@chromium.org</owner>
   <owner>jessemckenna@google.com</owner>
   <summary>
@@ -371,18 +398,30 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.TaskbarPinFromFRESucceeded" enum="Boolean"
-    expires_after="2025-12-01">
+    expires_after="2026-04-05">
   <owner>davidbienvenu@chromium.org</owner>
   <owner>jessemckenna@google.com</owner>
   <summary>
-    The result of calling PinAppToTaskbar() in the first run experience, logged
-    when it is called. It is called when the user has agreed to set Chrome as
-    the default browser and pin Chrome to the taskbar.
+    The bool result passed to PinAppToTaskbar()'s PinResultCallback argument,
+    called from first run experience's set default browser page. The result will
+    be true if pinning succeeded, false otherwise. It is called when the user
+    has agreed to set Chrome as the default browser and pin it to the taskbar.
+  </summary>
+</histogram>
+
+<histogram name="Windows.TaskbarPinFromSettingsSucceeded" enum="Boolean"
+    expires_after="2026-03-01">
+  <owner>davidbienvenu@chromium.org</owner>
+  <owner>jessemckenna@google.com</owner>
+  <summary>
+    The result of calling PinAppToTaskbar() from settings, logged when it is
+    called. It is called when the user has asked to set Chrome as the default
+    browser and pin Chrome to the taskbar.
   </summary>
 </histogram>
 
 <histogram name="Windows.TaskbarPinResult" enum="TaskbarPinResult"
-    expires_after="2025-12-01">
+    expires_after="2026-04-05">
   <owner>davidbienvenu@chromium.org</owner>
   <owner>jessemckenna@google.com</owner>
   <summary>
@@ -392,7 +431,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.TimeInSelectFileDialog" units="ms"
-    expires_after="2025-10-26">
+    expires_after="2026-03-01">
   <owner>fdoray@chromium.org</owner>
   <owner>pmonette@chromium.org</owner>
   <summary>
@@ -405,7 +444,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.Win11HardwareRequirements.{Type}Check"
-    enum="BooleanEnabled" expires_after="2025-10-05">
+    enum="BooleanEnabled" expires_after="2026-04-12">
   <owner>estalin@chromium.org</owner>
   <owner>davidbienvenu@chromium.org</owner>
   <summary>
@@ -422,7 +461,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Windows.Win11UpgradeEligible" enum="BooleanEnabled"
-    expires_after="2025-10-05">
+    expires_after="2026-04-12">
   <owner>estalin@chromium.org</owner>
   <owner>davidbienvenu@chromium.org</owner>
   <summary>

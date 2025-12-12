@@ -12,17 +12,10 @@ import sys
 import time
 import zipfile
 
-import compile_java
 import javac_output_processor
 from util import build_utils
 import action_helpers  # build_utils adds //build to sys.path.
 import zip_helpers
-
-
-def ProcessJavacOutput(output, target_name):
-  output_processor = javac_output_processor.JavacOutputProcessor(target_name)
-  lines = output_processor.Process(output.split('\n'))
-  return '\n'.join(lines)
 
 
 def main(argv):
@@ -123,7 +116,7 @@ def main(argv):
   if java_files:
     # Use jar_path to ensure paths are relative (needed for rbe).
     files_rsp_path = options.jar_path + '.java_files_list.txt'
-    with open(files_rsp_path, 'w') as f:
+    with open(files_rsp_path, 'w', encoding='utf-8') as f:
       f.write('\n'.join(java_files))
     # Pass source paths as response files to avoid extremely long command
     # lines that are tedius to debug.
@@ -140,7 +133,7 @@ def main(argv):
       action_helpers.atomic_output(options.generated_jar_path) as gensrc_jar:
     cmd += ['--output', output_jar.name, '--gensrc_output', gensrc_jar.name]
     process_javac_output_partial = functools.partial(
-        ProcessJavacOutput, target_name=options.target_name)
+        javac_output_processor.Process, options.target_name)
 
     logging.debug('Command: %s', cmd)
     start = time.time()

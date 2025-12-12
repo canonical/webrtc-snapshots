@@ -105,8 +105,7 @@ LIGHTWEIGHT_TESTERS = [
     'win-10-perf',
     'win-10_laptop_low_end-perf',
     'win-11-perf',
-    'mac-laptop_high_end-perf',
-    'mac-laptop_low_end-perf',
+    'mac-m4-mini-perf',
 ]
 
 UPLOAD_SKIA_JSON_BUILDERS = frozenset([
@@ -125,6 +124,11 @@ UPLOAD_SKIA_JSON_BUILDERS = frozenset([
     'android-pixel9-perf',
     'android-pixel9-pro-perf',
     'android-pixel9-pro-xl-perf',
+    'android-pixel25-ultra-perf',
+    'android-pixel25-ultra-xl-perf',
+    'android-brya-kano-i5-8gb-perf',
+    'android-corsola-steelix-8gb-perf',
+    'android-nissa-uldren-8gb-perf',
     'linux-builder-perf',
     'linux-perf-fyi',
     'linux-perf-rel',
@@ -139,13 +143,14 @@ UPLOAD_SKIA_JSON_BUILDERS = frozenset([
     'mac-m1_mini_2020-perf-pgo',
     'mac-m2-pro-perf',
     'mac-m3-pro-perf',
+    'mac-m4-mini-processor-perf',
     'win-10-processor-perf',
     'win-10_amd_laptop-perf',
     'win-10_laptop_low_end-processor-perf',
     'win-10_laptop_low_end-perf_HP-Candidate',
-    'win-11_laptop_low_end-perf',  # One of the non-lightweight testers.
     'win-11-processor-perf',  # One of the lightweight processors.
     'win64-builder-perf',
+    'win-arm64-snapdragon-elite-perf',
 ])
 
 PUBLIC_PERF_BUILDERS = [
@@ -221,7 +226,26 @@ FYI_BUILDERS = {
             'isolate':
             'performance_web_engine_test_suite',
             'extra_args':
-            ['--output-format=histograms', '--experimental-tbmv3-metrics'] +
+            ['--output-format=histograms'] +
+            bot_platforms.FUCHSIA_EXEC_ARGS['nelson'],
+            'type':
+            TEST_TYPES.TELEMETRY,
+        }],
+        'platform':
+        'fuchsia-wes',
+        'dimension': {
+            'cpu': None,
+            'device_type': 'Nelson',
+            'os': 'Fuchsia',
+            'pool': 'chrome.tests',
+        },
+    },
+    'fuchsia-perf-nsn-pgo': {
+        'tests': [{
+            'isolate':
+            'performance_web_engine_test_suite',
+            'extra_args':
+            ['--output-format=histograms'] +
             bot_platforms.FUCHSIA_EXEC_ARGS['nelson'],
             'type':
             TEST_TYPES.TELEMETRY,
@@ -240,7 +264,7 @@ FYI_BUILDERS = {
             'isolate':
             'performance_web_engine_test_suite',
             'extra_args':
-            ['--output-format=histograms', '--experimental-tbmv3-metrics'] +
+            ['--output-format=histograms'] +
             bot_platforms.FUCHSIA_EXEC_ARGS['sherlock'],
             'type':
             TEST_TYPES.TELEMETRY,
@@ -254,8 +278,24 @@ FYI_BUILDERS = {
             'pool': 'chrome.tests',
         },
     },
-    'win-arm64-builder-perf': {
-        'perf_trigger': False,
+    'fuchsia-perf-shk-pgo': {
+        'tests': [{
+            'isolate':
+            'performance_web_engine_test_suite',
+            'extra_args':
+            ['--output-format=histograms'] +
+            bot_platforms.FUCHSIA_EXEC_ARGS['sherlock'],
+            'type':
+            TEST_TYPES.TELEMETRY,
+        }],
+        'platform':
+        'fuchsia-wes',
+        'dimension': {
+            'cpu': None,
+            'device_type': 'Sherlock',
+            'os': 'Fuchsia',
+            'pool': 'chrome.tests',
+        },
     },
     'win-10_laptop_low_end-perf_HP-Candidate': {
         'tests': [
@@ -283,48 +323,6 @@ FYI_BUILDERS = {
             'Windows-10',
             'synthetic_product_name':
             'HP Laptop 15-bs1xx [Type1ProductConfigId] (HP)'
-        },
-    },
-    'win-arm64-snapdragon-plus-perf': {
-        'tests': [
-            {
-                'isolate': 'performance_test_suite',
-                'extra_args': [
-                    '--assert-gpu-compositing',
-                ],
-            },
-        ],
-        'platform':
-        'win',
-        'target_bits':
-        64,
-        'dimension': {
-            'pool': 'chrome.tests.perf',
-            'os': 'Windows-11',
-            'cpu':
-            'arm64-64-Snapdragon(R)_X_Plus_-_X1P64100_-_Qualcomm(R)_Oryon(TM)_CPU',
-            'synthetic_product_name': 'Inspiron 14 Plus 7441 (Dell Inc.)'
-        },
-    },
-    'win-arm64-snapdragon-elite-perf': {
-        'tests': [
-            {
-                'isolate': 'performance_test_suite',
-                'extra_args': [
-                    '--assert-gpu-compositing',
-                ],
-            },
-        ],
-        'platform':
-        'win',
-        'target_bits':
-        64,
-        'dimension': {
-            'pool': 'chrome.tests.perf',
-            'os': 'Windows-11',
-            'cpu':
-            'arm64-64-Snapdragon(R)_X_Elite_-_X1E80100_-_Qualcomm(R)_Oryon(TM)_CPU',
-            'synthetic_product_name': 'Latitude 7455 (Dell Inc.)'
         },
     },
     'chromeos-kevin-builder-perf-fyi': {
@@ -572,7 +570,7 @@ BUILDERS = {
         }],
         'dimension': {
             'cpu': 'x86-64',
-            'os': 'Windows-10',
+            'os': 'Windows-10-19045',
             'pool': 'chrome.tests',
         },
         'perf_trigger':
@@ -613,10 +611,15 @@ BUILDERS = {
         },
     },
     'android-desktop-x64-builder-perf': {},
-    'android-byra-perf': {
+    'android-brya-kano-i5-8gb-perf': {
         'tests': [{
             'isolate':
             'performance_test_suite_android_trichrome_chrome_google_64_32_bundle',
+            'extra_args': [
+                '--device',
+                'variable_lab_dut_hostname',
+                '--connect-to-device-over-network',
+            ],
         }],
         'platform':
         'android-trichrome-chrome-google-64-32-bundle',
@@ -625,7 +628,59 @@ BUILDERS = {
             'pool': 'chrome',
             'os': 'Android',
             'label-pool': 'chrome.tests.perf',
-            'label-board': 'brya',
+            'label-hwid_sku': 'kano_12th_Gen_IntelR_CoreTM_i5_1235U_8GB',
+        },
+        'server':
+        'https://chromeos-swarming.appspot.com',
+        'service_account':
+        'chromeos-tester@chops-service-accounts.iam.gserviceaccount.com',
+        'realm':
+        'chromeos:chrome',
+    },
+    'android-corsola-steelix-8gb-perf': {
+        'tests': [{
+            'isolate':
+            'performance_test_suite_android_trichrome_chrome_google_64_32_bundle',
+            'extra_args': [
+                '--device',
+                'variable_lab_dut_hostname',
+                '--connect-to-device-over-network',
+            ],
+        }],
+        'platform':
+        'android-trichrome-chrome-google-64-32-bundle',
+        'dimension': {
+            'dut_state': 'ready',
+            'pool': 'chrome',
+            'os': 'Android',
+            'label-pool': 'chrome.tests.perf',
+            'label-hwid_sku': 'steelix_MT8186_8GB',
+        },
+        'server':
+        'https://chromeos-swarming.appspot.com',
+        'service_account':
+        'chromeos-tester@chops-service-accounts.iam.gserviceaccount.com',
+        'realm':
+        'chromeos:chrome',
+    },
+    'android-nissa-uldren-8gb-perf': {
+        'tests': [{
+            'isolate':
+            'performance_test_suite_android_trichrome_chrome_google_64_32_bundle',
+            'extra_args': [
+                '--device',
+                'variable_lab_dut_hostname',
+                '--connect-to-device-over-network',
+            ],
+        }],
+        'platform':
+        'android-trichrome-chrome-google-64-32-bundle',
+        'dimension': {
+            'dut_state': 'ready',
+            'pool': 'chrome',
+            'os': 'Android',
+            'label-pool': 'chrome.tests.perf',
+            'label-hwid_sku': 'uldren_99C4LZ/Q1XT/6W_8GB',
         },
         'server':
         'https://chromeos-swarming.appspot.com',
@@ -796,6 +851,36 @@ BUILDERS = {
             'pool': 'chrome.tests.perf',
             'os': 'Android',
             'device_type': 'komodo',
+            'device_os': 'B',
+            'device_os_flavor': 'google',
+        },
+    },
+    'android-pixel25-ultra-perf': {
+        'tests': [{
+            'isolate':
+            'performance_test_suite_android_trichrome_chrome_google_64_32_bundle',
+        }],
+        'platform':
+        'android-trichrome-chrome-google-64-32-bundle',
+        'dimension': {
+            'pool': 'chrome.tests.perf',
+            'os': 'Android',
+            'device_type': 'mustang',
+            'device_os': 'B',
+            'device_os_flavor': 'google',
+        },
+    },
+    'android-pixel25-ultra-xl-perf': {
+        'tests': [{
+            'isolate':
+            'performance_test_suite_android_trichrome_chrome_google_64_32_bundle',
+        }],
+        'platform':
+        'android-trichrome-chrome-google-64-32-bundle',
+        'dimension': {
+            'pool': 'chrome.tests.perf',
+            'os': 'Android',
+            'device_type': 'blazer',
             'device_os': 'B',
             'device_os_flavor': 'google',
         },
@@ -1031,6 +1116,30 @@ BUILDERS = {
             'Mac15,3_arm64-64-Apple_M3_apple m3_8192_APPLE SSD AP0512Z',
         },
     },
+    'mac-m4-mini-perf': {
+        'tests': [
+            {
+                'isolate': 'performance_test_suite',
+                'extra_args': [
+                    '--assert-gpu-compositing',
+                ],
+            },
+        ],
+        'platform':
+        'mac',
+        'dimension': {
+            'cpu': 'arm',
+            'mac_model': 'Mac16,10',
+            'os': 'Mac',
+            'pool': 'chrome.tests.perf',
+            'synthetic_product_name':
+                'Mac16,10_arm64-64-Apple_M4_apple m4_32768_APPLE SSD AP2048Z',
+        },
+    },
+    'mac-m4-mini-processor-perf': {
+        'platform': 'linux',
+        'perf_processor': True,
+    },
     'win-10_amd_laptop-perf': {
         'tests': [
             {
@@ -1172,26 +1281,6 @@ BUILDERS = {
         'platform': 'linux',
         'perf_processor': True,
     },
-    'win-11_laptop_low_end-perf': {
-        'tests': [
-            {
-                'isolate': 'performance_test_suite',
-                'extra_args': [
-                    '--assert-gpu-compositing',
-                ],
-            },
-        ],
-        'platform':
-        'win',
-        'target_bits':
-        64,
-        'dimension': {
-            'pool': 'chrome.tests.perf',
-            'os': 'Windows-11',
-            'gpu': '8086:46b3-32.0.101.6297',
-            'synthetic_product_name': 'Inspiron 15 3520 (Dell Inc.)'
-        },
-    },
     'win-11-perf': {
         'tests': [
             {
@@ -1243,6 +1332,30 @@ BUILDERS = {
     'win-11-processor-perf': {
         'platform': 'linux',
         'perf_processor': True,
+    },
+    'win-arm64-builder-perf': {
+        'perf_trigger': False,
+    },
+    'win-arm64-snapdragon-elite-perf': {
+        'tests': [
+            {
+                'isolate': 'performance_test_suite',
+                'extra_args': [
+                    '--assert-gpu-compositing',
+                ],
+            },
+        ],
+        'platform':
+        'win',
+        'target_bits':
+        64,
+        'dimension': {
+            'pool': 'chrome.tests.perf',
+            'os': 'Windows-11',
+            'cpu':
+            'arm64-64-Snapdragon(R)_X_Elite_-_X1E80100_-_Qualcomm(R)_Oryon(TM)_CPU',
+            'synthetic_product_name': 'Latitude 7455 (Dell Inc.)'
+        },
     },
 }
 
@@ -1394,10 +1507,11 @@ GTEST_BENCHMARKS = {
         'enga@chromium.org', 'Dawn',
         'https://dawn.googlesource.com/dawn/+/HEAD/src/tests/perf_tests/README.md'
     ),
-    'tint_benchmark':
-    BenchmarkMetadata(
-        'jrprice@google.com, dsinclair@chromium.org', 'Dawn>Tint',
-        'https://dawn.googlesource.com/dawn/+/HEAD/docs/tint/benchmark.md'),
+    # (crbug.com/445456830) temporarily disabled
+    # 'tint_benchmark':
+    # BenchmarkMetadata(
+    #     'jrprice@google.com, dsinclair@chromium.org', 'Dawn>Tint',
+    #     'https://dawn.googlesource.com/dawn/+/HEAD/docs/tint/benchmark.md'),
 }
 
 RESOURCE_SIZES_METADATA = BenchmarkMetadata(
@@ -1955,9 +2069,14 @@ def validate_all_files():
     for run_updater, src_file in ALL_UPDATERS_AND_FILES:
       real_filepath = _source_filepath(src_file)
       temp_filepath = os.path.join(tempdir, os.path.basename(real_filepath))
-      if not (os.path.exists(real_filepath) and
-              run_updater(temp_filepath) and
-              filecmp.cmp(temp_filepath, real_filepath)):
+      if not os.path.exists(real_filepath):
+        print(f'Error: file {real_filepath} missing')
+        return False
+      if not run_updater(temp_filepath):
+        print(f'Error: updater {run_updater} failed')
+        return False
+      if not filecmp.cmp(temp_filepath, real_filepath):
+        print(f'Error: {run_updater} generated new contents for {src_file}')
         return False
   finally:
     shutil.rmtree(tempdir)

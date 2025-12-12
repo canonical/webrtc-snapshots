@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "testing/libfuzzer/confirm_fuzztest_init_buildflags.h"
+#include "testing/libfuzzer/buildflags.h"
 #include "testing/libfuzzer/fuzztest_init_helper.h"
 #include "third_party/fuzztest/src/fuzztest/init_fuzztest.h"
 
@@ -24,7 +24,7 @@
 
 namespace {
 
-static void RealInitFunction(int argc, char** argv) {
+static void RealInitFunction(int argc, char const* const* argv) {
   static std::vector<std::string> fuzztest_argv_strings;
   static std::vector<char*> fuzztest_argv_data;
   static int fuzztest_argc;

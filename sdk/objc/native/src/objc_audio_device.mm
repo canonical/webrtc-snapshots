@@ -13,6 +13,7 @@
 #include <memory>
 
 #import "components/audio/RTCAudioDevice.h"
+#import "helpers/AudioTimeStamp+Nanoseconds.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "objc_audio_device_delegate.h"
 #include "rtc_base/logging.h"
@@ -81,8 +82,7 @@ int32_t ObjCAudioDeviceModule::Init() {
   io_record_thread_checker_.Detach();
 
   thread_ = Thread::Current();
-  audio_device_buffer_ =
-      std::make_unique<webrtc::AudioDeviceBuffer>(&env_.task_queue_factory());
+  audio_device_buffer_ = std::make_unique<webrtc::AudioDeviceBuffer>(env_);
 
   if (![audio_device_ isInitialized]) {
     if (audio_device_delegate_ == nil) {
@@ -449,7 +449,8 @@ OSStatus ObjCAudioDeviceModule::OnDeliverRecordedData(
     record_fine_audio_buffer_->DeliverRecordedData(
         webrtc::ArrayView<const int16_t>(
             static_cast<int16_t*>(audio_buffer->mData), num_frames),
-        cached_recording_delay_ms_.load());
+        cached_recording_delay_ms_.load(),
+        AudioTimeStampGetNanoseconds(time_stamp));
     return noErr;
   }
   RTC_DCHECK(render_block != nullptr)
@@ -492,7 +493,9 @@ OSStatus ObjCAudioDeviceModule::OnDeliverRecordedData(
   // Use the FineAudioBuffer instance to convert between native buffer size
   // and the 10ms buffer size used by WebRTC.
   record_fine_audio_buffer_->DeliverRecordedData(
-      record_audio_buffer_, cached_recording_delay_ms_.load());
+      record_audio_buffer_,
+      cached_recording_delay_ms_.load(),
+      AudioTimeStampGetNanoseconds(time_stamp));
   return noErr;
 }
 

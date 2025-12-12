@@ -30,19 +30,16 @@ _JAVAC_EXTRACTOR = os.path.join(build_utils.DIR_SOURCE_ROOT, 'third_party',
                                 'android_prebuilts', 'build_tools', 'common',
                                 'framework', 'javac_extractor.jar')
 
+# These warnings cannot be suppressed even for third party code. Deprecation
+# warnings especially do not help since we must support older android version.
+_OUTPUT_FILTER_RE = re.compile(
+    r'^Note: .* uses? or overrides? a deprecated API.*\n|'
+    r'^Note: .* uses? unchecked or unsafe operations.*\n|'
+    r'^Note: Recompile with -Xlint:.* for details.*\n', re.MULTILINE)
+
 
 def ProcessJavacOutput(output, target_name):
-  # These warnings cannot be suppressed even for third party code. Deprecation
-  # warnings especially do not help since we must support older android version.
-  deprecated_re = re.compile(r'Note: .* uses? or overrides? a deprecated API')
-  unchecked_re = re.compile(
-      r'(Note: .* uses? unchecked or unsafe operations.)$')
-  recompile_re = re.compile(r'(Note: Recompile with -Xlint:.* for details.)$')
-
-  def ApplyFilters(line):
-    return not (deprecated_re.match(line) or unchecked_re.match(line)
-                or recompile_re.match(line))
-
+  output = _OUTPUT_FILTER_RE.sub('', output)
   output = build_utils.FilterReflectiveAccessJavaWarnings(output)
 
   # Warning currently cannot be silenced via javac flag.
@@ -54,14 +51,9 @@ def ProcessJavacOutput(output, target_name):
     #                 ^
     output = re.sub(r'.*?Unsafe is internal proprietary API[\s\S]*?\^\n', '',
                     output)
-    output = re.sub(r'\d+ warnings\n', '', output)
+    output = re.sub(r'\d+ warnings?\n', '', output)
 
-  lines = (l for l in output.split('\n') if ApplyFilters(l))
-
-  output_processor = javac_output_processor.JavacOutputProcessor(target_name)
-  lines = output_processor.Process(lines)
-
-  return '\n'.join(lines)
+  return javac_output_processor.Process(target_name, output)
 
 
 def CreateJarFile(jar_path,
@@ -231,7 +223,7 @@ class _MetadataParser:
     logging.info('Collecting info file entries')
     entries = {}
     for path in itertools.chain(java_files, kt_files or []):
-      data = pathlib.Path(path).read_text()
+      data = pathlib.Path(path).read_text(encoding='utf-8')
       package_name, class_names = ParseJavaSource(data,
                                                   self.services_map,
                                                   path=path)
@@ -242,7 +234,7 @@ class _MetadataParser:
           entries[fully_qualified_name] = path
 
     logging.info('Writing info file: %s', output_path)
-    with action_helpers.atomic_output(output_path, mode='wb') as f:
+    with action_helpers.atomic_output(output_path, encoding='utf-8') as f:
       jar_info_utils.WriteJarInfoFile(f, entries, self._srcjar_files)
     logging.info('Completed info file: %s', output_path)
 
@@ -380,8 +372,8 @@ def _RunCompiler(changes,
             and (jar_info_path is None or os.path.exists(jar_info_path))):
           # Log message is used by tests to determine whether partial javac
           # optimization was used.
-          logging.info('Using partial javac optimization for %s compile' %
-                       (jar_path))
+          logging.info('Using partial javac optimization for %s compile',
+                       jar_path)
 
           # Header jar corresponding to |java_files| did not change.
           # As a build speed optimization (crbug.com/1170778), re-compile only
@@ -430,7 +422,7 @@ def _RunCompiler(changes,
       # Pass source paths as response files to avoid extremely long command
       # lines that are tedius to debug.
       java_files_rsp_path = os.path.join(temp_dir, 'files_list.txt')
-      with open(java_files_rsp_path, 'w') as f:
+      with open(java_files_rsp_path, 'w', encoding='utf-8') as f:
         f.write(' '.join(java_files))
       cmd += ['@' + java_files_rsp_path]
 

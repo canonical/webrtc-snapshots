@@ -30,6 +30,7 @@ interface TestWebIdl {
   static undefined takesSequenceArgument(sequence<boolean> sequenceArgument);
   static undefined takesOptionalSequenceArgument(
       optional sequence<boolean> optionalSequenceArgument);
+  static undefined takesEnum(EnumType enumArgument);
 
   static ExampleType returnsCustomType();
   static undefined takesCustomType(ExampleType customTypeArgument);
@@ -42,6 +43,10 @@ interface TestWebIdl {
   static Promise<undefined> undefinedPromiseReturn();
   static Promise<sequence<long>> longSequencePromiseReturn();
   static Promise<sequence<ExampleType>> customTypeSequencePromiseReturn();
+
+  const long CONSTANT_LONG = 39;
+  const double CONSTANT_DOUBLE = 3.9;
+  [StringValue="Foo"] const DOMString CONSTANT_STRING = 0;
 
   // Items for testing the processing of IDL comments to schema descriptions:
 
@@ -70,6 +75,24 @@ interface TestWebIdl {
 
   // Comment for onTestTwo.
   static attribute OnTestTwoEvent onTestTwo;
+
+  // Promise returning function, with a comment that provides the name and
+  // description of the value the promise resolves to.
+  // |arg1|: This is a normal argument comment.
+  // |Returns|: General description for the promise return.
+  // |PromiseValue|: returnValueName: A description for the value the promise
+  // resolves to: with an extra colon for good measure.
+  static Promise<ExampleType> describedPromiseReturn(boolean arg1);
+
+  // |PromiseValue|: justAName
+  static Promise<boolean> namedPromiseReturn();
+
+  // General function description for the describedReturnFunction.
+  // |Returns|: Description for the returns object itself.
+  static DOMString describedReturnFunction();
+
+  // Comment on a constant property with a value.
+  const long DESCRIBED_CONSTANT = 9;
 };
 
 // Comment for parameter descriptions on the onTestOne event. The first part of
@@ -96,13 +119,40 @@ interface OnTestTwoEvent : ExtensionEvent {
 
 dictionary ExampleType {
   // Attribute comment attached to ExampleType.someString.
-  DOMString someString;
+  required DOMString someString;
   // Comment where <var>someNumber</var> has some markup.
-  double someNumber;
+  required double someNumber;
   // Comment with HTML comment. <!-- Which should get through -->
-  boolean? optionalBoolean;
+  boolean optionalBoolean;
   // Comment on sequence type.
-  sequence<boolean> booleanSequence;
+  required sequence<boolean> booleanSequence;
+};
+
+dictionary UnionTypes {
+  required (DOMString or long or boolean) stringLongOrBoolean;
+  required (DOMString or EnumType) stringOrEnum;
+  (EnumType or DOMString) optionalEnumOrString;
+  (DOMString or sequence<DOMString>) optionalStringOrStringSequence;
+  required (ExampleType or long) dictTypeOrLong;
+};
+
+callback DictionaryCallback = undefined(DOMString stringArgument);
+dictionary DictionaryWithCallbackMember {
+  required DictionaryCallback callbackMember;
+};
+
+// Enum description.
+enum EnumType {
+  // Comment1.
+  "name1",
+  "name2"
+};
+
+partial dictionary Manifest {
+  // Description of a manifest key.
+  required DOMString string_key;
+  required ExampleType custom_type_key;
+  required (DOMString or long) union_type_key;
 };
 
 partial interface Browser {

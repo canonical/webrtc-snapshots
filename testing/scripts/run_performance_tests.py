@@ -42,13 +42,19 @@ import argparse
 from collections import deque, OrderedDict
 import datetime
 import json
+import logging
 import os
 import pathlib
+import shlex
 import shutil
+import subprocess
 import sys
 import time
 import tempfile
 import traceback
+
+if sys.platform == 'darwin':
+  import plistlib
 
 # vpython-provided modules.
 # pylint: disable=import-error
@@ -99,6 +105,12 @@ BUNDLETOOL = THIRD_PARTY_DIR / 'android_build_tools/bundletool/cipd/bundletool.j
 GSUTIL_DIR = THIRD_PARTY_DIR / 'catapult/third_party/gsutil'
 PAGE_SETS_DATA = CHROMIUM_SRC_DIR / 'tools/perf/page_sets/data'
 PERF_TOOLS = ['benchmarks', 'executables', 'crossbench']
+
+# Constants for CBB support.
+# CBB uses a pseudo benchmark that retrieves the versions of alternative
+# browsers (Edge on Windows, or Safari on Mac) installed on the device.
+CBB_BROWSER_VERSIONS_BENCHMARK = 'browser_versions'
+CBB_BROWSER_VERSIONS_FILENAME = 'browser_versions.json'
 
 # See https://crbug.com/923564.
 # We want to switch over to using histograms for everything, but converting from
@@ -736,6 +748,7 @@ class CrossbenchTest(object):
       'speedometer_3.1': 'third_party/speedometer/v3.1',
       'speedometer_3.0': 'third_party/speedometer/v3.0',
       'speedometer_3': 'third_party/speedometer/v3.1',
+      'sp3': 'third_party/speedometer/v3.1',
       'speedometer_2.1': 'third_party/speedometer/v2.1',
       'speedometer_2.0': 'third_party/speedometer/v2.0',
       'speedometer_2': 'third_party/speedometer/v2.1',
@@ -748,7 +761,6 @@ class CrossbenchTest(object):
     self.options = options
     self._parse_arguments()
     self.isolated_out_dir = isolated_out_dir
-    self.network = self._get_network_arg(options.passthrough_args)
     self.is_chrome = (not self.cb_options.official_browser
                       or self.cb_options.official_browser.startswith('chrome'))
     self.env = self._create_env_arg()
@@ -762,6 +774,7 @@ class CrossbenchTest(object):
       browser_arg = _get_browser_arg(options.passthrough_args)
       self.is_android = _is_android(browser_arg)
       self._find_browser(browser_arg)
+    self.network = self._get_network_arg(options.passthrough_args)
 
   def _parse_arguments(self):
     parser = argparse.ArgumentParser()
@@ -769,6 +782,20 @@ class CrossbenchTest(object):
                         type=str,
                         required=False,
                         help='Use official build of the browser')
+    parser.add_argument(
+        '--connect-to-device-over-network',
+        action='store_true',
+        default=False,
+        help='Connect to test device over TCP (used on Android desktop)')
+    parser.add_argument('--device', help='The device to connect to')
+    parser.add_argument(
+        '--disable-field-trial-config',
+        action='store_true',
+        help='Start Chrome with --disable-field-trial-config option')
+    parser.add_argument(
+        '--extra-browser-args',
+        dest='extra_browser_args_as_string',
+        help='Additional arguments to pass to the browser when it starts')
     self.cb_options, self.options.passthrough_args = parser.parse_known_args(
         self.options.passthrough_args)
 
@@ -779,7 +806,7 @@ class CrossbenchTest(object):
       return self._create_fileserver_network(_arg)
     if _get_arg(args, '--wpr'):
       return self._create_wpr_network(args)
-    if self.options.benchmarks.startswith('motionmark'):
+    if self.options.benchmarks.startswith('motionmark') and not self.is_android:
       # TODO(crbug.com/413452730): Enable local file server in all platforms.
       return []
     if ((self.options.benchmarks in self.BENCHMARK_FILESERVERS)
@@ -827,7 +854,16 @@ class CrossbenchTest(object):
     if wpr_arg:
       # Replacing --wpr with --network.
       self.options.passthrough_args.remove(wpr_arg)
-    return [_create_network_json('wpr', path=archive, wpr_go_bin=wpr_go)]
+    skip_injection_arg = '--skip-wpr-script-injection'
+    skip_injection = _get_arg(args, skip_injection_arg)
+    if skip_injection:
+      self.options.passthrough_args.remove(skip_injection_arg)
+    return [
+        _create_network_json('wpr',
+                             path=archive,
+                             wpr_go_bin=wpr_go,
+                             skip_injection=bool(skip_injection))
+    ]
 
   def _check_for_embedder_arg(self):
     embedder_arg = _get_arg(self.options.passthrough_args, '--embedder=')
@@ -860,7 +896,13 @@ class CrossbenchTest(object):
     options = browser_options.BrowserFinderOptions()
     options.chrome_root = CHROMIUM_SRC_DIR
     parser = options.CreateParser()
-    parser.parse_args([self.CHROME_BROWSER % browser_arg])
+    browser_finder_args = [self.CHROME_BROWSER % browser_arg]
+    if self.cb_options.connect_to_device_over_network:
+      browser_finder_args.append('--connect-to-device-over-network')
+      logging.getLogger().setLevel(logging.DEBUG)
+    if self.cb_options.device:
+      browser_finder_args.extend(['--device', self.cb_options.device])
+    parser.parse_args(browser_finder_args)
     possible_browser = browser_finder.FindBrowser(options)
     if not possible_browser:
       raise ValueError(f'Unable to find Chrome browser of type: {browser_arg}')
@@ -885,21 +927,25 @@ class CrossbenchTest(object):
 
   def _get_default_args(self):
     default_args = ['--no-symlinks']
-    if self.is_chrome:
-      # Required until crbug.com/41491492 and crbug.com/346323630 are fixed.
-      default_args.append('--enable-features=DisablePrivacySandboxPrompts')
     if self.is_chrome and not self.is_android:
-      # See http://shortn/_xGSaVM9P5g
-      default_args.append('--enable-field-trial-config')
+      if self.cb_options.disable_field_trial_config:
+        default_args.append('--disable-field-trial-config')
+      else:
+        # See http://shortn/_xGSaVM9P5g
+        default_args.append('--enable-field-trial-config')
     if self.options.luci_chromium:
       default_args.append('--headless')
     return default_args
 
   def _generate_command_list(self, benchmark, benchmark_args, working_dir):
+    extra_browser_args = []
+    if self.cb_options.extra_browser_args_as_string:
+      extra_browser_args = ['--'] + shlex.split(
+          self.cb_options.extra_browser_args_as_string, posix=(not IsWindows()))
     return (['vpython3', '-Xutf8'] + [self.options.executable] + [benchmark] +
             ['--env-validation=throw'] + [self.OUTDIR % working_dir] +
-            [self.browser] + benchmark_args + self.driver_path_arg +
-            self.network + self.env + self._get_default_args())
+            [self.browser] + self.driver_path_arg + self.network + self.env +
+            self._get_default_args() + benchmark_args + extra_browser_args)
 
   def execute_benchmark(self,
                         benchmark,
@@ -931,12 +977,12 @@ class CrossbenchTest(object):
                                                               handle,
                                                               env=env)
 
-      if return_code == 0:
+      if return_code == 0 or self.options.ignore_benchmark_exit_code:
         crossbench_result_converter.convert(
             pathlib.Path(output_paths.benchmark_path) / 'output',
             pathlib.Path(output_paths.perf_results), display_name,
             self.STORY_LABEL, self.options.results_label)
-      elif os.path.exists(output_paths.logs):
+      if return_code and os.path.exists(output_paths.logs):
         # To avoid printing too large log file, we print the last 100 lines.
         bottom_of_log = deque(maxlen=100)
         with open(output_paths.logs, 'r') as handle:
@@ -987,13 +1033,19 @@ class CrossbenchTest(object):
         self.options.passthrough_args)
 
 
-def _create_network_json(config_type, path, url=None, wpr_go_bin=None):
+def _create_network_json(config_type,
+                         path,
+                         url=None,
+                         wpr_go_bin=None,
+                         skip_injection=False):
   network_dict = {'type': config_type}
   network_dict['path'] = path
   if url:
     network_dict['url'] = url
   if wpr_go_bin:
     network_dict['wpr_go_bin'] = wpr_go_bin
+  if skip_injection:
+    network_dict['skip_deterministic_script_injection'] = True
   network_json = json.dumps(network_dict)
   return f'--network={network_json}'
 
@@ -1164,6 +1216,81 @@ def _set_cwd():
   os.chdir(candidates[0])
 
 
+def get_browser_versions(isolated_out_dir):
+  """Detect versions of alternative browsers installed on the device.
+
+  Detect which version of Edge (and Safari in the future) is currently
+  installed. The result is saved in a file named CBB_BROWSER_VERSIONS_FILENAME
+  in the isolated output directory.
+  """
+  results = {}
+  if IsWindows():
+    channels = {
+        'stable':
+        'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+        'dev':
+        'C:/Program Files (x86)/Microsoft/Edge Dev/Application/msedge.exe',
+    }
+    for channel, path in channels.items():
+      cmd = [
+          'powershell', '-command',
+          f"(Get-Item '{path}').VersionInfo.ProductVersion"
+      ]
+      results[channel] = subprocess.run(cmd,
+                                        capture_output=True,
+                                        encoding='utf8',
+                                        check=True).stdout.strip()
+  elif sys.platform == 'darwin':
+    channels = {
+        'stable': {
+            'driver': '/usr/bin/safaridriver',
+            'prefix': 'Included with Safari ',
+        },
+        # pylint: disable=line-too-long
+        'technology-preview': {
+            'plist': '/Applications/Safari Technology Preview.app/Contents/Info.plist',
+            'driver': '/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver',
+            'prefix': 'Included with Safari Technology Preview ',
+        },
+        # pylint: enable=line-too-long
+    }
+    for channel, info in channels.items():
+      driver_version = subprocess.run([info['driver'], '--version'],
+                                      capture_output=True,
+                                      encoding='utf8',
+                                      check=True).stdout.strip()
+      prefix = info['prefix']
+      if not driver_version.startswith(prefix):
+        # pylint: disable=line-too-long
+        print(f'Missing expected prefix from Safari {channel} output: {driver_version}')
+        # pylint: enable=line-too-long
+        return 1
+      driver_version = driver_version[len(prefix):]
+      # For Safari stable, the version reported by safaridriver is complete and
+      # can be used as is. For Safari Technology Preview, however, the version
+      # reported by safaridriver is missing the main version (such as '26.0'),
+      # and we need to retrieve it from the app's plist file.
+      if plist_path := info.get('plist'):
+        plist = plistlib.loads(pathlib.Path(plist_path).read_bytes())
+        version = plist.get('CFBundleShortVersionString')
+        if not version:
+          print(f'Missing version info for Safari {channel}')
+          return 1
+        results[channel] = f'{version} {driver_version}'
+      else:
+        results[channel] = driver_version
+  else:
+    print('Only Windows OS and MacOS are supported')
+    return 1
+
+  with open(os.path.join(isolated_out_dir, CBB_BROWSER_VERSIONS_FILENAME),
+            'w') as f:
+    json.dump(results, f)
+    f.write('\n')
+
+  return 0
+
+
 def main(sys_args):
   sys.stdout.reconfigure(line_buffering=True)
   _set_cwd()
@@ -1227,6 +1354,8 @@ def main(sys_args):
         options.xvfb,
         results_label=options.results_label)
     test_results_files.append(output_paths.test_results)
+  elif options.benchmarks == CBB_BROWSER_VERSIONS_BENCHMARK:
+    overall_return_code = get_browser_versions(isolated_out_dir)
   elif options.benchmarks:
     benchmarks = options.benchmarks.split(',')
     for benchmark in benchmarks:

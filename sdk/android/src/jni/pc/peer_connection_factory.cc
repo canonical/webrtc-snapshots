@@ -23,11 +23,13 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio/audio_device.h"
+#include "api/audio/audio_frame_processor.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio/builtin_audio_processing_builder.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
+#include "api/create_modular_peer_connection_factory.h"
 #include "api/enable_media.h"
 #include "api/environment/environment.h"
 #include "api/fec_controller.h"
@@ -198,6 +200,8 @@ static void JNI_PeerConnectionFactory_InitializeAndroidGlobals(JNIEnv* jni) {
   }
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 static void JNI_PeerConnectionFactory_InitializeFieldTrials(
     JNIEnv* jni,
     const jni_zero::JavaParamRef<jstring>& j_trials_init_string) {
@@ -214,6 +218,7 @@ static void JNI_PeerConnectionFactory_InitializeFieldTrials(
   RTC_LOG(LS_INFO) << "initializeFieldTrials: " << *field_trials_init_string;
   field_trial::InitFieldTrialsFromString(field_trials_init_string->c_str());
 }
+#pragma clang diagnostic pop
 
 static void JNI_PeerConnectionFactory_InitializeInternalTracer(JNIEnv* jni) {
   tracing::SetupInternalTracer();
@@ -261,7 +266,8 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
         network_controller_factory,
     std::unique_ptr<NetworkStatePredictorFactoryInterface>
         network_state_predictor_factory,
-    std::unique_ptr<NetEqFactory> neteq_factory) {
+    std::unique_ptr<NetEqFactory> neteq_factory,
+    std::unique_ptr<AudioFrameProcessor> audio_frame_processor) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
@@ -306,6 +312,7 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
   dependencies.adm = std::move(audio_device_module);
   dependencies.audio_encoder_factory = std::move(audio_encoder_factory);
   dependencies.audio_decoder_factory = std::move(audio_decoder_factory);
+  dependencies.audio_frame_processor = std::move(audio_frame_processor);
   if (audio_processor != nullptr) {
     dependencies.audio_processing_builder =
         CustomAudioProcessing(std::move(audio_processor));
@@ -351,7 +358,8 @@ JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     jlong native_fec_controller_factory,
     jlong native_network_controller_factory,
     jlong native_network_state_predictor_factory,
-    jlong native_neteq_factory) {
+    jlong native_neteq_factory,
+    jlong native_audio_frame_processor) {
   const Environment* env = reinterpret_cast<Environment*>(webrtc_env_ref);
   RTC_CHECK(env != nullptr);
   scoped_refptr<AudioProcessing> audio_processor(
@@ -369,12 +377,17 @@ JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
           native_network_controller_factory),
       TakeOwnershipOfUniquePtr<NetworkStatePredictorFactoryInterface>(
           native_network_state_predictor_factory),
-      TakeOwnershipOfUniquePtr<NetEqFactory>(native_neteq_factory));
+      TakeOwnershipOfUniquePtr<NetEqFactory>(native_neteq_factory),
+      TakeOwnershipOfUniquePtr<AudioFrameProcessor>(
+          reinterpret_cast<jlong>(native_audio_frame_processor)));
 }
 
 static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*, jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   field_trial::InitFieldTrialsFromString(nullptr);
+#pragma clang diagnostic pop
   GetStaticObjects().field_trials_init_string = nullptr;
 }
 

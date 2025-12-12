@@ -4,6 +4,7 @@
 
 //! Paths and helpers for running within a Chromium checkout.
 
+use crate::crates::{Epoch, NormalizedName};
 use itertools::Itertools;
 use std::env;
 use std::io;
@@ -32,8 +33,6 @@ pub struct ChromiumPaths {
 
     pub third_party_cargo_root: &'static Path,
     pub third_party_config_file: &'static Path,
-
-    pub vet_config_file: &'static Path,
 }
 
 impl ChromiumPaths {
@@ -65,9 +64,6 @@ impl ChromiumPaths {
 
             third_party_cargo_root: check_path(&cur_dir, THIRD_PARTY_CARGO_ROOT)?,
             third_party_config_file: check_path(&cur_dir, THIRD_PARTY_CONFIG_FILE)?,
-
-            // The vet config file does not exist, since gnrt writes it.
-            vet_config_file: Path::new(VET_CONFIG_FILE),
         })
     }
 
@@ -103,8 +99,9 @@ fn check_path<'a>(root: &Path, p_str: &'a str) -> io::Result<&'a Path> {
 
 /// Replace all path separators with `/` and return it as a String. The
 /// resulting path is suitable for use in GN files.
-pub fn normalize_unix_path_separator(path: &Path) -> String {
+pub fn normalize_unix_path_separator(path: impl AsRef<Path>) -> String {
     // `Path`s on windows use `\` separators and we need to use `/` in GN strings.
+    let path = path.as_ref();
     path.iter()
         .map(|comp| comp.to_str().unwrap_or_else(|| panic!("non-UTF-8 in path {path:?}")))
         .join("/")
@@ -117,9 +114,26 @@ pub fn normalize_unix_path_separator(path: &Path) -> String {
 /// discover available crates by reading all the nested `Cargo.toml`
 /// files (rather than based on directory names).  See also
 /// https://crbug.com/396397336#comment7 and adjacent comments.
-pub fn get_vendor_dir_for_package(name: &str, version: &semver::Version) -> String {
-    let epoch = crate::crates::Epoch::from_version(version);
-    format!("{name}-{epoch}")
+pub fn get_vendor_dir_for_package(
+    paths: &ChromiumPaths,
+    name: &str,
+    version: &semver::Version,
+) -> PathBuf {
+    let epoch = Epoch::from_version(version);
+    paths.third_party_cargo_root.join("vendor").join(Path::new(&format!("{name}-{epoch}")))
+}
+
+/// Returns the name of a directory where we generate `BUILD.gn` (and also
+/// `README.chromium`).
+pub fn get_build_dir_for_package(
+    paths: &ChromiumPaths,
+    name: &str,
+    version: &semver::Version,
+) -> PathBuf {
+    paths
+        .third_party
+        .join(NormalizedName::from_crate_name(name).to_string())
+        .join(Epoch::from_version(version).to_string())
 }
 
 static RUST_THIRD_PARTY_DIR: &str = "third_party/rust";
@@ -135,8 +149,6 @@ static STD_FAKE_ROOT_CARGO_TEMPLATE: &str = "build/rust/std/fake_root/Cargo.toml
 
 static THIRD_PARTY_CARGO_ROOT: &str = "third_party/rust/chromium_crates_io";
 static THIRD_PARTY_CONFIG_FILE: &str = "third_party/rust/chromium_crates_io/gnrt_config.toml";
-
-static VET_CONFIG_FILE: &str = "third_party/rust/chromium_crates_io/supply-chain/config.toml";
 
 #[cfg(test)]
 mod tests {

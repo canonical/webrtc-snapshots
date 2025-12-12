@@ -58,9 +58,16 @@ def _FilterFlags(command, additional_filtered_flags):
       # This is used for profiling-guided optimizations. Not necessary by tools,
       # and clangd complains it cannot find the referenced profile file.
       '-fprofile-sample-use': 1,
+      '-fprofile-use': 1,
       # This flag is only usable with -fprofile-sample-use excluded above.
       # Exclude it to avoid having an unused-command-line-argument error.
       '-fsample-profile-use-profi': 1,
+      # Clang modules don't play particularly well with clangd.
+      # To solve this, we simply need to remove all references to modulemaps and
+      # to modules.
+      '-fbuiltin-module-map': 0,
+      '-fmodule-map-file': 1,
+      '-fmodule-file': 1,
   }
   # Add user-added flags. We only support flags with no parameters here.
   if additional_filtered_flags:

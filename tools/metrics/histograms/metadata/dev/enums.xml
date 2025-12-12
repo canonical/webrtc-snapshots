@@ -838,6 +838,12 @@ Called by update_protocol_commands_enum.py.-->
   <int value="181" label="AI Assistance - Error"/>
   <int value="182"
       label="Performance Insight agent opened from Insights sidebar"/>
+  <int value="183" label="AI Assistance - Opened from Performance full button"/>
+  <int value="184" label="AI Code Completion - Response served from cache"/>
+  <int value="185" label="AI Code Completion - Request triggered"/>
+  <int value="186" label="AI Code Completion - Suggestion displayed"/>
+  <int value="187" label="AI Code Completion - Suggestion accepted"/>
+  <int value="188" label="AI Code Completion - Error"/>
 </enum>
 
 <enum name="DevToolsAnimationPlaybackRateChanged">
@@ -845,31 +851,6 @@ Called by update_protocol_commands_enum.py.-->
   <int value="1" label="25%"/>
   <int value="2" label="10%"/>
   <int value="3" label="Other"/>
-</enum>
-
-<enum name="DevToolsAnimationPointDragged">
-  <int value="0" label="Animation is dragged as a whole"/>
-  <int value="1" label="Keyframe is moved"/>
-  <int value="2" label="Animation start point is moved"/>
-  <int value="3" label="Animation finish point is moved"/>
-  <int value="4" label="Other"/>
-</enum>
-
-<enum name="DevToolsCSSHintShown">
-  <int value="0" label="Other"/>
-  <int value="1" label="AlignContent"/>
-  <int value="2" label="FlexItem"/>
-  <int value="3" label="FlexContainer"/>
-  <int value="4" label="GridContainer"/>
-  <int value="5" label="GridItem"/>
-  <int value="6" label="FlexGrid"/>
-  <int value="7" label="MulticolFlexGrid"/>
-  <int value="8" label="Padding"/>
-  <int value="9" label="Position"/>
-  <int value="10" label="ZIndex"/>
-  <int value="11" label="Sizing"/>
-  <int value="12" label="FlexOrGridItem"/>
-  <int value="13" label="FontVariationSettings"/>
 </enum>
 
 <enum name="DevToolsDebuggingUserDataDirStatus">
@@ -1115,16 +1096,14 @@ Called by update_protocol_commands_enum.py.-->
   <int value="83" label="CookieIssue::WarnThirdPartyPhaseout::SetCookie"/>
   <int value="84" label="CookieIssue::ExcludeThirdPartyPhaseout::ReadCookie"/>
   <int value="85" label="CookieIssue::ExcludeThirdPartyPhaseout::SetCookie"/>
-  <int value="86"
-      label="SelectElementAccessibilityIssue::DisallowedSelectChild"/>
-  <int value="87"
-      label="SelectElementAccessibilityIssue::DisallowedOptGroupChild"/>
+  <int value="86" label="ElementAccessibilityIssue::DisallowedSelectChild"/>
+  <int value="87" label="ElementAccessibilityIssue::DisallowedOptGroupChild"/>
   <int value="88"
-      label="SelectElementAccessibilityIssue::NonPhrasingContentOptionChild"/>
+      label="ElementAccessibilityIssue::NonPhrasingContentOptionChild"/>
   <int value="89"
-      label="SelectElementAccessibilityIssue::InteractiveContentOptionChild"/>
+      label="ElementAccessibilityIssue::InteractiveContentOptionChild"/>
   <int value="90"
-      label="SelectElementAccessibilityIssue::InteractiveContentLegendChild"/>
+      label="ElementAccessibilityIssue::InteractiveContentLegendChild"/>
   <int value="91" label="SRIMessageSignatureIssue::MissingSignatureHeader"/>
   <int value="92"
       label="SRIMessageSignatureIssue::MissingSignatureInputHeader"/>
@@ -1166,6 +1145,8 @@ Called by update_protocol_commands_enum.py.-->
   <int value="111" label="CorsIssue::LocalNetworkAccessPermissionDenied"/>
   <int value="112"
       label="SRIMessageSignatureIssue::ValidationFailedIntegrityMismatch"/>
+  <int value="113"
+      label="ElementAccessibilityIssue::InteractiveContentSummaryDescendant"/>
 </enum>
 
 <enum name="DevToolsIssuesPanelIssueExpanded">
@@ -1411,15 +1392,6 @@ Called by update_protocol_commands_enum.py.-->
   <int value="82" label="zu - Zulu"/>
 </enum>
 
-<enum name="DevToolsLighthouseCategoryUsed">
-  <int value="0" label="Performance"/>
-  <int value="1" label="Accessibility"/>
-  <int value="2" label="BestPractices"/>
-  <int value="3" label="SEO"/>
-  <int value="4" label="PWA"/>
-  <int value="5" label="PubAds"/>
-</enum>
-
 <enum name="DevToolsLighthouseModeRun">
   <int value="0" label="Navigation"/>
   <int value="1" label="Timespan"/>
@@ -1549,6 +1521,7 @@ Called by update_protocol_commands_enum.py.-->
   <int value="65" label="Application - Bounce Tracking Mitigations"/>
   <int value="66" label="Drawer - Resource Loading"/>
   <int value="67" label="Drawer - Autofill"/>
+  <int value="68" label="AI Assistance"/>
 </enum>
 
 <enum name="DevToolsRecordingAssertion">
@@ -1619,22 +1592,6 @@ Called by update_protocol_commands_enum.py.-->
   <int value="2" label="Recording finished"/>
 </enum>
 
-<enum name="DevToolsSidebarPane">
-  <int value="0" label="Other sidebar pane"/>
-  <int value="1" label="Elements - Styles"/>
-  <int value="2" label="Elements - Computed"/>
-  <int value="3" label="Elements - Layout"/>
-  <int value="4" label="Elements - Event Listeners"/>
-  <int value="5" label="Elements - DOM Breakpoints"/>
-  <int value="6" label="Elements - Properties"/>
-  <int value="7" label="Elements - Accessibility"/>
-  <int value="8" label="Sources - Page"/>
-  <int value="9" label="Sources - Workspace"/>
-  <int value="10" label="Sources - Overrides"/>
-  <int value="11" label="Sources - Content Scripts"/>
-  <int value="12" label="Sources - Snippets"/>
-</enum>
-
 <enum name="DevToolsSwatchActivated">
   <int value="0" label="Variable link"/>
   <int value="1" label="Animation name link"/>
@@ -1646,6 +1603,9 @@ Called by update_protocol_commands_enum.py.-->
   <int value="7" label="Angle"/>
   <int value="8" label="Length"/>
   <int value="9" label="Position fallback link"/>
+  <int value="10" label="Position try link"/>
+  <int value="11" label="Attribute link"/>
+  <int value="12" label="Masonry editor"/>
 </enum>
 
 <enum name="DevToolsSyncSetting">

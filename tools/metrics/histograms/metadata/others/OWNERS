@@ -17,7 +17,7 @@ dullweber@chromium.org
 olivierli@chromium.org
 # For AccessCodeCast.* histograms:
 bzielinski@google.com
-# For Ads.InterestGroup.* histograms:
-orrb@google.com
 # For BootTime.Login* histograms:
 junis@google.com
+# For BootTime.* histograms:
+uekawa@chromium.org
