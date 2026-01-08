@@ -32,13 +32,18 @@ declare_args() {
   # The default linker everywhere else.
   use_lld = is_clang && current_os != "zos"
 
-  # If false, build using C++20; otherwise, build using C++23.
-  use_cxx23 = false
-
   # If true, optimize for size.
   # Default to favoring speed over size for platforms not listed below.
   optimize_for_size =
       !is_high_end_android && (is_android || is_castos || is_fuchsia)
+}
+
+# Allow other projects to keep use_cxx23 false by default if they aren't ready.
+if (!defined(use_cxx23)) {
+  declare_args() {
+    # If false, build using C++20; otherwise, build using C++23.
+    use_cxx23 = false
+  }
 }
 
 declare_args() {
@@ -47,6 +52,9 @@ declare_args() {
   # builds on Linux that could use a different version of the compiler.
   # With GCC, warnings in no-Chromium code are always not treated as errors.
   treat_warnings_as_errors = true
+
+  # Ignore unknown warning flags when using an older Clang version.
+  disable_unknown_warning_option = false
 
   # How clang should report warnings, either false to report in the usual
   # manner, or true to add source range information to the diagnostics in

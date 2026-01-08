@@ -23,6 +23,12 @@ chromium-metrics-reviews@google.com.
 
 <histograms>
 
+<variants name="ContextualCueingCueType">
+  <variant name="" summary="All cues"/>
+  <variant name=".Dynamic" summary="Cues that are contextual to the page"/>
+  <variant name=".Static" summary="Static cues"/>
+</variants>
+
 <variants name="ContextualCueingGlicSuggestionsEngagementType">
   <variant name="" summary="All requests"/>
   <variant name=".FRE" summary="When suggestions are fetched for the FRE"/>
@@ -51,7 +57,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ContextualCueing.GlicSuggestions.MesFetchLatency" units="ms"
-    expires_after="2026-03-22">
+    expires_after="2026-05-24">
   <owner>sophiechang@chromium.org</owner>
   <owner>zekunjiang@google.com</owner>
   <summary>
@@ -63,7 +69,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ContextualCueing.GlicSuggestions.PageContextFetchlatency.{PageContextType}"
-    units="ms" expires_after="2026-03-22">
+    units="ms" expires_after="2026-05-24">
   <owner>zekunjiang@google.com</owner>
   <owner>rajendrant@google.com</owner>
   <owner>sophiechang@chromium.org</owner>
@@ -113,7 +119,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ContextualCueing.GlicSuggestions.SuggestionsFetchLatency.{ResultType}{EngagementType}"
-    units="ms" expires_after="2026-03-22">
+    units="ms" expires_after="2026-05-24">
   <owner>sophiechang@chromium.org</owner>
   <owner>zekunjiang@google.com</owner>
   <summary>
@@ -136,7 +142,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ContextualCueing.NudgeDecision.{ContextualCueingOptimizationType}"
-    enum="ContextualCueingNudgeDecision" expires_after="2026-03-08">
+    enum="ContextualCueingNudgeDecision" expires_after="2026-05-10">
   <owner>sophiechang@chromium.org</owner>
   <owner>zekunjiang@google.com</owner>
   <summary>
@@ -147,14 +153,15 @@ chromium-metrics-reviews@google.com.
       variants="ContextualCueingOptimizationType"/>
 </histogram>
 
-<histogram name="ContextualCueing.NudgeInteraction"
-    enum="ContextualCueingNudgeInteraction" expires_after="2026-03-08">
-  <owner>sophiechang@google.com</owner>
-  <owner>jeffreycohen@chromium.org</owner>
+<histogram name="ContextualCueing.NudgeInteraction{CueType}"
+    enum="ContextualCueingNudgeInteraction" expires_after="2026-05-10">
+  <owner>sophiechang@chromium.org</owner>
+  <owner>zekunjiang@google.com</owner>
   <summary>
     The user interaction for a Contextual Cueing Nudge. Recorded when a user is
     shown or interacts with a contextual nudge.
   </summary>
+  <token key="CueType" variants="ContextualCueingCueType"/>
 </histogram>
 
 </histograms>

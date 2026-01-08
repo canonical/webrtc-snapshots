@@ -14,6 +14,7 @@ import logging
 import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -107,8 +108,6 @@ PRUNE_PATHS = set([
     os.path.join('third_party', 'wix'),
     # See crbug.com/350472
     os.path.join('chrome', 'browser', 'resources', 'chromeos', 'quickoffice'),
-    # Chrome for Android proprietary code.
-    os.path.join('clank'),
 
     # Proprietary barcode detection library.
     os.path.join('third_party', 'barhopper'),
@@ -146,7 +145,7 @@ ADDITIONAL_PATHS_FILENAME = 'additional_readme_paths.json'
 
 # A list of paths that contain license information but that would otherwise
 # not be included.  Possible reasons include:
-#   - Third party directories in //clank which are considered to be Google-owned
+#   - Third party directories in //internal which are considered to be Google-owned
 #   - Directories that are directly checked out from upstream, and thus
 #     don't have a README.chromium
 #   - Directories that contain example code, or build tooling.
@@ -863,7 +862,7 @@ def LogParseDirErrors(errors):
 
 def GetThirdPartyDepsFromGNDepsOutput(
     scan_root: str,
-    gn_deps: str,
+    gn_deps: List[str],
     exclude_dirs: Optional[List[str]] = None,
     extra_allowed_dirs: Optional[List[str]] = None):
   """Returns third_party/foo directories given the output of "gn desc deps".
@@ -900,7 +899,7 @@ def GetThirdPartyDepsFromGNDepsOutput(
       re.VERBOSE)
 
   third_party_deps = set()
-  for absolute_build_dep in gn_deps.split():
+  for absolute_build_dep in gn_deps:
     relative_build_dep = os.path.relpath(absolute_build_dep, scan_root)
     m = path_regex.search(relative_build_dep)
     if not m:
@@ -936,13 +935,19 @@ def FindThirdPartyDeps(gn_out_dir: str,
     # "gn gen" is slow and requires too much memory.
     with open(os.path.join(tmp_dir, "build.ninja"), "w") as w:
       pass
-    gn_deps = subprocess.check_output(_GnBinary() + [
+    cmd = _GnBinary() + [
         "desc",
         "--root=%s" % scan_root, tmp_dir, gn_target, "deps", "--as=buildfile",
         "--all"
-    ],
-                                      encoding='utf-8',
-                                      stderr=sys.stderr)
+    ]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, encoding='utf-8')
+    if proc.returncode:
+      sys.stderr.write('Failed: ' + shlex.join(cmd) + '\n')
+      sys.stderr.write(proc.stdout)
+      sys.exit(1)
+    # Filter out any warnings messages. E.g. those about unused GN args.
+    # https://crbug.com/444024516
+    gn_deps = [l for l in proc.stdout.splitlines() if l.endswith('BUILD.gn')]
 
   third_party_deps = GetThirdPartyDepsFromGNDepsOutput(scan_root, gn_deps,
                                                        exclude_dirs,

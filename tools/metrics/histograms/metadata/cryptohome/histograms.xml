@@ -69,23 +69,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Cryptohome.BackupKeysetCleanupResult"
-    enum="CryptohomeBackupKeysetCleanupResult" expires_after="2025-12-08">
-  <owner>jadmanski@google.com</owner>
-  <owner>cros-security-cryptohome+uma@google.com</owner>
-  <summary>
-    Records the result of the backup VaultKeyset cleanup for users with mixed
-    USS-VaultKeyset configurations. Backup VaultKeysets are keysets marked as
-    backup during the migration to USS and kept as a rollback protection. Since
-    M114 backup keysets are removed on AuthSession start if the USS migration of
-    the particular user is completed. Starting with M115 backup keyset for the
-    migrated credential is removed after the successful authentication with the
-    given credential with USS, even if the USS migration is not completed. This
-    metric tracks the result of the removal of backup keysets after successful
-    authetnication for users whose USS migration isn't completed yet.
-  </summary>
-</histogram>
-
 <histogram name="Cryptohome.DeletedUserProfiles" units="profiles"
     expires_after="2026-09-20">
   <owner>simmonsjosh@google.com</owner>
@@ -117,7 +100,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.DownloadsBindMountMigration.{Operation}"
-    enum="PopularOSErrno" expires_after="2026-03-15">
+    enum="PopularOSErrno" expires_after="2026-05-17">
   <owner>wenbojie@chromium.org</owner>
   <owner>src/ui/file_manager/OWNERS</owner>
   <summary>
@@ -140,7 +123,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.DownloadsBindMountMigrationStatus"
-    enum="CryptohomeDownloadsMigrationStatus" expires_after="2026-03-15">
+    enum="CryptohomeDownloadsMigrationStatus" expires_after="2026-05-17">
   <owner>wenbojie@chromium.org</owner>
   <owner>src/ui/file_manager/OWNERS</owner>
   <summary>
@@ -150,7 +133,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.Errors" enum="CryptohomeError"
-    expires_after="2026-03-22">
+    expires_after="2026-05-24">
   <owner>apronin@chromium.org</owner>
   <owner>cros-hwsec+uma@google.com</owner>
   <summary>Cryptohome errors.</summary>
@@ -304,7 +287,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.MaskedDownloadsItems" units="items"
-    expires_after="2026-03-08">
+    expires_after="2026-05-10">
   <owner>benreich@chromium.org</owner>
   <owner>src/ui/file_manager/OWNERS</owner>
   <summary>
@@ -457,7 +440,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.TimeToGenerateEccAuthValue" units="ms"
-    expires_after="2026-03-22">
+    expires_after="2026-05-24">
   <owner>yich@google.com</owner>
   <owner>cros-hwsec+uma@google.com</owner>
   <summary>
@@ -606,7 +589,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.{Action}AuthBlockType"
-    enum="CryptohomeAuthBlockType" expires_after="2026-03-22">
+    enum="CryptohomeAuthBlockType" expires_after="2026-05-24">
   <owner>yich@google.com</owner>
   <owner>cros-hwsec+uma@google.com</owner>
   <summary>
@@ -734,7 +717,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Cryptohome.{ErrorOperation}{AuthFactorType}.DevUnexpectedState"
-    enum="CryptohomeErrorLocation" expires_after="2026-03-15">
+    enum="CryptohomeErrorLocation" expires_after="2026-05-17">
   <owner>zuan@chromium.org</owner>
   <owner>cros-hwsec+uma@google.com</owner>
   <summary>
@@ -806,7 +789,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Cryptohome.{ErrorOperation}{AuthFactorType}.LeafErrorWithTPM"
-    enum="CryptohomeErrorLocationWithTPMError" expires_after="2026-03-15">
+    enum="CryptohomeErrorLocationWithTPMError" expires_after="2026-05-17">
   <owner>zuan@chromium.org</owner>
   <owner>cros-hwsec+uma@google.com</owner>
   <summary>
