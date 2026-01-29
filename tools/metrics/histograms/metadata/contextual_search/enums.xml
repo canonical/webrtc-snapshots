@@ -26,6 +26,17 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
+<!-- LINT.IfChange(ContextAddedMethod) -->
+
+<enum name="ContextAddedMethod">
+  <int value="0" label="ContextMenu"/>
+  <int value="1" label="CopyPaste"/>
+  <int value="2" label="DragAndDrop"/>
+  <int value="3" label="RecentTabChip"/>
+</enum>
+
+<!-- LINT.ThenChange(//ui/webui/resources/cr_components/search/constants.ts:ComposeboxContextAddedMethod) -->
+
 <!-- LINT.IfChange(AimToolState) -->
 
 <enum name="ContextualSearchAimToolState">
@@ -34,6 +45,15 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//components/contextual_search/contextual_search_types.h:AimToolState) -->
+
+<!-- LINT.IfChange(ContextualSearchErrorPage) -->
+
+<enum name="ContextualSearchErrorPage">
+  <int value="0" label="Unknown"/>
+  <int value="1" label="Page context not eligible"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/contextual_search/contextual_search_types.h:ContextualSearchErrorPage) -->
 
 <!-- LINT.IfChange(FileValidationError) -->
 

@@ -279,7 +279,7 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Navigate back to main screen"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/first_run/ui_bundled/best_features/ui/metrics_util.h:BestFeaturesDetailScreenActionType) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/first_run/best_features/ui/metrics_util.h:BestFeaturesDetailScreenActionType) -->
 
 <!-- LINT.IfChange(IOSBestFeaturesItemType) -->
 
@@ -310,7 +310,7 @@ chromium-metrics-reviews@google.com.
   <int value="8" label="Share Passwords Item Tapped"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/first_run/ui_bundled/best_features/ui/metrics_util.h:BestFeaturesMainScreenActionType) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/first_run/best_features/ui/metrics_util.h:BestFeaturesMainScreenActionType) -->
 
 <enum name="IOSBringAndroidTabsPromptActionType">
   <int value="0" label="Review tabs"/>
@@ -434,7 +434,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Other error"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/default_browser/model/default_status/default_status_helper_types.h:DefaultStatusAPIOutcomeType) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/default_browser/default_status/model/default_status_helper_types.h:DefaultStatusAPIOutcomeType) -->
 
 <!-- LINT.IfChange(IOSDefaultStatusHeuristicAssessment) -->
 
@@ -445,7 +445,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="False positive"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/default_browser/model/default_status/default_status_helper_types.h:DefaultStatusHeuristicAssessment) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/default_browser/default_status/model/default_status_helper_types.h:DefaultStatusHeuristicAssessment) -->
 
 <!-- LINT.IfChange(IOSDefaultStatusRetention) -->
 
@@ -456,7 +456,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Remained non-default"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/default_browser/model/default_status/default_status_helper_types.h:DefaultStatusRetention) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/default_browser/default_status/model/default_status_helper_types.h:DefaultStatusRetention) -->
 
 <enum name="IOSDeleteAllSavedCredentialsActions">
   <int value="0" label="User confirmed delete all saved credentials"/>
@@ -560,6 +560,8 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Add account failure"/>
 </enum>
 
+<!-- LINT.IfChange(IOSFilePickerDriveDisplayed) -->
+
 <enum name="IOSFilePickerDriveDisplayed">
   <int value="0" label="The Drive element was displayed"/>
   <int value="1" label="The tab was killed"/>
@@ -567,7 +569,10 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="The tab was OTR"/>
   <int value="4" label="The user was not signed in"/>
   <int value="5" label="The feature was disabled by an enterprise policy"/>
+  <int value="6" label="The Drive service is not supported"/>
 </enum>
+
+<!-- LINT.ThenChange(//ios/chrome/browser/drive/model/drive_availability.mm:FilePickerDriveDisplayed) -->
 
 <enum name="IOSFilePickerDriveFilter">
   <int value="0" label="Select Archives"/>
@@ -639,6 +644,7 @@ chromium-metrics-reviews@google.com.
   <int value="0" label="FilePicker"/>
   <int value="1" label="PhotoPicker"/>
   <int value="2" label="Camera"/>
+  <int value="3" label="DriveFilePicker"/>
 </enum>
 
 <!-- LINT.ThenChange(//ios/chrome/browser/file_upload_panel/ui/constants.h:FileUploadPanelContextMenuActionVariant) -->
@@ -646,8 +652,11 @@ chromium-metrics-reviews@google.com.
 <!-- LINT.IfChange(IOSFileUploadPanelContextMenuVariant) -->
 
 <enum name="IOSFileUploadPanelContextMenuVariant">
-  <int value="0" label="PhotoPickerAndCameraAndFilePicker"/>
-  <int value="1" label="PhotoPickerAndFilePicker"/>
+  <int value="0" label="PhotoPickerAndFilePicker"/>
+  <int value="1" label="PhotoPickerAndCameraAndFilePicker"/>
+  <int value="2" label="FilePickerAndDriveFilePicker"/>
+  <int value="3" label="PhotoPickerAndFilePickerAndDriveFilePicker"/>
+  <int value="4" label="PhotoPickerAndCameraAndFilePickerAndDriveFilePicker"/>
 </enum>
 
 <!-- LINT.ThenChange(//ios/chrome/browser/file_upload_panel/ui/constants.h:FileUploadPanelContextMenuVariant) -->
@@ -679,7 +688,7 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="AI Hub"/>
   <int value="3" label="Omnibox Chip (Skipped AI Hub)"/>
   <int value="4" label="Tab Reopen"/>
-  <int value="5" label="Diamond"/>
+  <int value="5" label="App Bar"/>
   <int value="6" label="Image long-press context menu"/>
 </enum>
 
@@ -700,7 +709,7 @@ chromium-metrics-reviews@google.com.
   <int value="9" label="Discovery Card"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/intelligence/bwg/metrics/bwg_metrics.h:IOSGeminiFirstPromptSubmissionMethod) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/intelligence/bwg/metrics/gemini_metrics.h:IOSGeminiFirstPromptSubmissionMethod) -->
 
 <!-- LINT.IfChange(IOSGeminiFREAction) -->
 
@@ -710,7 +719,18 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Link Click"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/intelligence/bwg/metrics/bwg_metrics.h:IOSGeminiFREAction) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/intelligence/bwg/metrics/gemini_metrics.h:IOSGeminiFREAction) -->
+
+<!-- LINT.IfChange(IOSGeminiSettingsItem) -->
+
+<enum name="IOSGeminiSettingsItem">
+  <int value="0" label="GeminiAppsActivity"/>
+  <int value="1" label="Personalization"/>
+  <int value="2" label="Extensions"/>
+  <int value="3" label="Unknown"/>
+</enum>
+
+<!-- LINT.ThenChange(/ios/chrome/browser/settings/ui_bundled/bwg/utils/gemini_settings_metrics.h:IOSGeminiSettingsItem) -->
 
 <enum name="IOSHomeActionType">
   <int value="0" label="Most Visited Tiles"/>
@@ -732,8 +752,8 @@ chromium-metrics-reviews@google.com.
 
 <enum name="IOSHomeCustomizationBackgroundStyle">
   <int value="0" label="Default NTP background was loaded"/>
-  <int value="1" label="Gallery image background was loaded"/>
-  <int value="2" label="Color background was loaded"/>
+  <int value="1" label="Color background was loaded"/>
+  <int value="2" label="Gallery image background was loaded"/>
   <int value="3" label="User uploaded image background was loaded"/>
 </enum>
 
@@ -1477,6 +1497,8 @@ chromium-metrics-reviews@google.com.
   <int value="5" label="Voice Over Swipe"/>
 </enum>
 
+<!-- LINT.IfChange(IOSTipsNotificationType) -->
+
 <enum name="IOSTipsNotificationType">
   <int value="0" label="Default Browser"/>
   <int value="1" label="What's New"/>
@@ -1493,11 +1515,17 @@ chromium-metrics-reviews@google.com.
   <int value="12" label="Trusted Vault Key Retrieval"/>
 </enum>
 
+<!-- LINT.ThenChange(/ios/chrome/browser/tips_notifications/model/utils.h:TipsNotificationType) -->
+
+<!-- LINT.IfChange(IOSTipsNotificationUserType) -->
+
 <enum name="IOSTipsNotificationUserType">
   <int value="0" label="Unknown"/>
   <int value="1" label="Less Engaged"/>
   <int value="2" label="Active Seeker"/>
 </enum>
+
+<!-- LINT.ThenChange(/ios/chrome/browser/tips_notifications/model/utils.h:TipsNotificationUserType) -->
 
 <!-- LINT.IfChange(TrustedVaultNotificationEvents) -->
 
@@ -1644,7 +1672,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Timeout"/>
 </enum>
 
-<!-- LINT.ThenChange(/ios/chrome/browser/authentication/ui_bundled/signin_promo/coordinator/non_modal_signin_promo_metrics_util.h:NonModalSignInPromoAction) -->
+<!-- LINT.ThenChange(/ios/chrome/browser/authentication/signin/non_modal_promo/coordinator/non_modal_signin_promo_metrics_util.h:NonModalSignInPromoAction) -->
 
 <!-- LINT.IfChange(NotificationType) -->
 
@@ -1669,6 +1697,9 @@ chromium-metrics-reviews@google.com.
   <int value="17" label="Reminder"/>
   <int value="18" label="Commerce"/>
   <int value="19" label="Content"/>
+  <int value="20" label="Passwords [Cross Platform Promos]"/>
+  <int value="21" label="Safe Browsing [Cross Platform Promos]"/>
+  <int value="22" label="Lens [Cross Platform Promos]"/>
 </enum>
 
 <!-- LINT.ThenChange(/ios/chrome/browser/push_notification/model/constants.h:NotificationType) -->
@@ -1747,11 +1778,6 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(/ios/chrome/common/ui/promo_style/constants.h:PromoStyleSheetAction) -->
-
-<enum name="PromoWithInstructionsAction">
-  <int value="0" label="Close"/>
-  <int value="1" label="Open Instructions"/>
-</enum>
 
 <!-- LINT.IfChange(PromoWithTrustedVaultKeyRetrievalAction) -->
 
@@ -1955,6 +1981,7 @@ chromium-metrics-reviews@google.com.
   <int value="0" label="Sans Serif"/>
   <int value="1" label="Serif"/>
   <int value="2" label="Monospace"/>
+  <int value="3" label="Lexend"/>
 </enum>
 
 <!-- LINT.ThenChange(/ios/chrome/browser/reader_mode/model/constants.h:ReaderModeFontFamily) -->

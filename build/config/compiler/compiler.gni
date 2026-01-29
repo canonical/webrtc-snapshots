@@ -11,6 +11,7 @@ import("//build/config/compiler/pgo/pgo.gni")
 import("//build/config/cronet/config.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//build/toolchain/cc_wrapper.gni")
+import("//build/toolchain/kythe.gni")
 import("//build/toolchain/toolchain.gni")
 import("//build_overrides/build.gni")
 
@@ -32,18 +33,13 @@ declare_args() {
   # The default linker everywhere else.
   use_lld = is_clang && current_os != "zos"
 
+  # If false, build using C++20; otherwise, build using C++23.
+  use_cxx23 = true
+
   # If true, optimize for size.
   # Default to favoring speed over size for platforms not listed below.
   optimize_for_size =
       !is_high_end_android && (is_android || is_castos || is_fuchsia)
-}
-
-# Allow other projects to keep use_cxx23 false by default if they aren't ready.
-if (!defined(use_cxx23)) {
-  declare_args() {
-    # If false, build using C++20; otherwise, build using C++23.
-    use_cxx23 = false
-  }
 }
 
 declare_args() {
@@ -150,9 +146,10 @@ declare_args() {
                              use_custom_libcxx && !is_component_build
 
   # Enable C++14 sized global deallocation functions.
-  # Disabled by default because of binary size increase.
+  # Enable only on ASan or platforms without strict binary size requirements
+  # because of binary size increase.
   # TODO(crbug.com/345541122): investigate the fuchsia binary size increase.
-  use_sized_deallocation = is_clang && is_asan
+  use_sized_deallocation = is_clang && (is_asan || !optimize_for_size)
 }
 
 # To try out this combination, delete this assert.
@@ -165,8 +162,12 @@ assert(!is_cfi || use_thin_lto, "CFI requires ThinLTO")
 assert(!enable_profiling || !is_component_build,
        "Cannot profile component builds (crbug.com/1199271).")
 
-assert(!is_win || is_asan == use_sized_deallocation,
-       "ASan and sized deallocation must be enabled together on Windows.")
+# The Abseil .def lists for Windows component builds are created expecting sized
+# deallocation. Disabling it leads to symbol mismatches and build failures.
+# This assertion is restricted to Clang builds. ANGLE MSVC builds, where
+# is_clang is false, do not use Abseil that requires this assertion.
+assert(!is_clang || !is_win || !is_component_build || use_sized_deallocation,
+       "Sized deallocation must be enabled in component builds on Windows.")
 assert(is_clang || !use_sized_deallocation,
        "Sized deallocation is supported on clang.")
 
@@ -279,6 +280,12 @@ if (strip_absolute_paths_from_debug_symbols_default) {
 # When absolute_paths in debug symbols, we need to use input root
 # absolute path to execute remotely in RBE.
 clang_need_input_root_absolute_path = !strip_absolute_paths_from_debug_symbols
+
+# TODO(crbug.com/473693507): Remove once fixed.
+# Builders as Kythe client might output system headers with absolute paths.
+if (is_win && enable_kythe_annotations) {
+  clang_need_input_root_absolute_path = true
+}
 
 if (clang_need_input_root_absolute_path) {
   compiler_logs += [ "clang_need_input_root_absolute_path=true" ]

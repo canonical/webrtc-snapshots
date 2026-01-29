@@ -104,7 +104,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.ChromeOS.DeviceKeyMissing" enum="BooleanDetected"
-    expires_after="2026-04-13">
+    expires_after="2026-06-21">
   <owner>laikatherine@chromium.org</owner>
   <owner>chromeos-bt-team@google.com</owner>
   <summary>Emitted each time a Bluetooth device has missing keys.</summary>
@@ -1737,7 +1737,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.ChromeOS.TimeIntervalBetweenConnections" units="ms"
-    expires_after="2026-01-14">
+    expires_after="2027-01-14">
   <owner>longbowei@google.com</owner>
   <owner>jimmyxgong@chromium.org</owner>
   <owner>cros-device-enablement@google.com</owner>
@@ -1785,7 +1785,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Bluetooth.ChromeOS.UserInitiatedReconnectionAttempt.Duration.Success{BluetoothTransportTypes}"
-    units="ms" expires_after="2026-05-03">
+    units="ms" expires_after="2026-07-05">
   <owner>khorimoto@chromium.org</owner>
   <owner>cros-device-enablement@google.com</owner>
   <summary>
@@ -1886,7 +1886,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="Bluetooth.Linux.ConnectToServiceInsecurelyResult"
     enum="BluetoothAdapterConnectToServiceInsecurelyResult"
-    expires_after="2026-04-13">
+    expires_after="2026-06-21">
   <owner>hansenmichael@google.com</owner>
   <owner>chromeos-cross-device-eng@google.com</owner>
   <summary>
@@ -1896,7 +1896,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.LocalNameIsUtf8" enum="Boolean"
-    expires_after="2026-04-13">
+    expires_after="2026-06-21">
   <owner>dcheng@chromium.org</owner>
   <owner>reillyg@chromium.org</owner>
   <owner>cros-device-enablement@google.com</owner>
@@ -1940,7 +1940,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.Serial.OpenSocketResult" enum="Boolean"
-    expires_after="2026-04-13">
+    expires_after="2026-06-21">
   <owner>xutan@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
@@ -1951,7 +1951,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.StackName" enum="BluetoothStackName"
-    expires_after="2026-04-13">
+    expires_after="2026-06-21">
   <owner>michaelfsun@google.com</owner>
   <owner>chromeos-bt-kpi@google.com</owner>
   <summary>
@@ -1961,7 +1961,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.Web.Characteristic.ReadValue.Outcome"
-    enum="WebBluetoothGATTOperationOutcome" expires_after="2026-04-13">
+    enum="WebBluetoothGATTOperationOutcome" expires_after="2026-06-21">
   <owner>alvinji@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
@@ -1997,8 +1997,8 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.Web.ConnectGATT.Outcome"
-    enum="WebBluetoothConnectGATTOutcome" expires_after="2026-04-13">
-  <owner>chengweih@chromium.org</owner>
+    enum="WebBluetoothConnectGATTOutcome" expires_after="2026-06-21">
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Records the result of a device.gatt.connect() call. Used to understand what
@@ -2019,8 +2019,8 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bluetooth.Web.GetCharacteristics.Characteristic"
-    enum="GATTCharacteristicHash" expires_after="2026-04-13">
-  <owner>chengweih@chromium.org</owner>
+    enum="GATTCharacteristicHash" expires_after="2026-06-21">
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Records the UUIDs used when getting characteristics. The recorded value is a
@@ -2031,7 +2031,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="Bluetooth.Web.GetPrimaryService.Services"
     enum="GATTServiceHash" expires_after="2026-06-08">
-  <owner>chengweih@chromium.org</owner>
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Records what GATT Services are used when connected. The record value is a
@@ -2042,7 +2042,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="Bluetooth.Web.GetPrimaryServices.Services"
     enum="GATTServiceHash" expires_after="2026-06-08">
-  <owner>chengweih@chromium.org</owner>
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Records what GATT Services are used when connected. The record value is a
@@ -2053,7 +2053,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="Bluetooth.Web.RequestDevice.RSSISignalStrength" units="dBm"
     expires_after="2026-04-25">
-  <owner>chengweih@chromium.org</owner>
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Raw RSSI values provided to chooser, before processing them for display in
@@ -2066,7 +2066,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="Bluetooth.Web.RequestDevice.RSSISignalStrengthLevel"
     enum="WebBluetoothRSSISignalStrengthLevel" expires_after="2026-04-25">
-  <owner>chengweih@chromium.org</owner>
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Displayed RSSI levels, after processing and as displayed to users in the Web
@@ -2076,7 +2076,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="Bluetooth.Web.RequestDevice.UnionOfServices.Services"
     enum="GATTServiceHash" expires_after="2026-06-08">
-  <owner>chengweih@chromium.org</owner>
+  <owner>mattreynolds@chromium.org</owner>
   <owner>deviceapi-team@google.com</owner>
   <summary>
     Records what services are used from either required or optional sets. The

@@ -211,8 +211,30 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="CTA image shown"/>
 </enum>
 
+<!-- LINT.IfChange(NewTabPageLogoShowniOSGoogleDSEEnum) -->
+
+<enum name="NewTabPageLogoShowniOSGoogleDSEEnum">
+  <int value="0" label="Embedded logo shown"/>
+  <int value="1" label="Downloaded logo shown"/>
+  <int value="2" label="Static image doodle shown"/>
+  <int value="3" label="CTA doodle shown"/>
+</enum>
+
+<!-- LINT.ThenChange(//ios/chrome/browser/ntp/search_engine_logo/mediator/search_engine_logo_mediator.mm:NewTabPageLogoShowniOSGoogleDSEEnum) -->
+
+<!-- LINT.IfChange(NewTabPageLogoShowniOSThirdPartyDSEEnum) -->
+
+<enum name="NewTabPageLogoShowniOSThirdPartyDSEEnum">
+  <int value="0" label="No logo shown"/>
+  <int value="1" label="Downloaded logo shown"/>
+  <int value="2" label="Static image doodle shown"/>
+  <int value="3" label="CTA doodle shown"/>
+</enum>
+
+<!-- LINT.ThenChange(//ios/chrome/browser/ntp/search_engine_logo/mediator/search_engine_logo_mediator.mm:NewTabPageLogoShowniOSThirdPartyDSEEnum) -->
+
 <enum name="NewTabPageVoiceAction">
-  <int value="0" label="Activated by clicking on the fakebox icon"/>
+  <int value="0" label="Activated by clicking on the icon"/>
   <int value="1" label="Activated by keyboard shortcut"/>
   <int value="2" label="Closed overlay by a user's explicit action"/>
   <int value="3" label="Submitted voice query"/>
@@ -416,6 +438,7 @@ chromium-metrics-reviews@google.com.
   <int value="21" label="Chrome color clicked"/>
   <int value="22" label="Custom color clicked"/>
   <int value="23" label="Show footer toggle clicked"/>
+  <int value="24" label="Show action chips toggle clicked"/>
 </enum>
 
 <enum name="NTPCustomizedFeatures">
@@ -456,6 +479,8 @@ chromium-metrics-reviews@google.com.
       label="All enterprise shortcuts were restored (via menu or message
              pop-up)."/>
   <int value="14" label="An enterprise shortcut was updated."/>
+  <int value="15" label="Shortcuts were auto-removed due to inactivity."/>
+  <int value="16" label="Shortcuts auto-removal was undone."/>
 </enum>
 
 <enum name="NTPElement">
@@ -505,6 +530,7 @@ chromium-metrics-reviews@google.com.
   <int value="-1690248410" label="photos (deprecated)"/>
   <int value="-1421889245" label="microsoft_files"/>
   <int value="-1057474133" label="tab_resumption"/>
+  <int value="-831419666" label="tab_groups"/>
   <int value="-829949732" label="microsoft_authentication"/>
   <int value="-505117227" label="dummy2"/>
   <int value="-350308324" label="outlook_calendar"/>
@@ -609,6 +635,23 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Inspiration"/>
   <int value="2" label="History"/>
 </enum>
+
+<!-- LINT.IfChange(OmniboxAutofocusOutcome) -->
+
+<enum name="OmniboxAutofocusOutcome">
+  <int value="0" label="Not triggered"/>
+  <int value="1" label="Always on"/>
+  <int value="2" label="On not first tab"/>
+  <int value="3" label="With prediction"/>
+  <int value="4" label="With hardware keyboard"/>
+  <int value="5" label="On not first tab and with prediction"/>
+  <int value="6" label="On not first tab and with hardware keyboard"/>
+  <int value="7" label="With prediction and with hardware keyboard"/>
+  <int value="8"
+      label="On not first tab, with prediction, and with hardware keyboard"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/ntp/IncognitoNtpOmniboxAutofocusTracker.java:OmniboxAutofocusOutcome) -->
 
 <enum name="OutlookCalendarRequestResult">
   <int value="0" label="Success"/>

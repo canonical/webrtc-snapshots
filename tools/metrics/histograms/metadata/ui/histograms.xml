@@ -235,7 +235,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ContextMenu.Shown{Type}" enum="BooleanPresent"
-    expires_after="2026-05-03">
+    expires_after="2026-07-05">
   <owner>mpearson@chromium.org</owner>
   <owner>twellington@chromium.org</owner>
   <owner>clank-app-team@google.com</owner>
@@ -275,7 +275,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="DefaultBrowser.InfoBar.TimesShownBeforeAccept" units="count"
-    expires_after="2026-01-18">
+    expires_after="2026-05-31">
   <owner>agale@chromium.org</owner>
   <owner>robliao@chromium.org</owner>
   <summary>
@@ -380,12 +380,14 @@ chromium-metrics-reviews@google.com.
   <token key="DefaultBrowserStateValidator">
     <variant name="HttpProgIdAssocValidation"
         summary="AssocQueryString to get the HTTP default client's program ID"/>
+    <variant name="HttpProgIdRegistryValidation"
+        summary="the HTTP default client's program ID from the registry"/>
   </token>
 </histogram>
 
 <histogram
     name="InitialWebUI.ReloadButton.ChangeVisibleModeToNextPaintIn{VisibleMode}"
-    units="ms" expires_after="2026-04-30">
+    units="ms" expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -406,7 +408,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="InitialWebUI.ReloadButton.InputCount"
-    enum="ReloadButtonInputType" expires_after="2026-04-30">
+    enum="ReloadButtonInputType" expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -419,7 +421,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="InitialWebUI.ReloadButton.InputToNextPaint{InputType}"
-    units="ms" expires_after="2026-04-30">
+    units="ms" expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -436,7 +438,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="InitialWebUI.ReloadButton.InputToReload{InputType}" units="ms"
-    expires_after="2026-04-30">
+    expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -453,7 +455,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="InitialWebUI.ReloadButton.InputToStop{InputType}" units="ms"
-    expires_after="2026-04-30">
+    expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -470,7 +472,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="InitialWebUI.ReloadButton.MouseHoverToNextPaint" units="ms"
-    expires_after="2026-04-30">
+    expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -483,7 +485,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="InitialWebUI.ReloadButton.MousePressToNextPaint" units="ms"
-    expires_after="2026-04-30">
+    expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -499,7 +501,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{SessionRestore}.BrowserWindow.FirstPaint{StartupTemperature}"
-    units="ms" expires_after="2026-04-30">
+    units="ms" expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -524,7 +526,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{SessionRestore}.ReloadButton.FirstContentfulPaint{StartupTemperature}"
-    units="ms" expires_after="2026-04-30">
+    units="ms" expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -553,7 +555,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{SessionRestore}.ReloadButton.FirstPaint{StartupTemperature}"
-    units="ms" expires_after="2026-04-30">
+    units="ms" expires_after="2026-07-05">
   <owner>mych@chromium.org</owner>
   <owner>chrome-waap-eng@google.com</owner>
   <summary>
@@ -834,7 +836,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.ColorsStylesheetServingDuration" units="ms"
-    expires_after="2026-04-05">
+    expires_after="2026-06-07">
   <owner>skau@chromium.org</owner>
   <owner>tluk@chromium.org</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -855,7 +857,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.Settings.PathVisited" enum="WebUISettingsPathHashes"
-    expires_after="2026-05-03">
+    expires_after="2026-07-05">
   <owner>dschuyler@chromium.org</owner>
   <owner>tbuckley@chromium.org</owner>
   <owner>bettes@chromium.org</owner>
@@ -870,7 +872,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.ShownUrl" enum="WebUIUrlHashes"
-    expires_after="2026-04-05">
+    expires_after="2026-06-07">
   <owner>kerenzhu@chromium.org</owner>
   <owner>dpapad@chromium.org</owner>
   <owner>chrome-webui@google.com</owner>
@@ -885,7 +887,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.TopChrome.Preload.Reason" enum="WebUIPreloadReason"
-    expires_after="2026-03-29">
+    expires_after="2026-05-31">
   <owner>kerenzhu@chromium.org</owner>
   <owner>tluk@chromium.org</owner>
   <owner>robliao@chromium.org</owner>
@@ -895,7 +897,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.TopChrome.Preload.Result" enum="WebUIPreloadResult"
-    expires_after="2026-03-29">
+    expires_after="2026-05-31">
   <owner>kerenzhu@chromium.org</owner>
   <owner>dayeung@chromium.org</owner>
   <owner>elainechien@chromium.org</owner>
@@ -908,7 +910,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.TopChrome.RequestToFCP{WebUIName}" units="ms"
-    expires_after="2026-04-19">
+    expires_after="2026-06-21">
   <owner>kerenzhu@chromium.org</owner>
   <owner>chrome-webui-for-features@google.com</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -922,7 +924,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.TopChrome.RequestToLCP{WebUIName}" units="ms"
-    expires_after="2026-04-19">
+    expires_after="2026-06-21">
   <owner>kerenzhu@chromium.org</owner>
   <owner>chrome-webui-for-features@google.com</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1006,7 +1008,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUITabStrip.OpenAction" enum="WebUITabStripOpenActions"
-    expires_after="2026-04-19">
+    expires_after="2026-06-21">
   <owner>robliao@chromium.org</owner>
   <owner>tluk@chromium.org</owner>
   <summary>
@@ -1058,14 +1060,14 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WrenchMenu.MenuAction" enum="WrenchMenuAction"
-    expires_after="2026-05-03">
+    expires_after="2026-07-05">
   <owner>ainslie@chromium.org</owner>
   <owner>edwardjung@chromium.org</owner>
   <summary>Number of times that each menu item is clicked.</summary>
 </histogram>
 
 <histogram name="WrenchMenu.TimeToAction.{Action}" units="ms"
-    expires_after="2026-05-03">
+    expires_after="2026-07-05">
   <owner>ainslie@chromium.org</owner>
   <owner>edwardjung@chromium.org</owner>
   <summary>

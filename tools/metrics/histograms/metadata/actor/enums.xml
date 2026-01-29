@@ -28,7 +28,7 @@ chromium-metrics-reviews@google.com.
 
 <enum name="ActionResultCode">
   <int value="0" label="Ok"/>
-  <int value="10" label="Error"/>
+  <int value="10" label="(Obsolete) Error. Removed in Dec 2025."/>
   <int value="11" label="UrlBlocked"/>
   <int value="12" label="NewTabCreationFailed"/>
   <int value="13" label="TabWentAway"/>
@@ -57,8 +57,14 @@ chromium-metrics-reviews@google.com.
   <int value="36" label="kFilePickerCancelled"/>
   <int value="37" label="ExecutionEngineExistingAction"/>
   <int value="38" label="ExternalProtocolNavigationBlocked"/>
+  <int value="39" label="RendererCrashed"/>
+  <int value="40" label="NotImplemented"/>
+  <int value="41" label="InvokeCanceled"/>
+  <int value="42" label="kInvalidTaskStateForAct"/>
+  <int value="43" label="ActionsCancelled"/>
   <int value="100" label="NavigateInvalidUrl"/>
   <int value="101" label="NavigateFailedToStart"/>
+  <int value="102" label="NavigateCommittedErrorPage"/>
   <int value="200" label="ClickSuppressed"/>
   <int value="300" label="DragAndReleaseFromOffscreen"/>
   <int value="301" label="DragAndReleaseToOffscreen"/>
@@ -95,12 +101,21 @@ chromium-metrics-reviews@google.com.
   <int value="905" label="LoginPageChangedDuringSelection"/>
   <int value="906" label="LoginDeviceReauthRequired"/>
   <int value="907" label="LoginDeviceReauthFailed"/>
+  <int value="908" label="LoginFeatureDisabled"/>
+  <int value="909" label="LoginTooManyRequests"/>
   <int value="1000" label="MediaControlNoMedia"/>
   <int value="1100" label="FormFillingAutofillUnavailable"/>
   <int value="1101" label="FormFillingNoSuggestionsAvailable"/>
   <int value="1102" label="FormFillingDialogError"/>
   <int value="1103" label="FormFillingFieldNotFound"/>
   <int value="1104" label="FormFillingUnknownAutofillError"/>
+  <int value="1105" label="FormFillingNoLastTabObservation"/>
+  <int value="1106" label="FormFillingInvalidSuggestionId"/>
+  <int value="1200" label="ScriptToolNoResponse"/>
+  <int value="1201" label="ScriptToolInvalidName"/>
+  <int value="1202" label="ScriptToolInvalidInputArguments"/>
+  <int value="1203" label="ScriptToolInvocationFailed"/>
+  <int value="1300" label="ActorUiError"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/common/actor.mojom:ActionResultCode) -->
@@ -112,7 +127,16 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="kCallbackError"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/actor/ui/actor_ui_tab_controller_interface.h:ActorUiTabControllerError) -->
+<!-- LINT.ThenChange(//chrome/browser/actor/ui/actor_ui_metrics_types.h:ActorUiTabControllerError) -->
+
+<!-- LINT.IfChange(ActorUiTaskIconError) -->
+
+<enum name="ActorUiTaskIconError">
+  <int value="0" label="kBubbleTaskDoesntExist"/>
+  <int value="1" label="kNudgeTaskDoesntExist"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/actor/ui/actor_ui_metrics_types.h:ActorUiTaskIconError) -->
 
 <!-- LINT.IfChange(ComputedTargetResult) -->
 
@@ -123,7 +147,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="kTargetNotResolvedInApc"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/actor/ui/event_dispatcher.h:ComputedTargetResult) -->
+<!-- LINT.ThenChange(//chrome/browser/actor/ui/actor_ui_metrics_types.h:ComputedTargetResult) -->
 
 <!-- LINT.IfChange(GatingDecision) -->
 
@@ -146,7 +170,7 @@ chromium-metrics-reviews@google.com.
   <int value="4" label="kOffScreen"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/actor/ui/dom_node_geometry.h:GetDomNodeResult) -->
+<!-- LINT.ThenChange(//chrome/browser/actor/ui/dom_node_geometry_types.h:GetDomNodeResult) -->
 
 <!-- LINT.IfChange(ModelPageTargetType) -->
 
@@ -155,7 +179,7 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="kPoint"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/actor/ui/event_dispatcher.h:ModelPageTargetType) -->
+<!-- LINT.ThenChange(//chrome/browser/actor/ui/actor_ui_metrics_types.h:ModelPageTargetType) -->
 
 <!-- LINT.IfChange(PageStabilityOutcome) -->
 
@@ -186,6 +210,17 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/actor/actor_task.h:StoppedReason) -->
+
+<!-- LINT.IfChange(TaskNudgeState) -->
+
+<enum name="TaskNudgeState">
+  <int value="0" label="kDefault"/>
+  <int value="1" label="kNeedsAttention"/>
+  <int value="2" label="(Obsolete) kMultipleTasksNeedAttention"/>
+  <int value="3" label="kCompleteTasks"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/actor/ui/states/actor_task_nudge_state.h:ActorTaskNudgeState) -->
 
 <!-- LINT.IfChange(TimeOfUseResult) -->
 
