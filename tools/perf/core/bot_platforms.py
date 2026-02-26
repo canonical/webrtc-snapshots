@@ -411,13 +411,9 @@ def _speedometer_main_crossbench(estimated_runtime=60, arguments=()):
 
 def _speedometer3_a11y_crossbench(estimated_runtime=60, arguments=()):
   """Latest Speedometer 3 with accessibility flag enabled."""
-  # TODO(crbug.com/444653101): This configuration runs the same speedometer_3
-  # benchmark as _speedometer3_crossbench, but since the benchmark name is used
-  # as the dict key inside the shard maps, we can't pass 'speedometer_3' to
-  # CrossbenchConfig constructor. We work around this by using alias 'sp3'.
   arguments += ('--extra-browser-args=--force-renderer-accessibility', )
   return CrossbenchConfig('speedometer3.a11y.crossbench',
-                          'sp3',
+                          'speedometer_3',
                           estimated_runtime=estimated_runtime,
                           arguments=arguments)
 
@@ -505,6 +501,14 @@ def _jetstream3_crossbench(estimated_runtime=180, arguments=()):
 def _jetstream_main_crossbench(estimated_runtime=180, arguments=()):
   return CrossbenchConfig('jetstream_main.crossbench',
                           'jetstream_main',
+                          estimated_runtime=estimated_runtime,
+                          arguments=arguments)
+
+
+def _jetstream3_turbolev_future_crossbench(estimated_runtime=180, arguments=()):
+  arguments += ('--js-flags=--turbolev-future', )
+  return CrossbenchConfig('jetstream3-turbolev_future.crossbench',
+                          'jetstream_3',
                           estimated_runtime=estimated_runtime,
                           arguments=arguments)
 
@@ -896,6 +900,11 @@ _ANDROID_AL_BRYA_BENCHMARK_CONFIGS = PerfSuite([
     _GetBenchmarkConfig('jetstream2'),
     _GetBenchmarkConfig('speedometer2'),
 ])
+_ANDROID_AL_BRYA_EXECUTABLE_CONFIGS = frozenset([
+    ExecutableConfig('web_tests_cuj',
+                     path='../../tools/perf/web_tests_cuj.py',
+                     estimated_runtime=10),
+])
 _ANDROID_AL_BENCHMARK_CONFIGS = PerfSuite([
     _GetBenchmarkConfig('rendering.mobile'),
 ])
@@ -1079,10 +1088,13 @@ WIN_ARM64_SNAPDRAGON_ELITE = PerfPlatform(
 ANDROID_BRYA = PerfPlatform(
     name='android-brya-kano-i5-8gb-perf',
     description='Brya SKU kano_12th_Gen_IntelR_CoreTM_i5_1235U_8GB',
-    num_shards=7,
+    # We have enough resources to run at least 7 shards, but currently only
+    # have enough benchmarks to fill 4 shards, so setting num_shards=4 to
+    # avoid wasting resources.
+    num_shards=4,
     benchmark_configs=_ANDROID_AL_BRYA_BENCHMARK_CONFIGS,
     platform_os='android',
-    executables=None,
+    executables=_ANDROID_AL_BRYA_EXECUTABLE_CONFIGS,
     crossbench=_CROSSBENCH_ANDROID_AL)
 ANDROID_CORSOLA = PerfPlatform(name='android-corsola-steelix-8gb-perf',
                                description='Corsola SKU steelix_MT8186_8GB',

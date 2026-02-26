@@ -32,16 +32,16 @@
             }
         },
         "crossbench": {
-            "jetstream_2": {
-                "display_name": "jetstream2.crossbench",
+            "jetstream2.crossbench": {
+                "crossbench_name": "jetstream_2",
                 "arguments": []
             },
-            "jetstream_3": {
-                "display_name": "jetstream3.crossbench",
+            "jetstream3.crossbench": {
+                "crossbench_name": "jetstream_3",
                 "arguments": []
             },
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             }
         }
@@ -91,8 +91,8 @@
             }
         },
         "crossbench": {
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -130,16 +130,16 @@
             }
         },
         "crossbench": {
-            "jetstream_2": {
-                "display_name": "jetstream2.crossbench",
+            "jetstream2.crossbench": {
+                "crossbench_name": "jetstream_2",
                 "arguments": []
             },
-            "jetstream_3": {
-                "display_name": "jetstream3.crossbench",
+            "jetstream3.crossbench": {
+                "crossbench_name": "jetstream_3",
                 "arguments": []
             },
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             }
         }
@@ -178,8 +178,8 @@
             }
         },
         "crossbench": {
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -217,16 +217,16 @@
             }
         },
         "crossbench": {
-            "jetstream_2": {
-                "display_name": "jetstream2.crossbench",
+            "jetstream2.crossbench": {
+                "crossbench_name": "jetstream_2",
                 "arguments": []
             },
-            "jetstream_3": {
-                "display_name": "jetstream3.crossbench",
+            "jetstream3.crossbench": {
+                "crossbench_name": "jetstream_3",
                 "arguments": []
             },
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             }
         }
@@ -262,8 +262,8 @@
             }
         },
         "crossbench": {
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -298,20 +298,20 @@
             }
         },
         "crossbench": {
-            "jetstream_2": {
-                "display_name": "jetstream2.crossbench",
+            "jetstream2.crossbench": {
+                "crossbench_name": "jetstream_2",
                 "arguments": []
             },
-            "jetstream_3": {
-                "display_name": "jetstream3.crossbench",
+            "jetstream3.crossbench": {
+                "crossbench_name": "jetstream_3",
                 "arguments": []
             },
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -346,20 +346,20 @@
             }
         },
         "crossbench": {
-            "jetstream_2": {
-                "display_name": "jetstream2.crossbench",
+            "jetstream2.crossbench": {
+                "crossbench_name": "jetstream_2",
                 "arguments": []
             },
-            "jetstream_3": {
-                "display_name": "jetstream3.crossbench",
+            "jetstream3.crossbench": {
+                "crossbench_name": "jetstream_3",
                 "arguments": []
             },
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -383,7 +383,7 @@
                 "abridged": false
             },
             "blink_perf.bindings": {
-                "end": 50,
+                "end": 51,
                 "abridged": false
             },
             "speedometer2": {
@@ -402,12 +402,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -423,7 +423,7 @@
                 "pageset_repeat": 2
             },
             "blink_perf.bindings": {
-                "begin": 50,
+                "begin": 51,
                 "abridged": false
             },
             "blink_perf.css": {
@@ -458,12 +458,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -486,7 +486,7 @@
                 "abridged": false
             },
             "blink_perf.parser": {
-                "end": 25,
+                "end": 26,
                 "abridged": false
             },
             "speedometer2": {
@@ -505,12 +505,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -526,7 +526,7 @@
                 "pageset_repeat": 2
             },
             "blink_perf.parser": {
-                "begin": 25,
+                "begin": 26,
                 "abridged": false
             },
             "blink_perf.shadow_dom": {
@@ -573,12 +573,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -610,10 +610,6 @@
             "jetstream2-minorms": {
                 "abridged": false
             },
-            "media.desktop": {
-                "end": 2,
-                "abridged": false
-            },
             "speedometer2": {
                 "abridged": false,
                 "pageset_repeat": 2
@@ -630,16 +626,16 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             },
-            "devtools_frontend": {
-                "display_name": "devtools_frontend.crossbench",
+            "devtools_frontend.crossbench": {
+                "crossbench_name": "devtools_frontend",
                 "arguments": []
             }
         }
@@ -655,7 +651,6 @@
                 "pageset_repeat": 2
             },
             "media.desktop": {
-                "begin": 2,
                 "abridged": false
             },
             "memory.desktop": {
@@ -678,12 +673,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -725,12 +720,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -772,12 +767,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -813,12 +808,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -854,12 +849,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -895,12 +890,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -936,12 +931,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -970,12 +965,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -1004,12 +999,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -1038,12 +1033,12 @@
             }
         },
         "crossbench": {
-            "speedometer_3": {
-                "display_name": "speedometer3.crossbench",
+            "speedometer3.crossbench": {
+                "crossbench_name": "speedometer_3",
                 "arguments": []
             },
-            "motionmark_1.3": {
-                "display_name": "motionmark1.3.crossbench",
+            "motionmark1.3.crossbench": {
+                "crossbench_name": "motionmark_1.3",
                 "arguments": []
             }
         }
@@ -1090,8 +1085,8 @@
             }
         },
         "crossbench": {
-            "speedometer_2": {
-                "display_name": "speedometer2.crossbench",
+            "speedometer2.crossbench": {
+                "crossbench_name": "speedometer_2",
                 "arguments": []
             }
         }
@@ -1205,7 +1200,7 @@
         }
     },
     "extra_infos": {
-        "num_stories": 1333,
+        "num_stories": 1338,
         "predicted_min_shard_time": 2032.0,
         "predicted_min_shard_index": 0,
         "predicted_max_shard_time": 2697.0,
@@ -1218,12 +1213,12 @@
         "shard #5": 2333.0,
         "shard #6": 2395.0,
         "shard #7": 2395.0,
-        "shard #8": 2339.0,
-        "shard #9": 2343.0,
-        "shard #10": 2340.0,
-        "shard #11": 2334.0,
+        "shard #8": 2342.0,
+        "shard #9": 2340.0,
+        "shard #10": 2346.0,
+        "shard #11": 2328.0,
         "shard #12": 2349.0,
-        "shard #13": 2319.0,
+        "shard #13": 2369.0,
         "shard #14": 2326.0,
         "shard #15": 2338.0,
         "shard #16": 2348.0,
