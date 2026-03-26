@@ -61,7 +61,6 @@
 #include "media/base/media_config.h"
 #include "media/base/media_engine.h"
 #include "media/base/stream_params.h"
-#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/network/sent_packet.h"
@@ -231,6 +230,12 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) override {
     ssrc_list_changed_callback_ = std::move(callback);
+  }
+
+  void SetParametersChangedCallback(
+      absl::AnyInvocable<void()> callback) override {
+    RTC_DCHECK_RUN_ON(&thread_checker_);
+    parameters_changed_callback_ = std::move(callback);
   }
 
   // Implemented for VideoMediaChannelTest.
@@ -501,6 +506,10 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   // Callback invoked whenever the list of SSRCs changes.
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
       ssrc_list_changed_callback_;
+
+  // Callback invoked whenever the sender parameters change.
+  absl::AnyInvocable<void()> parameters_changed_callback_
+      RTC_GUARDED_BY(&thread_checker_);
 };
 
 class WebRtcVideoReceiveChannel : public MediaChannelUtil,
@@ -544,14 +553,10 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   bool SetSink(uint32_t ssrc, VideoSinkInterface<VideoFrame>* sink) override;
   void SetDefaultSink(VideoSinkInterface<VideoFrame>* sink) override;
   bool GetStats(VideoMediaReceiveInfo* info) override;
-  void OnPacketReceived(const RtpPacketReceived& packet) override;
+  void OnPacketReceived(RtpPacketReceived packet) override;
   bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) override;
 
   std::optional<int> GetBaseMinimumPlayoutDelayMs(uint32_t ssrc) const override;
-
-  // Choose one of the available SSRCs (or default if none) as the current
-  // receiver report SSRC.
-  void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) override;
 
   // E2E Encrypted Video Frame API
   // Set a frame decryptor to a particular ssrc that will intercept all
@@ -588,8 +593,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   WebRtcVideoReceiveStream* FindReceiveStream(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 
-  void ProcessReceivedPacket(RtpPacketReceived packet)
-      RTC_RUN_ON(thread_checker_);
 
   // Expected to be invoked once per packet that belongs to this channel that
   // can not be demuxed.
@@ -609,10 +612,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
   void DeleteReceiveStream(WebRtcVideoReceiveStream* stream)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
-
-  // Called when the local ssrc changes. Sets `rtcp_receiver_report_ssrc_` and
-  // updates the receive streams.
-  void SetReceiverReportSsrc(uint32_t ssrc) RTC_RUN_ON(&thread_checker_);
 
   // Wrapper for the receiver part, contains configs etc. that are needed to
   // reconstruct the underlying VideoReceiveStreamInterface.
@@ -669,7 +668,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
     void SetDepacketizerToDecoderFrameTransformer(
         scoped_refptr<FrameTransformerInterface> frame_transformer);
 
-    void SetLocalSsrc(uint32_t local_ssrc);
     void UpdateRtxSsrc(uint32_t ssrc);
     void StartReceiveStream();
     void StopReceiveStream();
@@ -729,12 +727,11 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   // Variables.
   const Environment env_;
   TaskQueueBase* const worker_thread_;
-  ScopedTaskSafety task_safety_;
+  scoped_refptr<PendingTaskSafetyFlag> network_thread_safety_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_checker_{
       SequenceChecker::kDetached};
   RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
 
-  uint32_t rtcp_receiver_report_ssrc_ RTC_GUARDED_BY(thread_checker_);
   bool receiving_ RTC_GUARDED_BY(&thread_checker_);
   Call* const call_;
 
@@ -767,9 +764,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
 
   VideoDecoderFactory* const decoder_factory_ RTC_GUARDED_BY(thread_checker_);
   std::vector<VideoCodecSettings> recv_codecs_ RTC_GUARDED_BY(thread_checker_);
-  RtpHeaderExtensionMap recv_rtp_extension_map_ RTC_GUARDED_BY(thread_checker_);
-  std::vector<RtpExtension> recv_rtp_extensions_
-      RTC_GUARDED_BY(thread_checker_);
   // See reason for keeping track of the FlexFEC payload type separately in
   // comment in WebRtcVideoChannel::ChangedReceiverParameters.
   int recv_flexfec_payload_type_ RTC_GUARDED_BY(thread_checker_);

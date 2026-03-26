@@ -53,6 +53,7 @@
       'linux-pgo': 'official_linux_pgo',
       'mac-arm-pgo': 'official_mac_arm_pgo_with_symbols',
       'mac-pgo': 'official_mac_pgo_with_symbols',
+      'webview-arm64-pgo': 'official_webview_arm64_pgo',
       'win-arm64-pgo': 'official_win_arm64_pgo',
       'win32-pgo': 'official_x86_pgo',
       'win64-pgo': 'official_x64_pgo',
@@ -107,7 +108,7 @@
       'android_arm64-cfi-builder-perf-fyi': 'official_remoteexec_minimal_symbols_android_thin_lto_opt_arm64',
       'chromeos-kevin-builder-perf-fyi': 'chromeos_kevin_include_unwind_tables_official_remoteexec',
       'fuchsia-builder-perf-arm64': 'official_remoteexec_fuchsia_arm64_perf',
-      'fuchsia-builder-perf-arm64-pgo': 'official_remoteexec_fuchsia_arm64_perf_pgo',
+      'fuchsia-builder-perf-arm64-pgo': 'official_remoteexec_fuchsia_arm64_perf',
       'linux-chromium-builder-perf': 'chromium_remoteexec_linux',
     },
 
@@ -511,10 +512,6 @@
     ],
 
     'official_remoteexec_fuchsia_arm64_perf': [
-      'cast_receiver_size_optimized_internal', 'official', 'remoteexec', 'minimal_symbols', 'fuchsia', 'fuchsia_include_sd_images', 'arm64', 'ffmpeg_branding_chrome', 'proprietary_codecs', 'release', 'test_isolate_no_emulator',
-    ],
-
-    'official_remoteexec_fuchsia_arm64_perf_pgo': [
       'cast_receiver_perf_optimized_internal', 'official', 'remoteexec', 'minimal_symbols', 'fuchsia', 'fuchsia_include_sd_images', 'arm64', 'ffmpeg_branding_chrome', 'proprietary_codecs', 'release', 'test_isolate_no_emulator',
     ],
 
@@ -612,6 +609,10 @@
 
     'official_webview_arm64_orderfile': [
       'official', 'remoteexec', 'android', 'arm64', 'minimal_symbols', 'orderfile_common',
+    ],
+
+    'official_webview_arm64_pgo': [
+      'official', 'remoteexec', 'android', 'arm64', 'minimal_symbols', 'no_default_afdo', 'pgo_phase_1', 'stable_version_code',
     ],
 
     'official_win_arm64_pgo': [
@@ -771,10 +772,6 @@
 
     'cast_receiver_perf_optimized_internal': {
       'args_file': '//build/config/fuchsia/perf_optimized_cast_receiver_args_internal.gn',
-    },
-
-    'cast_receiver_size_optimized_internal': {
-      'args_file': '//build/config/fuchsia/size_optimized_cast_receiver_args_internal.gn',
     },
 
     'chrome_branded': {

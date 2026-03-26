@@ -84,7 +84,7 @@
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/async_audio_processing/async_audio_processing.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
@@ -286,12 +286,10 @@ struct AdaptivePtimeConfig {
 // Move some of this boiler plate code into the config structs themselves.
 AudioReceiveStreamInterface::Config BuildReceiveStreamConfig(
     uint32_t remote_ssrc,
-    uint32_t local_ssrc,
     bool use_nack,
     bool enable_non_sender_rtt,
     RtcpMode rtcp_mode,
     const std::vector<std::string>& stream_ids,
-    const std::vector<RtpExtension>& /* extensions */,
     Transport* rtcp_send_transport,
     const scoped_refptr<AudioDecoderFactory>& decoder_factory,
     const std::map<int, SdpAudioFormat>& decoder_map,
@@ -303,7 +301,6 @@ AudioReceiveStreamInterface::Config BuildReceiveStreamConfig(
     scoped_refptr<FrameTransformerInterface> frame_transformer) {
   AudioReceiveStreamInterface::Config config;
   config.rtp.remote_ssrc = remote_ssrc;
-  config.rtp.local_ssrc = local_ssrc;
   config.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
   config.rtp.rtcp_mode = rtcp_mode;
   if (!stream_ids.empty()) {
@@ -1370,10 +1367,6 @@ bool WebRtcVoiceSendChannel::SetSenderParameters(
     return false;
   }
 
-  if (!ValidateRtpExtensions(params.extensions, send_rtp_extensions_)) {
-    return false;
-  }
-
   if (ExtmapAllowMixed() != params.extmap_allow_mixed) {
     SetExtmapAllowMixed(params.extmap_allow_mixed);
     for (auto& it : send_streams_) {
@@ -1663,10 +1656,6 @@ bool WebRtcVoiceSendChannel::RemoveSendStream(uint32_t ssrc) {
   }
 
   it->second->SetSend(false);
-
-  // TODO(solenberg): If we're removing the receiver_reports_ssrc_ stream, find
-  // the first active send stream and use that instead, reassociating receive
-  // streams.
 
   delete it->second;
   send_streams_.erase(it);
@@ -2153,6 +2142,9 @@ WebRtcVoiceReceiveChannel::WebRtcVoiceReceiveChannel(
     : MediaChannelUtil(call->network_thread(), config.enable_dscp),
       env_(env),
       worker_thread_(call->worker_thread()),
+      network_thread_safety_(PendingTaskSafetyFlag::CreateAttachedToTaskQueue(
+          /*alive=*/true,
+          call->network_thread())),
       engine_(engine),
       call_(call),
       audio_config_(config.audio),
@@ -2188,20 +2180,11 @@ bool WebRtcVoiceReceiveChannel::SetReceiverParameters(
     return false;
   }
 
-  if (!ValidateRtpExtensions(params.extensions, recv_rtp_extensions_)) {
-    return false;
-  }
-  std::vector<RtpExtension> filtered_extensions =
-      FilterRtpExtensions(params.extensions, RtpExtension::IsSupportedForAudio,
-                          false, env_.field_trials());
-  if (recv_rtp_extensions_ != filtered_extensions) {
-    recv_rtp_extensions_.swap(filtered_extensions);
-    recv_rtp_extension_map_ = RtpHeaderExtensionMap(recv_rtp_extensions_);
-  }
   // RTCP mode, NACK, and receive-side RTT are not configured here because they
   // enable send functionality in the receive channels. This functionality is
   // instead configured using the SetReceiveRtcpMode, SetReceiveNackEnabled, and
   // SetReceiveNonSenderRttEnabled methods.
+  recv_params_ = params;
   return true;
 }
 
@@ -2219,7 +2202,10 @@ RtpParameters WebRtcVoiceReceiveChannel::GetRtpReceiverParameters(
   }
   rtp_params.encodings.emplace_back();
   rtp_params.encodings.back().ssrc = it->second->stream().remote_ssrc();
-  rtp_params.header_extensions = recv_rtp_extensions_;
+
+  rtp_params.header_extensions = FilterRtpExtensions(
+      recv_params_.extensions, RtpExtension::IsSupportedForAudio, false,
+      env_.field_trials());
 
   for (const Codec& codec : recv_codecs_) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
@@ -2447,9 +2433,8 @@ bool WebRtcVoiceReceiveChannel::AddRecvStream(const StreamParams& sp) {
 
   // Create a new channel for receiving audio data.
   auto config = BuildReceiveStreamConfig(
-      ssrc, receiver_reports_ssrc_, recv_nack_enabled_, enable_non_sender_rtt_,
-      recv_rtcp_mode_, sp.stream_ids(), recv_rtp_extensions_, transport(),
-      engine()->decoder_factory_, decoder_map_,
+      ssrc, recv_nack_enabled_, enable_non_sender_rtt_, recv_rtcp_mode_,
+      sp.stream_ids(), transport(), engine()->decoder_factory_, decoder_map_,
       engine()->audio_jitter_buffer_max_packets_,
       engine()->audio_jitter_buffer_fast_accelerate_,
       engine()->audio_jitter_buffer_min_delay_ms_, unsignaled_frame_decryptor_,
@@ -2501,24 +2486,6 @@ std::optional<uint32_t> WebRtcVoiceReceiveChannel::GetUnsignaledSsrc() const {
   // In the event of multiple unsignaled ssrcs, the last in the vector will be
   // the most recent one (the one forwarded to the MediaStreamTrack).
   return unsignaled_recv_ssrcs_.back();
-}
-
-void WebRtcVoiceReceiveChannel::ChooseReceiverReportSsrc(
-    const std::set<uint32_t>& choices) {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  // Don't change SSRC if set is empty. Note that this differs from
-  // the behavior of video.
-  if (choices.empty()) {
-    return;
-  }
-  if (choices.find(receiver_reports_ssrc_) != choices.end()) {
-    return;
-  }
-  uint32_t ssrc = *(choices.begin());
-  receiver_reports_ssrc_ = ssrc;
-  for (auto& kv : recv_streams_) {
-    call_->OnLocalSsrcUpdated(kv.second->stream(), ssrc);
-  }
 }
 
 // Not implemented.
@@ -2615,37 +2582,17 @@ void WebRtcVoiceReceiveChannel::SetFrameDecryptor(
   }
 }
 
-void WebRtcVoiceReceiveChannel::OnPacketReceived(
-    const RtpPacketReceived& packet) {
+void WebRtcVoiceReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
 
-  // TODO(bugs.webrtc.org/11993): This code is very similar to what
-  // WebRtcVideoChannel::OnPacketReceived does. For maintainability and
-  // consistency it would be good to move the interaction with
-  // call_->Receiver() to a common implementation and provide a callback on
-  // the worker thread for the exception case (DELIVERY_UNKNOWN_SSRC) and
-  // how retry is attempted.
-  worker_thread_->PostTask(
-      SafeTask(task_safety_.flag(), [this, packet = packet]() mutable {
-        RTC_DCHECK_RUN_ON(worker_thread_);
+  if (!packet.arrival_time().IsFinite()) {
+    packet.set_arrival_time(env_.clock().CurrentTime());
+  }
 
-        // TODO(bugs.webrtc.org/7135): extensions in `packet` is currently set
-        // in RtpTransport and does not necessarily include extensions specific
-        // to this channel/MID. Also see comment in
-        // BaseChannel::MaybeUpdateDemuxerAndRtpExtensions_w.
-        // It would likely be good if extensions where merged per BUNDLE and
-        // applied directly in RtpTransport::DemuxPacket;
-        packet.IdentifyExtensions(recv_rtp_extension_map_);
-        if (!packet.arrival_time().IsFinite()) {
-          packet.set_arrival_time(env_.clock().CurrentTime());
-        }
-
-        call_->Receiver()->DeliverRtpPacket(
-            MediaType::AUDIO, std::move(packet),
-            absl::bind_front(
-                &WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream,
-                this));
-      }));
+  call_->Receiver()->DeliverRtpPacket(
+      MediaType::AUDIO, std::move(packet),
+      absl::bind_front(
+          &WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream, this));
 }
 
 bool WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream(

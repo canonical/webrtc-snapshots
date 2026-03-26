@@ -7,12 +7,63 @@ See http://dev.chromium.org/developers/how-tos/depottools/presubmit-scripts
 for more details on the presubmit API built into gcl.
 """
 
+import os
+import sys
+from pathlib import Path
+from typing import Iterable
+
+# PRESUBMIT infrastructure doesn't guarantee that the cwd() will be on
+# path requiring manual path manipulation to call setup_modules.
+# TODO(crbug.com/482274154): Consider using subprocesses to run actual
+#                            test as recommended by presubmit docs:
+# https://www.chromium.org/developers/how-tos/depottools/presubmit-scripts/
+sys.path.append('.')
+import setup_modules
+
+sys.path.remove('.')
+
+import chromium_src.tools.metrics.python_support.tests_helpers as tests_helpers
+import chromium_src.tools.metrics.python_support.mypy_helpers as mypy_helpers
+import chromium_src.tools.metrics.python_support.script_checker as script_checker
+import chromium_src.tools.metrics.python_support.dependency_solver as dependency_solver
+
 UKM_XML = 'ukm.xml'
 ENUMS_XML = 'enums.xml'
 
 
+_FILES_MISSING_IN_BUILD_GN_ERROR_TEMPLATE = """
+There are test files that are not listed in tools/metrics/BUILD.gn
+metrics_python_tests rule. Those test will not be run by CI.
+Please add the missing files to BUILD.gn:
+{missing_files_list}
+"""
+
+
+def _ThisDirPath(input_api) -> Path:
+  return Path(input_api.PresubmitLocalPath())
+
+
+def _ChromiumSrcPath(input_api) -> Path:
+  return _ThisDirPath(input_api).joinpath('..').joinpath('..').resolve()
+
+
+def _RunSelectedTests(input_api, output_api,
+                      test_scripts: Iterable[tests_helpers.TestableScript]):
+  """Executes the tests_scripts using typ"""
+  test_to_run_list = "\n * ".join([''] +
+                                  [str(t.file_path) for t in test_scripts])
+  print(f"Executing following tests in tools/metrics: {test_to_run_list}")
+  return input_api.RunTests([
+      input_api.Command(name=t.file_path,
+                        cmd=t.cmd,
+                        kwargs={'cwd': _ChromiumSrcPath(input_api)},
+                        message=output_api.PresubmitError) for t in test_scripts
+  ])
+
 def CheckChange(input_api, output_api):
   """Checks that ukm/ukm.xml is validated on changes to histograms/enums.xml"""
+  problems = []
+
   absolute_paths_of_affected_files = [
       f.AbsoluteLocalPath() for f in input_api.AffectedFiles()
   ]
@@ -21,10 +72,49 @@ def CheckChange(input_api, output_api):
       input_api.basename(p) == UKM_XML for p in absolute_paths_of_affected_files
   ])
 
+  py_or_build_modified = any([(input_api.basename(p).endswith(".py")
+                               or input_api.basename(p) == "BUILD.gn")
+                              for p in absolute_paths_of_affected_files])
+
+  if py_or_build_modified:
+    missing_files = tests_helpers.validate_gn_sources('metrics_python_tests')
+    if missing_files:
+      files_formatted_for_build_gn = [
+          f'   "//{f}",' for f in sorted(missing_files)
+      ]
+      missing_files_list = "\n".join(files_formatted_for_build_gn)
+      problems.append(output_api.PresubmitError(
+        _FILES_MISSING_IN_BUILD_GN_ERROR_TEMPLATE \
+           .format(missing_files_list=missing_files_list)))
+
+  if py_or_build_modified:
+    my_py_issues = mypy_helpers.run_mypy_and_filter_irrelevant(
+        input_api.PresubmitLocalPath())
+    problems.extend(output_api.PresubmitError(i) for i in my_py_issues)
+
+  deps_graph = dependency_solver.scan_directory_dependencies(
+      input_api.PresubmitLocalPath(),
+      report_relative_to=_ChromiumSrcPath(input_api))
+  scripts_to_test = tests_helpers.get_affected_testable_scripts(
+      set(Path(p) for p in absolute_paths_of_affected_files), deps_graph)
+  if scripts_to_test:
+    print(f"Running {len(scripts_to_test)} affected scripts to check them.")
+    commands_failed = script_checker.check_scripts(
+        scripts_to_test, cwd=_ChromiumSrcPath(input_api))
+    problems.extend([
+        output_api.PresubmitError(res.error_message())
+        for res in commands_failed
+    ])
+
+  tests_to_run = tests_helpers.get_affected_tests(
+      [Path(p) for p in absolute_paths_of_affected_files], deps_graph)
+  if tests_to_run:
+    problems.extend(_RunSelectedTests(input_api, output_api, tests_to_run))
+
   # Early return if the ukm file is changed, then the presubmit script in the
   # ukm directory would run and report the errors.
   if ukm_xml_modified:
-    return []
+    return problems
 
   enums_changed = any([
       input_api.basename(p) == ENUMS_XML
@@ -34,7 +124,7 @@ def CheckChange(input_api, output_api):
   # This check only applies to changes to enums.xml, so if no enums are changed,
   # then there is nothing to check and we return early with no errors.
   if not enums_changed:
-    return []
+    return problems
 
   cwd = input_api.os_path.dirname(input_api.PresubmitLocalPath())
   args = [
@@ -44,14 +134,13 @@ def CheckChange(input_api, output_api):
   exit_code = input_api.subprocess.call(args, cwd=cwd)
 
   if exit_code != 0:
-    return [
+    problems.append(
         output_api.PresubmitError(
             '%s does not pass format validation; run '
             '%s/ukm/validate_format.py and fix the reported error(s) or '
-            'warning(s).' % (UKM_XML, input_api.PresubmitLocalPath())),
-    ]
+            'warning(s).' % (UKM_XML, input_api.PresubmitLocalPath())))
 
-  return []
+  return problems
 
 
 def CheckChangeOnUpload(input_api, output_api):

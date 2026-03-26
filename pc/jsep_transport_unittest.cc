@@ -15,6 +15,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -1172,7 +1173,7 @@ class JsepTransport2HeaderExtensionTest
     memcpy(rtp_packet_data, kPcmuFrameWithExtensions, rtp_len);
     // In order to be able to run this test function multiple times we can not
     // use the same sequence number twice. Increase the sequence number by one.
-    SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_data) + 2,
+    SetBE16(std::span<uint8_t>(rtp_packet_buffer).subspan(2),
             ++sequence_number_);
     CopyOnWriteBuffer rtp_packet(rtp_packet_data, rtp_len, packet_size);
 

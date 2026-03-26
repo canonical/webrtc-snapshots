@@ -122,6 +122,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
+#include "test/run_loop.h"
 #include "test/time_controller/simulated_time_controller.h"
 #include "video/config/encoder_stream_factory.h"
 #include "video/config/simulcast.h"
@@ -2749,11 +2750,6 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
     receive_channel_ =
         engine_->CreateReceiveChannel(env_, fake_call_.get(), GetMediaConfig(),
                                       VideoOptions(), CryptoOptions());
-    send_channel_->SetSsrcListChangedCallback(
-        [receive_channel =
-             receive_channel_.get()](const std::set<uint32_t>& choices) {
-          receive_channel->ChooseReceiverReportSsrc(choices);
-        });
     send_channel_->OnReadyToSend(true);
     receive_channel_->SetReceive(true);
     last_ssrc_ = 123;
@@ -3358,69 +3354,22 @@ TEST_F(WebRtcVideoChannelTest,
                RtpExtension::kTimestampOffsetUri);
 }
 
-TEST_F(WebRtcVideoChannelTest, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
-  const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
-  for (int incorrect_id : kIncorrectIds) {
-    send_parameters_.extensions.push_back(
-        RtpExtension(RtpExtension::kTimestampOffsetUri, incorrect_id));
-    EXPECT_FALSE(send_channel_->SetSenderParameters(send_parameters_))
-        << "Bad extension id '" << incorrect_id << "' accepted.";
-  }
-}
 
-TEST_F(WebRtcVideoChannelTest, SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
-  const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
-  for (int incorrect_id : kIncorrectIds) {
-    recv_parameters_.extensions.push_back(
-        RtpExtension(RtpExtension::kTimestampOffsetUri, incorrect_id));
-    EXPECT_FALSE(receive_channel_->SetReceiverParameters(recv_parameters_))
-        << "Bad extension id '" << incorrect_id << "' accepted.";
-  }
-}
-
-TEST_F(WebRtcVideoChannelTest, SetSendRtpHeaderExtensionsRejectsDuplicateIds) {
-  const int id = 1;
-  send_parameters_.extensions.push_back(
-      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
-  send_parameters_.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTimeUri, id));
-  EXPECT_FALSE(send_channel_->SetSenderParameters(send_parameters_));
-
-  // Duplicate entries are also not supported.
-  send_parameters_.extensions.clear();
-  send_parameters_.extensions.push_back(
-      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
-  send_parameters_.extensions.push_back(send_parameters_.extensions.back());
-  EXPECT_FALSE(send_channel_->SetSenderParameters(send_parameters_));
-}
-
-TEST_F(WebRtcVideoChannelTest, SetRecvRtpHeaderExtensionsRejectsDuplicateIds) {
-  const int id = 1;
-  recv_parameters_.extensions.push_back(
-      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
-  recv_parameters_.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTimeUri, id));
-  EXPECT_FALSE(receive_channel_->SetReceiverParameters(recv_parameters_));
-
-  // Duplicate entries are also not supported.
-  recv_parameters_.extensions.clear();
-  recv_parameters_.extensions.push_back(
-      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
-  recv_parameters_.extensions.push_back(recv_parameters_.extensions.back());
-  EXPECT_FALSE(receive_channel_->SetReceiverParameters(recv_parameters_));
-}
 
 TEST_F(WebRtcVideoChannelTest, OnPacketReceivedIdentifiesExtensions) {
   VideoReceiverParameters parameters = recv_parameters_;
   parameters.extensions.push_back(
       RtpExtension(RtpExtension::kVideoRotationUri, /*id=*/1));
   ASSERT_TRUE(receive_channel_->SetReceiverParameters(parameters));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
   RtpHeaderExtensionMap extension_map(parameters.extensions);
   RtpPacketReceived reference_packet(&extension_map);
   reference_packet.SetExtension<VideoOrientation>(
       VideoRotation::kVideoRotation_270);
   // Create a packet without the extension map but with the same content.
-  RtpPacketReceived received_packet;
+  // We need to parse it using the extension map to identify extensions properly
+  // since RtpTransport is effectively skipped in this test.
+  RtpPacketReceived received_packet(&extension_map);
   ASSERT_TRUE(received_packet.Parse(reference_packet.Buffer()));
 
   receive_channel_->OnPacketReceived(received_packet);
@@ -4751,8 +4700,6 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetRecvCodecsWithFec) {
   const FakeVideoReceiveStream* video_stream = video_streams.front();
   const VideoReceiveStreamInterface::Config& video_stream_config =
       video_stream->GetConfig();
-  EXPECT_EQ(video_stream_config.rtp.local_ssrc,
-            flexfec_stream_config.local_ssrc);
   EXPECT_EQ(video_stream_config.rtp.rtcp_mode, flexfec_stream_config.rtcp_mode);
   EXPECT_EQ(video_stream_config.rtcp_send_transport,
             flexfec_stream_config.rtcp_send_transport);
@@ -5340,6 +5287,7 @@ TEST_F(WebRtcVideoChannelTest, DuplicateUlpfecCodecIsDropped) {
   parameters.codecs.push_back(
       CreateVideoCodec(kSecondUlpfecPayloadType, kUlpfecCodecName));
   ASSERT_TRUE(receive_channel_->SetReceiverParameters(parameters));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
 
   FakeVideoReceiveStream* recv_stream = AddRecvStream();
   EXPECT_EQ(kFirstUlpfecPayloadType,
@@ -5357,6 +5305,7 @@ TEST_F(WebRtcVideoChannelTest, DuplicateRedCodecIsDropped) {
   parameters.codecs.push_back(
       CreateVideoCodec(kSecondRedPayloadType, kRedCodecName));
   ASSERT_TRUE(receive_channel_->SetReceiverParameters(parameters));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
 
   FakeVideoReceiveStream* recv_stream = AddRecvStream();
   EXPECT_EQ(kFirstRedPayloadType,
@@ -5670,6 +5619,54 @@ TEST_F(WebRtcVideoChannelTest, SendStreamNotSendingByDefault) {
 
 TEST_F(WebRtcVideoChannelTest, ReceiveStreamReceivingByDefault) {
   EXPECT_TRUE(AddRecvStream()->IsReceiving());
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       SetSendParametersRecreatesStreamAndClearsAdaptationStats) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  // Set cumulative stats that should be retained.
+  stats.number_of_cpu_adapt_changes = 2;
+  stats.number_of_quality_adapt_changes = 3;
+  stats.quality_limitation_durations_ms[webrtc::QualityLimitationReason::kCpu] =
+      100;
+
+  // Set ephemeral flags that should be cleared by RecreateWebRtcStream.
+  stats.bw_limited_resolution = true;
+  stats.bw_limited_framerate = true;
+  stats.cpu_limited_resolution = true;
+  stats.cpu_limited_framerate = true;
+  stats.quality_limitation_reason = webrtc::QualityLimitationReason::kBandwidth;
+
+  stream->SetStats(stats);
+
+  // Trigger stream recreation by changing construction-time parameters.
+  EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
+  VideoSenderParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  parameters.extmap_allow_mixed = true;  // This forces recreation.
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(2, fake_call_->GetNumCreatedSendStreams());
+
+  ASSERT_EQ(1U, fake_call_->GetVideoSendStreams().size());
+  FakeVideoSendStream* new_stream = fake_call_->GetVideoSendStreams()[0];
+
+  webrtc::VideoSendStream::Stats new_stats =
+      static_cast<webrtc::VideoSendStream*>(new_stream)->GetStats();
+
+  // Check that ephemeral flags were cleared.
+  EXPECT_FALSE(new_stats.bw_limited_resolution);
+  EXPECT_FALSE(new_stats.bw_limited_framerate);
+  EXPECT_FALSE(new_stats.cpu_limited_resolution);
+  EXPECT_FALSE(new_stats.cpu_limited_framerate);
+  EXPECT_EQ(webrtc::QualityLimitationReason::kNone,
+            new_stats.quality_limitation_reason);
+
+  // Check that cumulative stats were retained.
+  EXPECT_EQ(2, new_stats.number_of_cpu_adapt_changes);
+  EXPECT_EQ(3, new_stats.number_of_quality_adapt_changes);
+  EXPECT_EQ(100, new_stats.quality_limitation_durations_ms
+                     [webrtc::QualityLimitationReason::kCpu]);
 }
 
 TEST_F(WebRtcVideoChannelTest, SetSend) {
@@ -7672,6 +7669,7 @@ TEST_F(WebRtcVideoChannelTest,
   VideoReceiverParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP8"));
   ASSERT_TRUE(receive_channel_->SetReceiverParameters(parameters));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
 
   // No streams signaled and no packets received, so we should not have any
   // stream objects created yet.
@@ -9585,56 +9583,6 @@ TEST_F(WebRtcVideoChannelTest,
   EXPECT_TRUE(receive_channel_->AddRecvStream(params));
 }
 
-void WebRtcVideoChannelTest::TestReceiverLocalSsrcConfiguration(
-    bool receiver_first) {
-  EXPECT_TRUE(send_channel_->SetSenderParameters(send_parameters_));
-
-  const uint32_t kSenderSsrc = 0xC0FFEE;
-  const uint32_t kSecondSenderSsrc = 0xBADCAFE;
-  const uint32_t kReceiverSsrc = 0x4711;
-  const uint32_t kExpectedDefaultReceiverSsrc = 1;
-
-  if (receiver_first) {
-    AddRecvStream(StreamParams::CreateLegacy(kReceiverSsrc));
-    std::vector<FakeVideoReceiveStream*> receive_streams =
-        fake_call_->GetVideoReceiveStreams();
-    ASSERT_EQ(1u, receive_streams.size());
-    // Default local SSRC when we have no sender.
-    EXPECT_EQ(kExpectedDefaultReceiverSsrc,
-              receive_streams[0]->GetConfig().rtp.local_ssrc);
-  }
-  AddSendStream(StreamParams::CreateLegacy(kSenderSsrc));
-  if (!receiver_first)
-    AddRecvStream(StreamParams::CreateLegacy(kReceiverSsrc));
-  std::vector<FakeVideoReceiveStream*> receive_streams =
-      fake_call_->GetVideoReceiveStreams();
-  ASSERT_EQ(1u, receive_streams.size());
-  EXPECT_EQ(kSenderSsrc, receive_streams[0]->GetConfig().rtp.local_ssrc);
-
-  // Removing first sender should fall back to another (in this case the second)
-  // local send stream's SSRC.
-  AddSendStream(StreamParams::CreateLegacy(kSecondSenderSsrc));
-  ASSERT_TRUE(send_channel_->RemoveSendStream(kSenderSsrc));
-  receive_streams = fake_call_->GetVideoReceiveStreams();
-  ASSERT_EQ(1u, receive_streams.size());
-  EXPECT_EQ(kSecondSenderSsrc, receive_streams[0]->GetConfig().rtp.local_ssrc);
-
-  // Removing the last sender should fall back to default local SSRC.
-  ASSERT_TRUE(send_channel_->RemoveSendStream(kSecondSenderSsrc));
-  receive_streams = fake_call_->GetVideoReceiveStreams();
-  ASSERT_EQ(1u, receive_streams.size());
-  EXPECT_EQ(kExpectedDefaultReceiverSsrc,
-            receive_streams[0]->GetConfig().rtp.local_ssrc);
-}
-
-TEST_F(WebRtcVideoChannelTest, ConfiguresLocalSsrc) {
-  TestReceiverLocalSsrcConfiguration(false);
-}
-
-TEST_F(WebRtcVideoChannelTest, ConfiguresLocalSsrcOnExistingReceivers) {
-  TestReceiverLocalSsrcConfiguration(true);
-}
-
 TEST_F(WebRtcVideoChannelTest, Simulcast_QualityScalingNotAllowed) {
   FakeVideoSendStream* stream = SetUpSimulcast(true, /*with_rtx=*/true);
   EXPECT_FALSE(stream->GetEncoderConfig().is_quality_scaling_allowed);
@@ -9760,7 +9708,8 @@ TEST_F(WebRtcVideoChannelTest, GenerateKeyFrameSimulcast) {
 class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
  public:
   WebRtcVideoChannelSimulcastTest()
-      : env_(CreateTestEnvironment()),
+      : run_loop_(),
+        env_(CreateTestEnvironment()),
         fake_call_(env_),
         encoder_factory_(new FakeWebRtcVideoEncoderFactory),
         decoder_factory_(new FakeWebRtcVideoDecoderFactory),
@@ -9926,6 +9875,7 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
     return streams[streams.size() - 1];
   }
 
+  test::RunLoop run_loop_;
   Environment env_;
   FakeCall fake_call_;
   FakeWebRtcVideoEncoderFactory* encoder_factory_;

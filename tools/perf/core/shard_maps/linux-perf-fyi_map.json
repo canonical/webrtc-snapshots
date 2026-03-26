@@ -4,9 +4,6 @@
             "speedometer2": {
                 "abridged": false
             },
-            "speedometer2-minorms": {
-                "abridged": false
-            },
             "speedometer3": {
                 "abridged": false
             }
@@ -20,16 +17,18 @@
                 "crossbench_name": "jetstream_2",
                 "arguments": []
             },
+            "jetstream3-turbolev_future.crossbench": {
+                "crossbench_name": "jetstream_3",
+                "arguments": [
+                    "--js-flags=--turbolev-future"
+                ]
+            },
             "jetstream3.crossbench": {
                 "crossbench_name": "jetstream_3",
                 "arguments": []
             },
             "motionmark1.3.crossbench": {
                 "crossbench_name": "motionmark_1.3",
-                "arguments": []
-            },
-            "speedometer2.crossbench": {
-                "crossbench_name": "speedometer_2",
                 "arguments": []
             },
             "speedometer3.crossbench": {
@@ -39,11 +38,11 @@
         }
     },
     "extra_infos": {
-        "num_stories": 9,
-        "predicted_min_shard_time": 1027.0,
+        "num_stories": 8,
+        "predicted_min_shard_time": 1040,
         "predicted_min_shard_index": 0,
-        "predicted_max_shard_time": 1027.0,
+        "predicted_max_shard_time": 1040,
         "predicted_max_shard_index": 0,
-        "shard #0": 1027.0
+        "shard #0": 1040
     }
 }

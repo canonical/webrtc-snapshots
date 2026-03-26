@@ -179,6 +179,7 @@ class Speedometer31(_Speedometer3):
                 documentation_url='https://github.com/WebKit/Speedometer')
 class Speedometer3(Speedometer31):
   """The latest version of the Speedometer 3.x benchmark."""
+
   SCHEDULED = True
 
   @classmethod
@@ -206,22 +207,6 @@ class Speedometer3Future(Speedometer3):
     options.AppendExtraBrowserArgs('--enable-features=V8VmFuture')
 
 
-@benchmark.Info(emails=['omerkatz@chromium.org'],
-                component='Blink>JavaScript>GarbageCollection',
-                documentation_url='https://github.com/WebKit/Speedometer')
-class Speedometer3MinorMS(Speedometer3):
-  """The latest Speedometer 3.x benchmark without the MinorMS flag.
-
-  Shows the performance of Scavenger young generation GC in V8.
-  """
-  @classmethod
-  def Name(cls):
-    return 'speedometer3-minorms'
-
-  def SetExtraBrowserOptions(self, options):
-    options.AppendExtraBrowserArgs('--js-flags=--minor-ms')
-
-
 @benchmark.Info(emails=['rasikan@google.com', 'wnwen@google.com'],
                 component='Blink>JavaScript',
                 documentation_url='https://github.com/WebKit/Speedometer')
@@ -230,6 +215,8 @@ class Speedometer3Predictable(Speedometer3):
 
   This should (hopefully) help reduce variance in the score.
   """
+
+  SCHEDULED = False
 
   @classmethod
   def Name(cls):

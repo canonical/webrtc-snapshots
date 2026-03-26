@@ -457,6 +457,7 @@ rtc_library("turn_utils") {
     "base/turn_utils.h",
   ]
   deps = [
+    "../api:array_view",
     "../api/transport:stun_types",
     "../rtc_base:byte_order",
     "../rtc_base/system:rtc_export",
@@ -600,6 +601,7 @@ rtc_library("rtc_audio_video") {
     "../api:frame_transformer_interface",
     "../api:make_ref_counted",
     "../api:media_stream_interface",
+    "../api:payload_type",
     "../api:priority",
     "../api:rtc_error",
     "../api:rtp_headers",
@@ -640,6 +642,7 @@ rtc_library("rtc_audio_video") {
     "../call:rtp_interfaces",
     "../call:video_receive_stream_api",
     "../call:video_send_stream_api",
+    "../common_video",
     "../common_video:frame_counts",
     "../modules/async_audio_processing",
     "../modules/audio_mixer:audio_mixer_impl",
