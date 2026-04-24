@@ -13,7 +13,7 @@
 # file which should be imported at the top of each script, like so:
 #
 # ```
-# import setup_modules
+# import setup_modules  # pylint: disable=unused-import
 #
 # # Example import afterwards: Importing src/tools/metrics/common/models.py
 # import chrome_src.tools.metrics.common.models as models
@@ -26,13 +26,7 @@ import sys
 
 _CHROMIUM_SRC_RELATIVE_PATH = '../..'
 
-# When script is run in the context of PRESUBMIT check the
-# __file__ is not set, but we can use cwd() as an equivalent
-# due to how the script is run by PRESUBMIT instrumentation.
-if hasattr(sys.modules[__name__], '__file__'):
-  base_path = Path(os.path.dirname(os.path.abspath(__file__)))
-else:
-  base_path = Path(os.getcwd())
+base_path = Path(os.path.dirname(os.path.abspath(__file__)))
 
 # Add src/tools/metrics to path temporarily to import the setup_modules_lib.
 chromium_src_path = base_path.joinpath(_CHROMIUM_SRC_RELATIVE_PATH).resolve()

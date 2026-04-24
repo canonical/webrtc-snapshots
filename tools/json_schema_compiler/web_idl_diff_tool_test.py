@@ -51,6 +51,7 @@ class WebIdlDiffToolTest(unittest.TestCase):
         ('web_accessible_resources_mv2.idl',
          'web_accessible_resources_mv2.webidl'),
         ('automation_internal.idl', 'automation_internal.webidl'),
+        ('automation.idl', 'automation.webidl'),
         ('feedback_private.idl', 'feedback_private.webidl'),
         ('media_perception_private.idl', 'media_perception_private.webidl'),
         ('mojo_private.idl', 'mojo_private.webidl'),
@@ -65,6 +66,8 @@ class WebIdlDiffToolTest(unittest.TestCase):
         ('printer_provider.idl', 'printer_provider.webidl'),
         ('printer_provider_internal.idl', 'printer_provider_internal.webidl'),
         ('scripts_internal.idl', 'scripts_internal.webidl'),
+        ('user_scripts.idl', 'user_scripts.webidl'),
+        ('app_window.idl', 'app_window.webidl'),
     ]
     # LoadAndReturnUnifiedDiff expects file paths relative to the repo root.
     converted_schema_path = 'tools/json_schema_compiler/test/converted_schemas/'

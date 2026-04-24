@@ -3,11 +3,11 @@
 # found in the LICENSE file.
 
 import logging
-from parameterized import parameterized  # pylint: disable=import-error
+from parameterized import parameterized  # type: ignore # pylint: disable=import-error
 import unittest
 import xml.dom.minidom
 
-import setup_modules
+import setup_modules  # pylint: disable=unused-import
 
 import chromium_src.tools.metrics.histograms.extract_histograms as extract_histograms
 import chromium_src.tools.metrics.histograms.histogram_configuration_model as histogram_configuration_model

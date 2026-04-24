@@ -24,6 +24,7 @@ BookmarkEditorViewBrowserTestMoveDialog.*
 BookmarkEditorViewBrowserTestWithAccountBookmarks.*
 BrowserViewLayoutDelegateImplBrowsertest.Screenshot*
 BrowserViewScrimPixelTest.*
+BrowserViewTabbedLayoutImplUiTest.*
 BubbleFrameViewBrowserTest.*
 BubbleSignInPromoInteractiveUITest.*
 CaptionBubbleBrowserTest.*
@@ -39,6 +40,7 @@ CookieControlsBubbleViewPixelTest.*
 *CreatePopupRowViewWithNoUserEducationRateLimitTest.*
 CryptoModulePasswordDialogTest.*
 *DataControlsDialogUiTest.*
+DashboardKombuchaInteractiveUITest.*
 DeepScanningFailureModalDialogTest.*
 DiscountBubbleViewBrowserTest.*
 DiceMigrationServicePixelBrowserTest.*
@@ -81,7 +83,7 @@ IsolatedWebAppInstallerViewUiPixelTest.*
 JavascriptOptimizerUiTest.*
 *ContextualTasks*PixelTest*
 *LensSidePanel*PixelTest*
-LHSIndicatorsUiBrowserTest.*
+LHSIndicatorsInteractiveUITest.*
 LocalCardMigrationBrowserUiTest.*
 *MemorySaverChipInteractiveTest.*
 *MemorySaverFaviconTreatmentTest.*
@@ -89,7 +91,7 @@ LocalCardMigrationBrowserUiTest.*
 Mv2DeprecationReEnableDialogBrowserTest.*
 NewTabPageTest.*
 NtpPromoVisualUiTest.*
-NtpRealboxUiTest.*
+NtpRealboxUiScreenshotTest.*
 OfferNotificationBubbleViewPixelBrowserTest.*
 OutdatedUpgradeBubbleTest.*
 PageActionPixelIconsHiddenTest.*
@@ -117,6 +119,9 @@ PasswordBubbleInteractiveUiTest.NavigateToManagementDetailsViewWithMoveFooterVis
 PasswordReuseModalWarningTest.*
 PaymentsWindowUserConsentDialogBrowserTest*
 PerformanceInterventionInteractiveTest.InterventionToolbarButton
+PermissionChipKombuchaInteractiveUITest.PermissionChipClickTest
+PermissionChipKombuchaInteractiveUITest.QuietPermissionChipClickTest
+PermissionChipKombuchaInteractiveUITest.QuietestPermissionChipClickTest
 PermissionRequestChipBrowserUiTest.*
 *PermissionPromptBubble*View*BrowserTest.InvokeUi_*
 PermissionPromptPreviewBrowserTest.InvokeUi_*
@@ -137,6 +142,7 @@ RecentActivityBubbleDialogViewInteractiveUiTest.*
 RelaunchRecommendedBubbleViewDialogTest.*
 RelaunchRequiredDialogViewDialogTest.*
 ReopenTabPromoControllerDialogBrowserTest.*
+ReportUnsafeSiteDialogInteractiveUiTest.ExcludeScreenshotPixelTest
 SafetyTipPageInfoBubbleViewDialogTest.*
 ScreenCaptureNotificationUiBrowserTest.*
 SearchEngineChoiceUIPixelTest.*
@@ -147,7 +153,8 @@ SettingsOverriddenExplicitChoiceDialogInteractiveUiTest.*
 *SharedPasswordsNotificationBubbleInteractiveUiTest.*
 SharedTabGroupInteractiveUiTest.SharedTabGroupIn*
 SingleBookmarkUploadDialogPixelTest.InvokeUi
-*SkillsPageInteractiveUITest*
+SearchAIModeSignInPromoViewPixelTest.*
+*SkillsPageScreenshotInteractiveUITest.*
 SplitTabButtonInteractiveTest.ButtonUpdatesOnSplit
 SyncConfirmationUIDialogPixelTest.*
 SyncConfirmationUIWindowPixelTest.*

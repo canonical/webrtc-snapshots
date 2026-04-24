@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from parameterized import parameterized
+from parameterized import parameterized  # type: ignore
 from xml.dom import minidom
 import unittest
 
-import setup_modules
+import setup_modules  # pylint: disable=unused-import
 
 import chromium_src.tools.metrics.histograms.split_xml as split_xml
 

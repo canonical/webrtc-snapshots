@@ -15,10 +15,10 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
@@ -141,7 +141,7 @@ void OutstandingData::AckChunk(AckInfo& ack_info,
 
 OutstandingData::AckInfo OutstandingData::HandleSack(
     UnwrappedTSN cumulative_tsn_ack,
-    webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+    std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
     bool is_in_fast_recovery) {
   bool cumulative_tsn_ack_advanced =
       cumulative_tsn_ack > last_cumulative_tsn_ack_;
@@ -205,7 +205,7 @@ void OutstandingData::RemoveAcked(UnwrappedTSN cumulative_tsn_ack,
 
 void OutstandingData::AckGapBlocks(
     UnwrappedTSN cumulative_tsn_ack,
-    webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+    std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
     AckInfo& ack_info) {
   // Mark all non-gaps as ACKED (but they can't be removed) as (from RFC)
   // "SCTP considers the information carried in the Gap Ack Blocks in the
@@ -226,7 +226,7 @@ void OutstandingData::AckGapBlocks(
 
 void OutstandingData::NackBetweenAckBlocks(
     UnwrappedTSN cumulative_tsn_ack,
-    webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+    std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
     bool is_in_fast_recovery,
     bool cumulative_tsn_acked_advanced,
     OutstandingData::AckInfo& ack_info) {
@@ -256,7 +256,8 @@ void OutstandingData::NackBetweenAckBlocks(
     UnwrappedTSN cur_block_first_acked =
         UnwrappedTSN::AddTo(cumulative_tsn_ack, block.start);
     for (UnwrappedTSN tsn = prev_block_last_acked.next_value();
-         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack;
+         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack &&
+         tsn < next_tsn();
          tsn = tsn.next_value()) {
       ack_info.has_packet_loss |=
           NackItem(tsn, /*retransmit_now=*/false,

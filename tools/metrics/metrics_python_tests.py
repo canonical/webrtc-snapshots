@@ -7,7 +7,7 @@ import contextlib
 import os
 import sys
 
-import setup_modules
+import setup_modules  # pylint: disable=unused-import
 
 import typ
 import chromium_src.tools.metrics.python_support.tests_helpers as tests_helpers
@@ -38,7 +38,7 @@ def main():
   # Hide LUCI_CONTEXT from typ so it doesn't try to upload granular test
   # results to ResultSink. typ's hierarchical test IDs violate the presubmit
   # ResultDB schema, causing HTTP 400s and crashing the test run.
-  # TODO(crbug.com/482274154): Reconsider usage of typ as a runner.
+  # TODO(crbug.com/488365101): Reconsider usage of typ as a runner.
   with _disable_luci_context():
     return typ.main(
         tests=filtered_tests_files_paths,

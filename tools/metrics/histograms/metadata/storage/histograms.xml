@@ -27,14 +27,23 @@ chromium-metrics-reviews@google.com.
   <variant name="OnDisk" summary="on-disk database"/>
 </variants>
 
+<variants name="DomStorageRecoveryReason">
+  <variant name="CommitErrorThresholdExceeded"/>
+  <variant name="MetadataReadFailure"/>
+  <variant name="OpenFailure"/>
+</variants>
+
 <variants name="DomStorageType">
   <variant name="LocalStorage" summary="local storage"/>
   <variant name="SessionStorage" summary="session storage"/>
 </variants>
 
 <variants name="IndexedDBBackingStoreType">
-  <variant name="InMemory"/>
-  <variant name="OnDisk"/>
+  <variant name="Experimental"
+      summary="experimental (belongs to the treatment or control group of an
+               experiment targeting on-disk backing stores)"/>
+  <variant name="InMemory" summary="in-memory"/>
+  <variant name="OnDisk" summary="on-disk"/>
 </variants>
 
 <variants name="IndexedDBTransactionCount">
@@ -181,7 +190,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="API.StorageAccessHeader.StorageAccessStatusOutcome"
-    enum="StorageAccessStatusOutcome" expires_after="2026-05-24">
+    enum="StorageAccessStatusOutcome" expires_after="2026-09-20">
   <owner>sledoux@chromium.org</owner>
   <owner>cfredric@chromium.org</owner>
   <summary>
@@ -301,6 +310,7 @@ chromium-metrics-reviews@google.com.
     <variant name="BeginTransaction"/>
     <variant name="ChangeDatabaseVersion"/>
     <variant name="ClearObjectStore"/>
+    <variant name="CloseBackingStore"/>
     <variant name="CommitTransaction"/>
     <variant name="ContinueCursor"/>
     <variant name="CountRecords"/>
@@ -460,6 +470,35 @@ chromium-metrics-reviews@google.com.
   <token key="Mode" variants="IndexedDBTransactionMode"/>
 </histogram>
 
+<histogram
+    name="IndexedDB.DatabaseConnectionOpenResult.{IndexedDBBackingStoreType}"
+    enum="DatabaseConnectionOpenResult" expires_after="2027-03-01">
+  <owner>leimy@chromium.org</owner>
+  <owner>evanstade@microsoft.com</owner>
+  <owner>abhishek.shanthkumar@microsoft.com</owner>
+  <owner>chrome-owp-storage@google.com</owner>
+  <summary>
+    The outcome of an IDBFactory::Open request from the browser process's
+    perspective for an {IndexedDBBackingStoreType} backing store. Logged once on
+    receipt of the request and once at the terminal outcome, which is the point
+    after which subsequent results of the request depend on the client's
+    response or on external factors such as the bucket being force-closed.
+  </summary>
+</histogram>
+
+<histogram name="IndexedDB.DeleteBucketDataSuccess.{IndexedDBBackingStoreType}"
+    enum="BooleanSuccess" expires_after="2026-10-01">
+  <owner>leimy@chromium.org</owner>
+  <owner>evanstade@microsoft.com</owner>
+  <owner>abhishek.shanthkumar@microsoft.com</owner>
+  <owner>chrome-owp-storage@google.com</owner>
+  <summary>
+    Whether deleting the on-disk data of a bucket with an
+    {IndexedDBBackingStoreType} backing store succeeded. Logged after the
+    attempt to delete on-disk files by a doomed bucket context instance.
+  </summary>
+</histogram>
+
 <histogram name="IndexedDB.FilePathLengthOverflow.{Engine}" units="characters"
     expires_after="2026-08-09">
   <owner>leimy@chromium.org</owner>
@@ -531,7 +570,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="IndexedDB.LargeValueReadResult" enum="FileErrorCode"
-    expires_after="2026-05-24">
+    expires_after="2026-09-06">
   <owner>leimy@chromium.org</owner>
   <owner>evanstade@microsoft.com</owner>
   <owner>chrome-owp-storage@google.com</owner>
@@ -978,7 +1017,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="IndexedDB.WrappedBlobLoadTime" units="ms"
-    expires_after="2026-07-12">
+    expires_after="2026-09-13">
   <owner>estade@chromium.org</owner>
   <owner>chrome-owp-storage@google.com</owner>
   <summary>
@@ -1074,7 +1113,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="LocalStorage.DatabaseOnDiskSizeKB" units="KB"
-    expires_after="2026-07-20">
+    expires_after="2026-09-20">
   <owner>fergal@chromium.org</owner>
   <owner>rahsin@microsoft.com</owner>
   <owner>chrome-owp-storage@google.com</owner>
@@ -1321,7 +1360,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Storage.ClearSiteDataHeader.Parameters"
-    enum="ClearSiteDataParameters" expires_after="2026-07-12">
+    enum="ClearSiteDataParameters" expires_after="2026-09-13">
   <owner>estade@chromium.org</owner>
   <owner>chrome-owp-storage@google.com</owner>
   <summary>
@@ -2491,7 +2530,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Storage.SharedStorage.PrivateAggregationConfig.HasMaxContributions"
-    enum="Boolean" expires_after="2026-07-26">
+    enum="Boolean" expires_after="M150">
   <owner>alexmt@chromium.org</owner>
   <owner>measurement-api-dev+metrics@google.com</owner>
   <summary>
@@ -2503,7 +2542,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Storage.SharedStorage.PrivateAggregationConfig.RequestedMaxContributions"
-    units="contributions" expires_after="2026-03-19">
+    units="contributions" expires_after="M150">
   <owner>alexmt@chromium.org</owner>
   <owner>measurement-api-dev+metrics@google.com</owner>
   <summary>
@@ -2515,7 +2554,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Storage.SharedStorage.Run.DataDeserialization.Time" units="ms"
-    expires_after="2026-07-12">
+    expires_after="2026-09-13">
   <owner>cammie@chromium.org</owner>
   <owner>yaoxia@chromium.org</owner>
   <owner>chrome-ads-histograms@google.com</owner>
@@ -2911,6 +2950,81 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Storage.{DomStorageType}.CommitErrorCountAtReset"
+    units="errors" expires_after="2027-03-09">
+  <owner>fergal@chromium.org</owner>
+  <owner>leimy@chromium.org</owner>
+  <owner>rahsin@microsoft.com</owner>
+  <owner>chrome-owp-storage@google.com</owner>
+  <summary>
+    Records the number of consecutive commit errors that accumulated before the
+    error counter was reset in {DomStorageType}. Emitted whenever the counter is
+    reset from a non-zero value, whether due to a subsequent successful commit
+    or an attempt to recover the database. These errors represent commits whose
+    data was silently lost without retry.
+  </summary>
+</histogram>
+
+<histogram
+    name="Storage.{DomStorageType}.Duration.{Operation}.{DomStorageBackingStoreLifetime}"
+    units="ms" expires_after="2027-02-28">
+  <owner>leimy@chromium.org</owner>
+  <owner>fergal@chromium.org</owner>
+  <owner>rahsin@microsoft.com</owner>
+  <owner>chrome-owp-storage@google.com</owner>
+  <summary>
+    Records the duration of {Operation} operations in {DomStorageType} using
+    {DomStorageBackingStoreLifetime} database. This helps compare latency
+    between the LevelDB and SQLite backends.
+  </summary>
+  <token key="Operation">
+    <variant name="GetAll"
+        summary="reading all key-value pairs for a storage area via the async
+                 ReadMapKeyValues round-trip"/>
+    <variant name="InitiateCommit"
+        summary="the end-to-end async commit round-trip from collecting
+                 pending map updates through the single UpdateMaps call to
+                 receiving the result callback"/>
+    <variant name="OpenDatabase"
+        summary="the end-to-end async open round-trip from initiating the
+                 DomStorageDatabase::Open call to receiving the result
+                 callback"/>
+  </token>
+</histogram>
+
+<histogram name="Storage.{DomStorageType}.Recovery.{DomStorageRecoveryReason}"
+    enum="DomStorageDatabaseRecoveryOutcome" expires_after="2027-02-24">
+  <owner>fergal@chromium.org</owner>
+  <owner>leimy@chromium.org</owner>
+  <owner>rahsin@microsoft.com</owner>
+  <owner>chrome-owp-storage@google.com</owner>
+  <summary>
+    Records the outcome of a database recovery attempt for {DomStorageType}.
+    Emitted once per recovery cycle when reaching a terminal state (successful
+    reconnection or gave up). To track ongoing instability, it is also emitted
+    each time the commit-error threshold is exceeded after a prior recovery
+    attempt, and when post-recovery errors occur but resolve via a successful
+    commit. The {DomStorageRecoveryReason} suffix indicates what initiated the
+    recovery.
+  </summary>
+</histogram>
+
+<histogram
+    name="Storage.{DomStorageType}.Recovery.{DomStorageRecoveryReason}.InMemory"
+    enum="BooleanSuccess" expires_after="2027-02-24">
+  <owner>fergal@chromium.org</owner>
+  <owner>leimy@chromium.org</owner>
+  <owner>rahsin@microsoft.com</owner>
+  <owner>chrome-owp-storage@google.com</owner>
+  <summary>
+    Records whether the database recovery attempt for {DomStorageType} succeeded
+    when the database was originally in-memory. True means recovery succeeded
+    (re-opened successfully), false means we gave up after attempting and
+    failing to reopen. {DomStorageRecoveryReason} indicates what initiated the
+    recovery.
+  </summary>
+</histogram>
+
 <histogram
     name="Storage.{DomStorageType}.{Operation}.{DomStorageBackingStoreLifetime}"
     enum="DomStorageDbStatusType" expires_after="2027-02-10">
@@ -2927,9 +3041,11 @@ chromium-metrics-reviews@google.com.
     clobbered.
   </summary>
   <token key="Operation">
+    <variant name="CleanUpStaleData"/>
     <variant name="CloneMap"/>
     <variant name="DeleteSessions"/>
     <variant name="DeleteStorageKeysFromSession"/>
+    <variant name="DestroyDatabase"/>
     <variant name="OpenDatabase"/>
     <variant name="PurgeOrigins"/>
     <variant name="PutMetadata"/>

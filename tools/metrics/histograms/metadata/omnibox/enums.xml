@@ -91,11 +91,6 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//components/omnibox/browser/android/java/src/org/chromium/components/omnibox/AutocompleteRequestType.java,//ios/chrome/browser/composebox/ui/composebox_metrics_recorder.h:AutocompleteRequestType)-->
 
-<enum name="BooleanNavigated">
-  <int value="0" label="Navigation did not occur"/>
-  <int value="1" label="Navigation occurred"/>
-</enum>
-
 <enum name="BooleanNonNull">
   <int value="0" label="Null"/>
   <int value="1" label="Non-null"/>
@@ -177,6 +172,17 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Served then not served"/>
   <int value="3" label="Served then served"/>
 </enum>
+
+<!-- LINT.IfChange(EntryPreservationReason) -->
+
+<enum name="EntryPreservationReason">
+  <int value="1" label="MatchesDefaultSearchProvider"/>
+  <int value="2" label="MatchesOtherDefaultSearchProvider"/>
+  <int value="3" label="NotSafeForAutoreplace"/>
+  <int value="4" label="NonPrepopulatedFromRegulatoryProgram"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/search_engines/util.cc:EntryPreservationReason) -->
 
 <!-- LINT.IfChange(FocusResultedInNavigationTypes) -->
 
@@ -384,6 +390,8 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/preloading/prefetch/search_prefetch/cache_alias_search_prefetch_url_loader.h:FallbackReason) -->
 
+<!-- LINT.IfChange(SearchPrefetchEligibilityReason) -->
+
 <enum name="SearchPrefetchEligibilityReason">
   <int value="0" label="Prefetch started"/>
   <int value="1" label="User disabled prefetch/preconnect"/>
@@ -397,6 +405,8 @@ chromium-metrics-reviews@google.com.
   <int value="9" label="SlowNetwork suppressed the prefetch"/>
 </enum>
 
+<!-- LINT.ThenChange(//chrome/browser/preloading/prefetch/search_prefetch/search_prefetch_service.h:SearchPrefetchEligibilityReason) -->
+
 <enum name="SearchPrefetchResponseDataReaderStatus">
   <int value="0" label="kCreated"/>
   <int value="1" label="kServingError"/>
@@ -404,6 +414,8 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="kCompleted"/>
   <int value="4" label="kCanceledByLoader"/>
 </enum>
+
+<!-- LINT.IfChange(SearchPrefetchServingReason) -->
 
 <enum name="SearchPrefetchServingReason">
   <int value="0" label="Served a prefetch response"/>
@@ -419,7 +431,10 @@ chromium-metrics-reviews@google.com.
   <int value="10"
       label="A prerender navigation request has taken this response away
              (Obsolete)."/>
+  <int value="11" label="Prefetch was not ready as it was in-flight."/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/browser/preloading/prefetch/search_prefetch/search_prefetch_service.h:SearchPrefetchServingReason) -->
 
 <enum name="SearchPrefetchStatus">
   <int value="0" label="Not started"/>
@@ -467,6 +482,9 @@ chromium-metrics-reviews@google.com.
   </int>
   <int value="8" label="kNotTriggeredOnPressNoSearchProviderOptIn">
     kNotTriggeredOnPressNoSearchProviderOptIn
+  </int>
+  <int value="9" label="kNotTriggeredThrottledByPrewarm">
+    kNotTriggeredThrottledByPrewarm
   </int>
 </enum>
 
