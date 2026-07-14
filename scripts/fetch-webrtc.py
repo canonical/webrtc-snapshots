@@ -12,7 +12,6 @@ import os
 import shutil
 import subprocess
 import sys
-import threading
 
 WEBRTC_URL = 'https://webrtc.googlesource.com/src'
 
@@ -46,6 +45,7 @@ EXTRA_TO_REMOVE = [
 ]
 
 MANIFEST = {}
+
 
 def git_repository_sync_is_disabled(git, directory):
   try:
@@ -155,8 +155,12 @@ def git_checkout_to_directory(git, repo, commithash, directory, shallow, verbose
 
 def parse_file_to_dict(path):
   dictionary = {}
+  helpers = (
+    "def Var(x): return vars[x]\n"
+    "def Str(x): return str(x)\n"
+  )
   with open(path) as f:
-    exec('def Var(x): return vars[x]\n' + f.read(), dictionary)
+    exec(helpers + f.read(), dictionary)
   return dictionary
 
 
@@ -252,7 +256,7 @@ def main(argv):
     gitrev = bs.decode('utf-8').rstrip('\n')
     timerev = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")
     version = "%s+%s" % (revision, timerev)
-    target_dir='libanbox-webrtc-%s' % version
+    target_dir = 'libanbox-webrtc-%s' % version
 
     sys.stdout.write('Creating archive ...\n')
     shutil.move(src_dir, target_dir)
