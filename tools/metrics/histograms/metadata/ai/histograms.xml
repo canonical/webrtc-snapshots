@@ -22,6 +22,21 @@ chromium-metrics-reviews@google.com.
 
 <histograms>
 
+<variants name="AiOverlayToolName">
+  <variant name="CloseCurrentTab"/>
+  <variant name="FindAndHighlight"/>
+  <variant name="GoBack"/>
+  <variant name="GoForward"/>
+  <variant name="OpenUrl"/>
+  <variant name="PauseVideo"/>
+  <variant name="PerformSearch"/>
+  <variant name="PlayVideo"/>
+  <variant name="ReloadPage"/>
+  <variant name="Scroll"/>
+  <variant name="SeekToTimestamp"/>
+  <variant name="SwitchTab"/>
+</variants>
+
 <!-- LINT.IfChange(LanguageModelExpectedInputOrOutput) -->
 
 <variants name="LanguageModelExpectedInputOrOutput">
@@ -36,9 +51,19 @@ chromium-metrics-reviews@google.com.
   <variant name="create" summary="Create a session."/>
 </variants>
 
+<variants name="SemanticEmbedderSignature">
+  <variant name=".64" summary="Signature length 64"/>
+  <variant name=".128" summary="Signature length 128"/>
+  <variant name=".256" summary="Signature length 256"/>
+  <variant name=".512" summary="Signature length 512"/>
+  <variant name=".1024" summary="Signature length 1024"/>
+  <variant name=".2048" summary="Signature length 2048"/>
+</variants>
+
 <!-- LINT.IfChange(SessionType) -->
 
 <variants name="SessionType">
+  <variant name="Classifier" summary="AI classifier session"/>
   <variant name="LanguageDetector" summary="AI language detector session"/>
   <variant name="LanguageModel" summary="AI language model session"/>
   <variant name="Proofreader" summary="AI proofreader session"/>
@@ -62,9 +87,10 @@ chromium-metrics-reviews@google.com.
 </variants>
 
 <histogram name="AI.LanguageModel.APIUsage.Messages.Role"
-    enum="LanguageModelInputRole" expires_after="2026-08-30">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="LanguageModelInputRole" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded for each message provided to a LanguageModel `prompt` or
@@ -74,9 +100,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.LanguageModel.APIUsage.Messages.Text.Length"
-    units="characters" expires_after="2026-04-27">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    units="characters" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded for each message content provided to a LanguageModel
@@ -86,9 +113,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.LanguageModel.APIUsage.Messages.Type"
-    enum="LanguageModelInputType" expires_after="2026-08-09">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="LanguageModelInputType" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded for each message content provided to a LanguageModel
@@ -98,10 +126,41 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram
+    name="AI.LanguageModel.APIUsage.{LanguageModelFunctionName}.OptionsType"
+    enum="LanguageModelCreateOptionsType" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <owner>src/chrome/browser/ai/OWNERS</owner>
+  <summary>
+    This is recorded each time when the LanguageModel `create` or `availability`
+    function is invoked. It can be used to measure whether no parameters, raw
+    parameters, or categorical presets were used.
+  </summary>
+  <token key="LanguageModelFunctionName" variants="LanguageModelFunctionName"/>
+</histogram>
+
+<histogram
+    name="AI.LanguageModel.APIUsage.{LanguageModelFunctionName}.SamplingMode"
+    enum="AILanguageModelSamplingMode" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <owner>src/chrome/browser/ai/OWNERS</owner>
+  <summary>
+    This is recorded each time when the LanguageModel `create` or `availability`
+    function is invoked with a categorical preset. It can be used to measure the
+    usage of specific sampling modes.
+  </summary>
+  <token key="LanguageModelFunctionName" variants="LanguageModelFunctionName"/>
+</histogram>
+
+<histogram
     name="AI.LanguageModel.APIUsage.{LanguageModelFunctionName}.TemperatureX1000"
-    units="tempX1000" expires_after="2026-08-23">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    units="tempX1000" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the LanguageModel `create` or `availability`
@@ -114,9 +173,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.LanguageModel.APIUsage.{LanguageModelFunctionName}.TopK"
-    units="tokens" expires_after="2026-08-30">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    units="tokens" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the LanguageModel `create` or `availability`
@@ -128,9 +188,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.LanguageModel.APIUsage.{LanguageModelFunctionName}.{LanguageModelExpectedInputOrOutput}.Language"
-    enum="LocaleCodeBCP47" expires_after="2026-08-23">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="LocaleCodeBCP47" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the LanguageModel `create` or `availability`
@@ -145,9 +206,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.LanguageModel.APIUsage.{LanguageModelFunctionName}.{LanguageModelExpectedInputOrOutput}.Type"
-    enum="LanguageModelInputType" expires_after="2026-08-30">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="LanguageModelInputType" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the LanguageModel `create` or `availability`
@@ -159,9 +221,145 @@ chromium-metrics-reviews@google.com.
       variants="LanguageModelExpectedInputOrOutput"/>
 </histogram>
 
+<histogram name="AI.OverlayDialog.ToolCallInvoked.{ToolName}" enum="BooleanHit"
+    expires_after="2027-04-03">
+  <owner>gklassen@chromium.org</owner>
+  <owner>bokan@chromium.org</owner>
+  <summary>
+    Records when the {ToolName} tool call is invoked in a conversation turn in
+    the AI overlay dialog.
+  </summary>
+  <token key="ToolName" variants="AiOverlayToolName"/>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.EmbeddingsGenerationSucceeded"
+    enum="BooleanSuccess" expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    Whether embeddings generation succeeded for the Gemma semantic embedder.
+    Recorded each time an embedding is generated.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.EmbeddingsModelLoadDuration" units="ms"
+    expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The duration of loading the embeddings model for the Gemma semantic
+    embedder. Recorded when the model is loaded.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.EmbeddingsModelLoadSucceeded"
+    enum="BooleanSuccess" expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    Whether loading the embeddings model succeeded for the Gemma semantic
+    embedder. Recorded when the model is loaded.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.LaunchDuration" units="ms"
+    expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The duration of launching the passage embeddings service and loading the
+    models for the Gemma semantic embedder. Recorded when the models are loaded.
+  </summary>
+</histogram>
+
+<histogram
+    name="AI.SemanticEmbedder.PassageEmbeddingsGenerationDuration{SignatureStr}"
+    units="ms" expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The duration of embeddings generation for the Gemma semantic embedder.
+    Recorded when an embedding generation completes.
+  </summary>
+  <token key="SignatureStr" variants="SemanticEmbedderSignature"/>
+</histogram>
+
+<histogram
+    name="AI.SemanticEmbedder.PassageEmbeddingsGenerationThreadDuration{SignatureStr}"
+    units="ms" expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The thread duration of embeddings generation for the Gemma semantic
+    embedder. Recorded when an embedding generation completes.
+  </summary>
+  <token key="SignatureStr" variants="SemanticEmbedderSignature"/>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.PassageTokenCount" units="tokens"
+    expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The token count of a passage for the Gemma semantic embedder. Recorded after
+    tokenization.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.SentencePieceModelLoadDuration" units="ms"
+    expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The duration of loading the sentence piece model for the Gemma semantic
+    embedder. Recorded when the model is loaded.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.SentencePieceModelLoadSucceeded"
+    enum="BooleanSuccess" expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    Whether loading the sentence piece model succeeded for the Gemma semantic
+    embedder. Recorded when the model is loaded.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.TaskDuration" units="ms"
+    expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The duration of a semantic embedding task from creation to completion.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.TokenizationDuration" units="ms"
+    expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    The duration of tokenization for the Gemma semantic embedder. Recorded when
+    tokenization completes.
+  </summary>
+</histogram>
+
+<histogram name="AI.SemanticEmbedder.TokenizationSucceeded"
+    enum="BooleanSuccess" expires_after="2027-03-16">
+  <owner>yinguang@chromium.org</owner>
+  <owner>chrome-chia-dev@google.com</owner>
+  <summary>
+    Whether tokenization succeeded for the Gemma semantic embedder. Recorded
+    when tokenization completes.
+  </summary>
+</histogram>
+
 <histogram name="AI.Session.{SessionType}.ContextTime" units="ms"
-    expires_after="2026-08-30">
-  <owner>cduvall@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the time it takes to process prompt input. This is recorded each
@@ -171,8 +369,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.ContextTokens" units="tokens"
-    expires_after="2026-09-20">
-  <owner>cduvall@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the size of the prompt in tokens. This is recorded each time a
@@ -182,8 +382,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.Crashed" enum="BooleanYesNo"
-    expires_after="2026-09-20">
-  <owner>cduvall@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Records whether the model crashed while a session was active. Recorded each
@@ -193,8 +395,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.FirstResponseTime" units="ms"
-    expires_after="2026-08-30">
-  <owner>cduvall@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the time it takes until the first tokens of the response are
@@ -204,9 +408,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.PromptRequestSize" units="bytes"
-    expires_after="2026-09-06">
-  <owner>leimy@chromium.org</owner>
-  <owner>fergal@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the size of the prompt request in bytes. This is recorded each time
@@ -216,9 +421,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.PromptResponseCallbackCount"
-    units="times" expires_after="2026-08-30">
-  <owner>leimy@chromium.org</owner>
-  <owner>fergal@chromium.org</owner>
+    units="times" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the number of times that the callback is triggered in one prompt
@@ -228,9 +434,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.PromptResponseSize" units="bytes"
-    expires_after="2026-09-06">
-  <owner>leimy@chromium.org</owner>
-  <owner>fergal@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the size of the prompt response in bytes. This is recorded each
@@ -240,9 +447,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.PromptResponseStatus"
-    enum="AIModelStreamingResponseStatus" expires_after="2026-09-06">
-  <owner>leimy@chromium.org</owner>
-  <owner>fergal@chromium.org</owner>
+    enum="AIModelStreamingResponseStatus" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Records the final response status for each prompt request. This is recorded
@@ -252,8 +460,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.ResponseCompleteTime" units="ms"
-    expires_after="2026-08-02">
-  <owner>cduvall@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the time it takes until the full response is complete. This is
@@ -263,8 +473,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.Session.{SessionType}.ResponseTokens" units="tokens"
-    expires_after="2026-05-19">
-  <owner>cduvall@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Measures the number of tokens in the completed response. This is recorded
@@ -275,9 +487,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.Summarizer.APIUsage.{WritingAssistanceFunctionName}.CoreOptionType"
-    enum="WritingAssistanceMetricsOptionType" expires_after="2026-08-23">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="WritingAssistanceMetricsOptionType" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the WritingAssistance function is invoked.
@@ -289,7 +502,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="AI.Translation.LoadTranslateKitErrorCode"
     enum="WinGetLastError" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
   <owner>evliu@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Records the error code of a failed attempt to load the TranslateKit binary
@@ -301,7 +517,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram name="AI.Translation.LoadTranslateKitResult"
     enum="LoadTranslateKitResult" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
   <owner>evliu@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Records the result of an attempt to load the TranslateKit binary for
@@ -312,9 +531,10 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AI.{SessionType}.AvailabilityV2" enum="Availability"
-    expires_after="2026-09-06">
-  <owner>leimy@chromium.org</owner>
-  <owner>fergal@chromium.org</owner>
+    expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     Records the availability of model execution as returned in methods like
@@ -325,9 +545,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.{WritingAssistanceType}.APIUsage.{WritingAssistanceFunctionName}.CoreOptionFormat"
-    enum="WritingAssistanceMetricsOptionFormat" expires_after="2026-08-23">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="WritingAssistanceMetricsOptionFormat" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the WritingAssistance function is invoked.
@@ -340,9 +561,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.{WritingAssistanceType}.APIUsage.{WritingAssistanceFunctionName}.CoreOptionLength"
-    enum="WritingAssistanceMetricsOptionLength" expires_after="2026-08-23">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="WritingAssistanceMetricsOptionLength" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the WritingAssistance function is invoked.
@@ -355,9 +577,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.{WritingAssistanceType}.APIUsage.{WritingAssistanceFunctionName}.CoreOptionTone"
-    enum="WritingAssistanceMetricsOptionTone" expires_after="2026-09-06">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="WritingAssistanceMetricsOptionTone" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the WritingAssistance function is invoked.
@@ -370,9 +593,10 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="AI.{WritingAssistanceType}.APIUsage.{WritingAssistanceFunctionName}.{LanguageMetric}"
-    enum="LocaleCodeBCP47" expires_after="2026-08-23">
-  <owner>btriebw@chromium.org</owner>
-  <owner>ayui@chromium.org</owner>
+    enum="LocaleCodeBCP47" expires_after="2027-03-16">
+  <owner>iahouma@google.com</owner>
+  <owner>ohjerry@google.com</owner>
+  <owner>chrome-chia-dev@google.com</owner>
   <owner>src/chrome/browser/ai/OWNERS</owner>
   <summary>
     This is recorded each time when the WritingAssistance function is invoked.

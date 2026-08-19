@@ -59,7 +59,13 @@ chromium-metrics-reviews@google.com.
       summary="scam detection verdict 1"/>
   <variant name=".scam_experiment_verdict_2"
       summary="scam detection verdict 2"/>
+  <variant name=".scam_experiment_verdict_3"
+      summary="scam detection verdict 3"/>
+  <variant name=".scam_experiment_verdict_4"
+      summary="scam detection verdict 4"/>
 </variants>
+
+<!-- LINT.IfChange(SecurityInterstitialSBWithSourceType) -->
 
 <variants name="SecurityInterstitialSBWithSourceType">
   <variant name=".from_android_safebrowsing"
@@ -75,6 +81,9 @@ chromium-metrics-reviews@google.com.
       summary="Interstitial for a resource classified as unsafe by the Safe
                Browsing database version 4 via either
                {Local,Remote}SafeBrowsingDatabaseManager."/>
+  <variant name=".from_glic_counter_abuse"
+      summary="Interstitial for a resource classified as unsafe by the Safe
+               Browsing server-reported Counter Abuse signal for Glic."/>
   <variant name=".from_hash_prefix_real_time_check_v5"
       summary="Interstitial for a resource classified as unsafe by the Safe
                Browsing hash-prefix real-time API version 5."/>
@@ -82,6 +91,8 @@ chromium-metrics-reviews@google.com.
       summary="Interstitial for a resource classified as unsafe by the Safe
                Browsing URL real-time API."/>
 </variants>
+
+<!-- LINT.ThenChange(//components/safe_browsing/core/common/utils.cc:GetExtraMetricsSuffix) -->
 
 <histogram name="interstitial.captive_portal"
     enum="CaptivePortalBlockingPageEvent" expires_after="2027-01-18">
@@ -167,8 +178,8 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="interstitial.phishing.decision{RepeatVisit}.from_client_side_detection{SecurityInterstitialSBWithSourceSubtype}"
-    enum="SecurityInterstitialDecision" expires_after="2026-07-19">
-  <owner>andysjlim@chromium.org</owner>
+    enum="SecurityInterstitialDecision" expires_after="2026-12-06">
+  <owner>nwokedi@chromium.org</owner>
   <owner>chrome-counter-abuse-alerts@Google.com</owner>
   <summary>
     User decision when presented with a security interstitial{RepeatVisit}
@@ -184,7 +195,7 @@ chromium-metrics-reviews@google.com.
 <histogram
     name="interstitial.phishing.interaction.from_client_side_detection{SecurityInterstitialSBWithSourceSubtype}"
     enum="SecurityInterstitialDecision" expires_after="2027-03-02">
-  <owner>andysjlim@chromium.org</owner>
+  <owner>nwokedi@chromium.org</owner>
   <owner>chrome-counter-abuse-alerts@Google.com</owner>
   <summary>
     User interactions with a security interstitial that comes from client side
@@ -196,8 +207,8 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="interstitial.phishing.show_delay{TimeRange}.from_client_side_detection{SecurityInterstitialSBWithSourceSubtype}"
-    enum="SecurityInterstitialDecision" expires_after="2026-07-19">
-  <owner>andysjlim@chromium.org</owner>
+    enum="SecurityInterstitialDecision" expires_after="2026-12-06">
+  <owner>nwokedi@chromium.org</owner>
   <owner>chrome-counter-abuse-alerts@Google.com</owner>
   <summary>
     The time {TimeRange} between when the blocked page is shown and when the
@@ -394,7 +405,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="interstitial.{SecurityInterstitialSBType}decision{RepeatVisit}{IsPostCommitInterstitialSuffix}"
-    enum="SecurityInterstitialDecision" expires_after="2026-09-06">
+    enum="SecurityInterstitialDecision" expires_after="2026-11-29">
   <owner>xinghuilu@chromium.org</owner>
   <owner>chrome-counter-abuse-alerts@google.com</owner>
   <summary>
@@ -486,7 +497,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="interstitial.{SecurityInterstitialSBType}show_delay{TimeRange}{SecurityInterstitialSBWithSourceType}"
-    units="ms" expires_after="2026-09-06">
+    units="ms" expires_after="2026-11-29">
   <owner>xinghuilu@chromium.org</owner>
   <owner>chrome-counter-abuse-alerts@google.com</owner>
   <summary>

@@ -18,7 +18,8 @@
 #include <utility>
 #include <vector>
 
-#include "api/field_trials.h"
+#include "api/environment/environment.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
 #include "call/rtp_demuxer.h"
@@ -32,8 +33,9 @@
 #include "rtc_base/byte_order.h"
 #include "rtc_base/containers/flat_set.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/ssl_stream_adapter.h"
-#include "test/create_test_field_trials.h"
+#include "test/create_test_environment.h"
 #include "test/gtest.h"
 #include "test/run_loop.h"
 
@@ -59,18 +61,18 @@ class SrtpTransportTest : public ::testing::Test {
     bool rtcp_mux_enabled = true;
 
     rtp_packet_transport1_ =
-        std::make_unique<FakePacketTransport>("fake_packet_transport1");
+        std::make_unique<FakePacketTransport>(env_, "fake_packet_transport1");
     rtp_packet_transport2_ =
-        std::make_unique<FakePacketTransport>("fake_packet_transport2");
+        std::make_unique<FakePacketTransport>(env_, "fake_packet_transport2");
 
     bool asymmetric = false;
     rtp_packet_transport1_->SetDestination(rtp_packet_transport2_.get(),
                                            asymmetric);
 
     srtp_transport1_ =
-        std::make_unique<SrtpTransport>(rtcp_mux_enabled, field_trials_);
+        std::make_unique<SrtpTransport>(rtcp_mux_enabled, env_.field_trials());
     srtp_transport2_ =
-        std::make_unique<SrtpTransport>(rtcp_mux_enabled, field_trials_);
+        std::make_unique<SrtpTransport>(rtcp_mux_enabled, env_.field_trials());
 
     srtp_transport1_->SetRtpPacketTransport(rtp_packet_transport1_.get());
     srtp_transport2_->SetRtpPacketTransport(rtp_packet_transport2_.get());
@@ -149,12 +151,12 @@ class SrtpTransportTest : public ::testing::Test {
   }
 
   void TestSendRecvRtcpPacket(int crypto_suite) {
-    size_t rtcp_len = sizeof(::kRtcpReport);
+    size_t rtcp_len = sizeof(kFakeRtcpReport);
     size_t packet_size = rtcp_len + 4 + rtcp_auth_tag_len(crypto_suite);
     Buffer rtcp_packet_buffer =
         Buffer::CreateUninitializedWithSize(packet_size);
     char* rtcp_packet_data = rtcp_packet_buffer.data<char>();
-    memcpy(rtcp_packet_data, ::kRtcpReport, rtcp_len);
+    memcpy(rtcp_packet_data, kFakeRtcpReport, rtcp_len);
 
     CopyOnWriteBuffer rtcp_packet1to2(rtcp_packet_data, rtcp_len, packet_size);
     CopyOnWriteBuffer rtcp_packet2to1(rtcp_packet_data, rtcp_len, packet_size);
@@ -190,7 +192,7 @@ class SrtpTransportTest : public ::testing::Test {
                           const ZeroOnFreeBuffer<uint8_t>& key1,
                           const ZeroOnFreeBuffer<uint8_t>& key2) {
     EXPECT_EQ(key1.size(), key2.size());
-    std::vector<int> extension_ids;
+    std::vector<RtpHeaderExtensionId> extension_ids;
     EXPECT_TRUE(srtp_transport1_->SetRtpParams(
         crypto_suite, key1, extension_ids, crypto_suite, key2, extension_ids));
     EXPECT_TRUE(srtp_transport2_->SetRtpParams(
@@ -207,7 +209,7 @@ class SrtpTransportTest : public ::testing::Test {
 
   void TestSendRecvPacketWithEncryptedHeaderExtension(
       int crypto_suite,
-      const std::vector<int>& encrypted_header_ids) {
+      const std::vector<RtpHeaderExtensionId>& encrypted_header_ids) {
     size_t rtp_len = sizeof(kPcmuFrameWithExtensions);
     size_t packet_size = rtp_len + rtp_auth_tag_len(crypto_suite);
     Buffer rtp_packet_buffer = Buffer::CreateUninitializedWithSize(packet_size);
@@ -264,7 +266,7 @@ class SrtpTransportTest : public ::testing::Test {
       int crypto_suite,
       const ZeroOnFreeBuffer<uint8_t>& key1,
       const ZeroOnFreeBuffer<uint8_t>& key2) {
-    std::vector<int> encrypted_headers;
+    std::vector<RtpHeaderExtensionId> encrypted_headers;
     encrypted_headers.push_back(kHeaderExtensionIDs[0]);
     // Don't encrypt header ids 2 and 3.
     encrypted_headers.push_back(kHeaderExtensionIDs[1]);
@@ -281,6 +283,7 @@ class SrtpTransportTest : public ::testing::Test {
                                                    encrypted_headers);
   }
   test::RunLoop main_thread;
+  const Environment env_ = CreateTestEnvironment();
 
   std::unique_ptr<SrtpTransport> srtp_transport1_;
   std::unique_ptr<SrtpTransport> srtp_transport2_;
@@ -292,7 +295,6 @@ class SrtpTransportTest : public ::testing::Test {
   TransportObserver rtp_sink2_;
 
   int sequence_number_ = 0;
-  FieldTrials field_trials_ = CreateTestFieldTrials();
 };
 
 TEST_F(SrtpTransportTest, SendAndRecvPacket_AES_CM_128_HMAC_SHA1_80) {
@@ -337,7 +339,7 @@ TEST_F(SrtpTransportTest,
 
 // Test directly setting the params with bogus keys.
 TEST_F(SrtpTransportTest, TestSetParamsKeyTooShort) {
-  std::vector<int> extension_ids;
+  std::vector<RtpHeaderExtensionId> extension_ids;
   EXPECT_FALSE(srtp_transport1_->SetRtpParams(
       kSrtpAes128CmSha1_80,
       ZeroOnFreeBuffer<uint8_t>(kTestKey1.data(), kTestKey1.size() - 1),
@@ -353,12 +355,12 @@ TEST_F(SrtpTransportTest, TestSetParamsKeyTooShort) {
 }
 
 TEST_F(SrtpTransportTest, RemoveSrtpReceiveStream) {
-  FieldTrials field_trials =
-      CreateTestFieldTrials("WebRTC-SrtpRemoveReceiveStream/Enabled/");
-  auto srtp_transport =
-      std::make_unique<SrtpTransport>(/*rtcp_mux_enabled=*/true, field_trials);
-  auto rtp_packet_transport =
-      std::make_unique<FakePacketTransport>("fake_packet_transport_loopback");
+  Environment env = CreateTestEnvironment(
+      {.field_trials = "WebRTC-SrtpRemoveReceiveStream/Enabled/"});
+  auto srtp_transport = std::make_unique<SrtpTransport>(
+      /*rtcp_mux_enabled=*/true, env.field_trials());
+  auto rtp_packet_transport = std::make_unique<FakePacketTransport>(
+      env, "fake_packet_transport_loopback");
 
   bool asymmetric = false;
   rtp_packet_transport->SetDestination(rtp_packet_transport.get(), asymmetric);
@@ -366,7 +368,7 @@ TEST_F(SrtpTransportTest, RemoveSrtpReceiveStream) {
 
   TransportObserver rtp_sink;
 
-  std::vector<int> extension_ids;
+  std::vector<RtpHeaderExtensionId> extension_ids;
   EXPECT_TRUE(srtp_transport->SetRtpParams(kSrtpAeadAes128Gcm, kTestKeyGcm128_1,
                                            extension_ids, kSrtpAeadAes128Gcm,
                                            kTestKeyGcm128_1, extension_ids));
@@ -411,6 +413,67 @@ TEST_F(SrtpTransportTest, RemoveSrtpReceiveStream) {
   EXPECT_EQ(rtp_sink.rtp_count(), 2);
   // Clear the sink to clean up.
   srtp_transport->UnregisterRtpDemuxerSink(&rtp_sink);
+}
+
+TEST(SrtpTransportTestWithFieldTrialEnabled,
+     NetworkRouteOverheadUpdatedWhenSrtpActivated) {
+  const Environment env = CreateTestEnvironment(
+      {.field_trials = "WebRTC-UpdateNetworkRouteOnSrtpActivation/Enabled/"});
+  auto rtp_transport = std::make_unique<FakePacketTransport>(env, "fake");
+  auto srtp_transport =
+      std::make_unique<SrtpTransport>(true, env.field_trials());
+  srtp_transport->SetRtpPacketTransport(rtp_transport.get());
+
+  std::optional<NetworkRoute> current_route;
+  srtp_transport->SubscribeNetworkRouteChanged(
+      rtp_transport.get(),
+      [&](std::optional<NetworkRoute> r) { current_route = r; });
+
+  NetworkRoute route;
+  route.connected = true;
+  route.packet_overhead = 28;
+  rtp_transport->SetNetworkRoute(std::optional<NetworkRoute>(route));
+
+  ASSERT_TRUE(current_route.has_value());
+  EXPECT_EQ(current_route->packet_overhead, 28);
+
+  // Activate SRTP.
+  EXPECT_TRUE(srtp_transport->SetRtpParams(
+      kSrtpAeadAes128Gcm, kTestKeyGcm128_1, std::vector<RtpHeaderExtensionId>(),
+      kSrtpAeadAes128Gcm, kTestKeyGcm128_1,
+      std::vector<RtpHeaderExtensionId>()));
+
+  ASSERT_TRUE(current_route.has_value());
+  EXPECT_EQ(current_route->packet_overhead, 28 + 16);
+}
+
+TEST(SrtpTransportTestDefault, NetworkRouteOverheadUnchangedWhenSrtpActivated) {
+  const Environment env = CreateTestEnvironment();
+  auto rtp_transport = std::make_unique<FakePacketTransport>(env, "fake");
+  auto srtp_transport =
+      std::make_unique<SrtpTransport>(true, env.field_trials());
+  srtp_transport->SetRtpPacketTransport(rtp_transport.get());
+
+  std::optional<NetworkRoute> current_route;
+  srtp_transport->SubscribeNetworkRouteChanged(
+      rtp_transport.get(),
+      [&](std::optional<NetworkRoute> r) { current_route = r; });
+
+  NetworkRoute route;
+  route.connected = true;
+  route.packet_overhead = 28;
+  rtp_transport->SetNetworkRoute(std::optional<NetworkRoute>(route));
+
+  ASSERT_TRUE(current_route.has_value());
+  EXPECT_EQ(current_route->packet_overhead, 28);
+
+  EXPECT_TRUE(srtp_transport->SetRtpParams(
+      kSrtpAeadAes128Gcm, kTestKeyGcm128_1, std::vector<RtpHeaderExtensionId>(),
+      kSrtpAeadAes128Gcm, kTestKeyGcm128_1,
+      std::vector<RtpHeaderExtensionId>()));
+
+  ASSERT_TRUE(current_route.has_value());
+  EXPECT_EQ(current_route->packet_overhead, 28);
 }
 
 }  // namespace webrtc

@@ -22,7 +22,7 @@ work - e.g. ones based on `git-new-workdir`).
 
 ## Checking the state of the world
 
-Before creating a CL stack, check for open CLs with the [`cratesio-autoupdate`
+Before creating a set of CLs, check for open CLs with the [`cratesio-autoupdate`
 tag](https://chromium-review.googlesource.com/q/hashtag:%22cratesio-autoupdate%22+(status:open%20OR%20status:merged)).
 Such CLs tend to conflict, so coordinate with owners of any open CLs.
 
@@ -44,8 +44,11 @@ $ tools/crates/create_update_cl.py auto
 In `auto` mode, it runs `gnrt update` to discover crate updates and then for
 each update creates a new local git branch (and a Gerrit CL unless invoked with
 `--no-upload`). Each branch contains an update created by `gnrt update <old
-crate id>`, `gnrt vendor`, and `gnrt gen`. Depending on how many crates are
-updated, the script may need 10-15 minutes to run.
+crate id>`, `gnrt vendor`, and `gnrt gen`. By default, each branch is
+independent and based on `origin/main` (or whatever is specified via
+`--upstream-branch`). If you want to create a chain of dependent CLs, you can
+use the `--chained` flag. Depending on how many crates are updated, the script
+may need 10-15 minutes to run.
 
 The script should Just Work in most cases, but sometimes it may fail when
 dealing with a specific crate update.  See [Recovering from script
@@ -60,12 +63,10 @@ OWNER will be automatically assigned.
 
 ## New transitive dependencies
 
-Notes from `//third_party/rust/OWNERS-review-checklist.md` apply:
-
-* The dependency will need to go through security review.
-* An FYI email should be sent to
-  [chrome-atls-discuss@google.com](mailto:chrome-atls-discuss@google.com)
-  in order to record the addition.
+Notes from `//third_party/rust/OWNERS-review-checklist.md` apply, in
+particular, an FYI email should be sent to
+[chrome-atls-discuss@google.com](mailto:chrome-atls-discuss@google.com)
+in order to record the addition.
 
 ### Optional: Adding the transitive dependency in its own CL
 
@@ -191,7 +192,7 @@ case the transition can be split into the following steps:
       in future rotations
 1. Land the new major version, so that the old and the new versions coexist.
    To do this follow the process for importing a new crate as described in
-   [`docs/rust.md`](../../docs/rust.md#importing-a-crate-from-crates_io)
+   [`//docs/rust/README.md`](/docs/rust/README.md#importing-a-crate-from-crates_io)
    (i.e. edit `Cargo.toml` to add the new version, run `gnrt vendor`, and so
    forth).
 1. Incrementally transition first-party code to the new major version
@@ -248,8 +249,7 @@ For maximal control, the script can be used in `manual` mode:
        version of the crate (or crates) you want to update.
        **Important**: Do not edit `Cargo.lock` (e.g. don't run `gnrt vendor`
        etc.).
-    1. `git add third_party/rust/chromium_crates_io/Cargo.toml`
-    1. `git commit -m "Manual edit of Cargo.toml"`
+    1. `git commit -m "Manual edit of Cargo.toml" third_party/rust/chromium_crates_io/Cargo.toml`
     1. `git cl upload -m "Manual edit of Cargo.toml" --bypass-hooks --skip-title --force`
 1. Run the helper script as follows:
    `tools/crates/create_update_cl.py manual

@@ -32,6 +32,21 @@ absl_cc_library(
 # Internal-only target, do not depend on directly.
 absl_cc_library(
   NAME
+    base_cpu_detect
+  HDRS
+    "internal/cpu_detect.h"
+  SRCS
+    "internal/cpu_detect.cc"
+  DEPS
+    absl::base
+    absl::config
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
     errno_saver
   HDRS
     "internal/errno_saver.h"
@@ -425,6 +440,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::config
+    absl::core_headers
     absl::hardening
     GTest::gtest_main
 )
@@ -614,6 +630,19 @@ absl_cc_test(
   DEPS
     absl::base
     absl::synchronization
+    GTest::gtest_main
+)
+
+absl_cc_test(
+  NAME
+    cpu_detect_test
+  SRCS
+    "internal/cpu_detect_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::base_cpu_detect
+    absl::config
     GTest::gtest_main
 )
 

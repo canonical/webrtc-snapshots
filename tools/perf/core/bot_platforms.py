@@ -11,11 +11,11 @@ import os
 import pathlib
 import io
 import shlex
+import urllib.parse
 
 
 from typing import Callable, Final, Iterable, Optional, Union
 
-import six.moves.urllib.parse  # pylint: disable=import-error
 
 from core import benchmark_finders
 from core import benchmark_utils
@@ -27,9 +27,6 @@ _SHARD_MAP_DIR = os.path.join(os.path.dirname(__file__), 'shard_maps')
 
 _ALL_BENCHMARKS_BY_NAMES = dict(
     (b.Name(), b) for b in benchmark_finders.GetAllBenchmarks())
-
-_OFFICIAL_BENCHMARKS = frozenset(
-    b for b in benchmark_finders.GetOfficialBenchmarks() if b.IsScheduled())
 GTEST_STORY_NAME = '_gtest_'
 
 
@@ -134,13 +131,18 @@ class _PerfPlatform(object):
     if self.pinpoint_only:
       return None
     return ('https://ci.chromium.org/p/chrome/builders/ci/%s' %
-            six.moves.urllib.parse.quote(self._name))
+            urllib.parse.quote(self._name))
 
 
 class BenchmarkConfig(object):
 
-  def __init__(self, name: str) -> None:
+  def __init__(self,
+               name: str,
+               repeat: int = 1,
+               flags: tuple[str, ...] = ()) -> None:
     self.name: Final[str] = name
+    self.repeat: Final[int] = repeat
+    self.flags: Final[tuple[str, ...]] = flags
 
 
 class TelemetryConfig(BenchmarkConfig):
@@ -148,36 +150,29 @@ class TelemetryConfig(BenchmarkConfig):
   def __init__(self,
                benchmark,
                abridged: bool = False,
-               pageset_repeat_override: Optional[int] = None):
+               repeat: Optional[int] = None):
     """A configuration for a benchmark that helps decide how to shard it.
 
     Args:
       benchmark: the benchmark.Benchmark object.
       abridged: True if the benchmark should be abridged so fewer stories
         are run, and False if the whole benchmark should be run.
-      pageset_repeat_override: number of times to repeat the entire story set.
+      repeat: number of times to repeat the entire story set.
         can be None, which defaults to the benchmark default pageset_repeat.
     """
-    super().__init__(benchmark.Name())
     self.benchmark = benchmark
-    self.abridged = abridged
-    self._stories = None
-    self._exhaustive_stories = None
-    self.is_telemetry = True
-    self.pageset_repeat_override = pageset_repeat_override
+    super().__init__(benchmark.Name(), self.get_repeat(repeat))
+    self.abridged: Final[bool] = abridged
+    self._stories: Optional[tuple[str, ...]] = None
+    self._exhaustive_stories: Optional[tuple[str, ...]] = None
 
-  @property
-  def repeat(self) -> int:
-    if self.pageset_repeat_override is not None:
-      return self.pageset_repeat_override
+  def get_repeat(self, repeat: Optional[int]) -> int:
+    if repeat is not None:
+      return repeat
     return self.benchmark.options.get('pageset_repeat', 1)
 
   @property
-  def extra_flags(self):
-    return ()
-
-  @property
-  def stories(self) -> list[str]:
+  def stories(self) -> tuple[str, ...]:
     if self._stories is not None:
       return self._stories
     story_set = benchmark_utils.GetBenchmarkStorySet(self.benchmark())
@@ -186,11 +181,11 @@ class TelemetryConfig(BenchmarkConfig):
     story_filter_obj = story_filter.StoryFilter(
         abridged_story_set_tag=abridged_story_set_tag)
     stories = story_filter_obj.FilterStories(story_set)
-    self._stories = [story.name for story in stories]
+    self._stories = tuple(story.name for story in stories)
     return self._stories
 
   @property
-  def exhaustive_stories(self) -> list[str]:
+  def exhaustive_stories(self) -> tuple[str, ...]:
     if self._exhaustive_stories is not None:
       return self._exhaustive_stories
     story_set = benchmark_utils.GetBenchmarkStorySet(self.benchmark(),
@@ -200,7 +195,7 @@ class TelemetryConfig(BenchmarkConfig):
     story_filter_obj = story_filter.StoryFilter(
         abridged_story_set_tag=abridged_story_set_tag)
     stories = story_filter_obj.FilterStories(story_set)
-    self._exhaustive_stories = [story.name for story in stories]
+    self._exhaustive_stories = tuple(story.name for story in stories)
     return self._exhaustive_stories
 
 
@@ -211,16 +206,12 @@ class ExecutableConfig(BenchmarkConfig):
                path: Optional[str] = None,
                flags: tuple[str, ...] = (),
                estimated_runtime: int = 60,
-               extra_flags: tuple[str, ...] = ()):
-    super().__init__(name)
-    self.path = path or name
-    self.flags = flags or ()
-    self.extra_flags = extra_flags or ()
-    self.estimated_runtime = estimated_runtime
-    self.abridged = False
-    self.stories = [GTEST_STORY_NAME]
-    self.is_telemetry = False
-    self.repeat = 1
+               repeat: int = 1):
+    super().__init__(name, repeat, flags)
+    self.path: Final[str] = path or name
+    self.estimated_runtime: Final[int] = estimated_runtime
+    self.abridged: Final[bool] = False
+    self.stories: Final[tuple[str, ...]] = (GTEST_STORY_NAME, )
 
 
 class CrossbenchConfig(BenchmarkConfig):
@@ -228,18 +219,26 @@ class CrossbenchConfig(BenchmarkConfig):
                name: str,
                crossbench_name: str,
                estimated_runtime: int = 60,
-               stories=None,
-               flags: tuple[str, ...] = ()):
-    super().__init__(name)
-    self.crossbench_name = crossbench_name
-    self.estimated_runtime = estimated_runtime
-    self.stories = stories or ['default']
-    self.arguments: tuple[str, ...] = flags
-    self.repeat = 1
+               stories: Optional[tuple[str]] = None,
+               flags: tuple[str, ...] = (),
+               repeat: int = 1,
+               auto_enable_field_trials: bool = True):
+    flags = self._process_flags(flags, auto_enable_field_trials)
+    super().__init__(name, repeat, flags)
+    self.crossbench_name: Final[str] = crossbench_name
+    self.estimated_runtime: Final[int] = estimated_runtime
+    self.stories: Final[tuple[str, ...]] = stories or ('default', )
 
-  @property
-  def extra_flags(self) -> tuple[str, ...]:
-    return self.arguments
+  def _process_flags(self, flags: tuple[str, ...],
+                     auto_enable_field_trials: bool) -> tuple[str, ...]:
+    if auto_enable_field_trials:
+      # Somewhat hacky solution if we want to run without field trials.
+      if "--disable-field-trials" not in flags and (
+          "--disable-field-trial-config" not in flags):
+        flags += ("--enable-field-trials", )
+    assert len(flags) == len(
+        set(flags)), (f"Found duplicate arguments in {flags}")
+    return flags
 
 
 class PerfSuite(object):
@@ -290,18 +289,6 @@ def _TelemetryConfig(benchmark_name: str,
   benchmark = _ALL_BENCHMARKS_BY_NAMES[benchmark_name]
   return TelemetryConfig(benchmark, abridged, pageset_repeat)
 
-
-_OFFICIAL_BENCHMARK_CONFIGS = PerfSuite(
-    [_TelemetryConfig(b.Name()) for b in _OFFICIAL_BENCHMARKS])
-_OFFICIAL_BENCHMARK_CONFIGS = _OFFICIAL_BENCHMARK_CONFIGS.Remove([
-    'blink_perf.svg',
-    'blink_perf.paint',
-])
-# TODO(crbug.com/40628256): Remove OFFICIAL_BENCHMARK_NAMES once sharding
-# scripts are no longer using it.
-OFFICIAL_BENCHMARK_NAMES = frozenset(
-    b.name for b in _OFFICIAL_BENCHMARK_CONFIGS.Frozenset())
-
 BenchmarkConfigFactory = Callable[..., BenchmarkConfig]
 _BENCHMARKS_CONFIG_FACTORIES: dict[str, BenchmarkConfigFactory] = {}
 for b in _ALL_BENCHMARKS_BY_NAMES:
@@ -322,59 +309,59 @@ def _register(name):
 @_register('sync_performance_tests')
 def _sync_performance_tests(estimated_runtime: int = 110,
                             path=None,
-                            extra_flags: tuple[str, ...] = ()):
-  flags = ('--test-launcher-jobs=1', '--test-launcher-retry-limit=0')
-  flags += extra_flags
+                            flags: tuple[str, ...] = ()):
   return ExecutableConfig('sync_performance_tests',
                           path=path,
-                          flags=flags,
-                          extra_flags=extra_flags,
+                          flags=('--test-launcher-jobs=1',
+                                 '--test-launcher-retry-limit=0', *flags),
                           estimated_runtime=estimated_runtime)
 
 
 @_register('base_perftests')
 def _base_perftests(estimated_runtime: int = 270,
                     path=None,
-                    extra_flags: tuple[str, ...] = ()):
-  flags = ('--test-launcher-jobs=1', '--test-launcher-retry-limit=0')
-  flags += extra_flags
+                    flags: tuple[str, ...] = ()):
   return ExecutableConfig('base_perftests',
                           path=path,
-                          flags=flags,
-                          extra_flags=extra_flags,
+                          flags=('--test-launcher-jobs=1',
+                                 '--test-launcher-retry-limit=0', *flags),
                           estimated_runtime=estimated_runtime)
 
 
 @_register('components_perftests')
-def _components_perftests(estimated_runtime: int = 110):
+def _components_perftests(estimated_runtime: int = 110,
+                          flags: tuple[str, ...] = ()):
   return ExecutableConfig('components_perftests',
-                          flags=('--xvfb', ),
+                          flags=('--xvfb', *flags),
                           estimated_runtime=estimated_runtime)
 
 
 @_register('dawn_perf_tests')
-def _dawn_perf_tests(estimated_runtime: int = 270):
+def _dawn_perf_tests(estimated_runtime: int = 270, flags: tuple[str, ...] = ()):
   return ExecutableConfig('dawn_perf_tests',
                           flags=('--test-launcher-jobs=1',
-                                 '--test-launcher-retry-limit=0'),
+                                 '--test-launcher-retry-limit=0', *flags),
                           estimated_runtime=estimated_runtime)
 
 
 @_register('tint_benchmark')
-def _tint_benchmark(estimated_runtime: int = 180):
+def _tint_benchmark(estimated_runtime: int = 180, flags: tuple[str, ...] = ()):
   return ExecutableConfig('tint_benchmark',
-                          flags=('--use-chrome-perf-format', ),
+                          flags=('--use-chrome-perf-format', *flags),
                           estimated_runtime=estimated_runtime)
 
 
 @_register('load_library_perf_tests')
-def _load_library_perf_tests(estimated_runtime: int = 3):
+def _load_library_perf_tests(estimated_runtime: int = 3,
+                             flags: tuple[str, ...] = ()):
   return ExecutableConfig('load_library_perf_tests',
+                          flags=flags,
                           estimated_runtime=estimated_runtime)
 
 
 @_register('performance_browser_tests')
-def _performance_browser_tests(estimated_runtime: int = 67):
+def _performance_browser_tests(estimated_runtime: int = 67,
+                               flags: tuple[str, ...] = ()):
   return ExecutableConfig(
       'performance_browser_tests',
       path='browser_tests',
@@ -389,29 +376,30 @@ def _performance_browser_tests(estimated_runtime: int = 67):
           '--test-launcher-timeout=60000',
           '--gtest_filter=*/TabCapturePerformanceTest.*:'
           '*/CastV2PerformanceTest.*',
-      ),
+          *flags),
       estimated_runtime=estimated_runtime)
 
 
 @_register('tracing_perftests')
-def _tracing_perftests(estimated_runtime: int = 5):
+def _tracing_perftests(estimated_runtime: int = 5, flags: tuple[str, ...] = ()):
   return ExecutableConfig('tracing_perftests',
+                          flags=flags,
                           estimated_runtime=estimated_runtime)
 
 
 @_register('views_perftests')
-def _views_perftests(estimated_runtime: int = 7):
+def _views_perftests(estimated_runtime: int = 7, flags: tuple[str, ...] = ()):
   return ExecutableConfig('views_perftests',
-                          flags=('--xvfb', ),
+                          flags=('--xvfb', *flags),
                           estimated_runtime=estimated_runtime)
 
 
 @_register('web_tests_cuj')
-def _web_tests_cuj(estimated_runtime: int = 10):
+def _web_tests_cuj(estimated_runtime: int = 10, flags: tuple[str, ...] = ()):
   return CrossbenchConfig('web_tests_cuj',
                           'speedometer_3.1',
                           estimated_runtime=estimated_runtime,
-                          flags=('--web-tests-cuj', '--debug'))
+                          flags=('--web-tests-cuj', '--debug', *flags))
 
 # Speedometer:
 @_register('speedometer2.0.crossbench')
@@ -470,26 +458,87 @@ def _speedometer3_crossbench(estimated_runtime: int = 60,
                           flags=flags)
 
 
+@_register("speedometer3-turbolev.crossbench")
+def _speedometer3_turbolev_crossbench(estimated_runtime: int = 60,
+                                      flags: tuple[str, ...] = ()):
+  flags += ("--js-flags=--turbolev", )
+  return CrossbenchConfig(
+      "speedometer3-turbolev.crossbench",
+      "speedometer_3",
+      estimated_runtime=estimated_runtime,
+      flags=flags,
+  )
+
+
+@_register("speedometer3-turbolev_future.crossbench")
+def _speedometer3_turbolev_future_crossbench(estimated_runtime: int = 60,
+                                             flags: tuple[str, ...] = ()):
+  flags += ("--js-flags=--turbolev-future", )
+  return CrossbenchConfig(
+      "speedometer3-turbolev_future.crossbench",
+      "speedometer_3",
+      estimated_runtime=estimated_runtime,
+      flags=flags,
+  )
+
+
 @_register('speedometer_main.crossbench')
 def _speedometer_main_crossbench(estimated_runtime: int = 60,
                                  flags: tuple[str, ...] = ()):
-  # The latest WIP speedometer version
-  flags += ('--detailed-metrics', )
+  """The latest WIP speedometer version running all stories."""
   return CrossbenchConfig('speedometer_main.crossbench',
                           'speedometer_main',
                           estimated_runtime=estimated_runtime,
-                          flags=flags)
+                          flags=('--detailed-metrics', *flags))
+
+
+@_register('speedometer_main.all.crossbench')
+def _speedometer_main_all_crossbench(estimated_runtime: int = 60,
+                                     flags: tuple[str, ...] = ()):
+  """The latest WIP speedometer version running all stories,
+  including experimental"""
+  return CrossbenchConfig('speedometer_main.all.crossbench',
+                          'speedometer_main',
+                          estimated_runtime=estimated_runtime,
+                          flags=('--stories=all', '--detailed-metrics', *flags))
+
+
+@_register('browser_startup.crossbench')
+def _browser_startup_crossbench(estimated_runtime: int = 60,
+                                flags: tuple[str, ...] = ()):
+  """Browser startup benchmark for InitialWebUI vs Baseline."""
+  # We cannot use --browser-config here because it conflicts with the
+  # --browser flag automatically added by the Chromium test runner.
+
+  # NOTE: Keep this list in sync with:
+  # third_party/crossbench/config/benchmark/browser_startup/browser.config.hjson
+  INITIAL_WEBUI_FEATURES = (
+      "InitialWebUI:high_stream_priority/true,"
+      "WebUIReloadButton:WebUIReloadButtonDeferBrowserViewShow/true/"
+      "WebUIReloadButtonKeepVisibleUntilPaint/true/"
+      "WebUIReloadButtonPrewarmWebUI/true,"
+      "SkipIPCChannelPausingForNonGuests,WebUIInProcessResourceLoadingV2,"
+      "InitialWebUISyncNavStartToCommit,InitialWebUIWithoutExtensions,"
+      "WebUIBundledCodeCache,SendGPUChannelEarly"
+  )
+  return CrossbenchConfig('browser_startup.crossbench',
+                          'browser-startup',
+                          estimated_runtime=estimated_runtime,
+                          flags=(f'--enable-features={INITIAL_WEBUI_FEATURES}',
+                                 *flags),
+                          repeat=10)
+
 
 
 @_register('speedometer3.a11y.crossbench')
 def _speedometer3_a11y_crossbench(estimated_runtime: int = 60,
                                   flags: tuple[str, ...] = ()):
   """Latest Speedometer 3 with accessibility flag enabled."""
-  flags += ('--extra-browser-args=--force-renderer-accessibility', )
-  return CrossbenchConfig('speedometer3.a11y.crossbench',
-                          'speedometer_3',
-                          estimated_runtime=estimated_runtime,
-                          flags=flags)
+  return CrossbenchConfig(
+      'speedometer3.a11y.crossbench',
+      'speedometer_3',
+      estimated_runtime=estimated_runtime,
+      flags=('--extra-browser-args=--force-renderer-accessibility', *flags))
 
 
 # MotionMark:
@@ -528,6 +577,17 @@ def _motionmark1_3_crossbench(estimated_runtime: int = 360,
                           'motionmark_1.3',
                           estimated_runtime=estimated_runtime,
                           flags=flags)
+
+
+@_register('motionmark1.3-turbolev.crossbench')
+def _motionmark1_3_turbolev_crossbench(estimated_runtime: int = 360,
+                                       flags: tuple[str, ...] = ()):
+  flags += ('--js-flags=--turbolev', )
+  return CrossbenchConfig('motionmark1.3-turbolev.crossbench',
+                          'motionmark_1.3',
+                          estimated_runtime=estimated_runtime,
+                          flags=flags)
+
 
 
 @_register('motionmark_main.crossbench')
@@ -604,6 +664,16 @@ def _jetstream_main_crossbench(estimated_runtime: int = 180,
                           flags=flags)
 
 
+@_register('jetstream3-turbolev.crossbench')
+def _jetstream3_turbolev_crossbench(estimated_runtime: int = 180,
+                                    flags: tuple[str, ...] = ()):
+  flags += ('--js-flags=--turbolev', )
+  return CrossbenchConfig('jetstream3-turbolev.crossbench',
+                          'jetstream_3',
+                          estimated_runtime=estimated_runtime,
+                          flags=flags)
+
+
 @_register('jetstream3-turbolev_future.crossbench')
 def _jetstream3_turbolev_future_crossbench(estimated_runtime: int = 180,
                                            flags: tuple[str, ...] = ()):
@@ -649,7 +719,8 @@ def _crossbench_loading(estimated_runtime: int = 750,
   return CrossbenchConfig('loading.crossbench',
                           'loading',
                           estimated_runtime=estimated_runtime,
-                          flags=flags)
+                          flags=flags,
+                          auto_enable_field_trials=False)
 
 
 @_register('embedder.crossbench')
@@ -658,7 +729,28 @@ def _crossbench_embedder(estimated_runtime: int = 900,
   return CrossbenchConfig('embedder.crossbench',
                           'embedder',
                           estimated_runtime=estimated_runtime,
-                          flags=flags)
+                          flags=flags,
+                          auto_enable_field_trials=False)
+
+
+@_register('gma.embedder.crossbench')
+def _crossbench_gma_embedder(estimated_runtime: int = 900,
+                            flags: tuple[str, ...] = ()):
+  return CrossbenchConfig('gma.embedder.crossbench',
+                          'embedder',
+                          estimated_runtime=estimated_runtime,
+                          flags=flags,
+                          auto_enable_field_trials=False)
+
+
+@_register('shell.embedder.crossbench')
+def _crossbench_shell_embedder(estimated_runtime: int = 900,
+                            flags: tuple[str, ...] = ()):
+  return CrossbenchConfig('shell.embedder.crossbench',
+                          'embedder',
+                          estimated_runtime=estimated_runtime,
+                          flags=flags,
+                          auto_enable_field_trials=False)
 
 
 @_register('devtools_frontend.crossbench')
@@ -670,12 +762,23 @@ def _devtools_frontend_crossbench(estimated_runtime: int = 60,
                           flags=flags)
 
 
+@_register('blink-ai.crossbench')
+def _crossbench_blink_ai(estimated_runtime: int = 300,
+                         flags: tuple[str, ...] = ()):
+  return CrossbenchConfig('blink-ai.crossbench',
+                          'blink-ai',
+                          estimated_runtime=estimated_runtime,
+                          stories=('language_model', ),
+                          flags=flags,
+                          auto_enable_field_trials=False)
+
+
 PLATFORM_INFO = {
     'linux-perf': {
         'description': ('Ubuntu-22.04, Precision 3930 Rack, '
                         'NVIDIA GeForce GTX 1660'),
         'num_shards':
-        7,
+        4,
         'platform_os':
         'linux',
         'is_fyi':
@@ -751,6 +854,18 @@ PLATFORM_INFO = {
     'mac-m4-mini-perf': {
         'description': 'Mac M4 mini ARM',
         'num_shards': 25,
+        'platform_os': 'mac',
+        'is_fyi': False
+    },
+    'mac-m4-pro-perf': {
+        'description': 'MacBook Pro M4 ARM',
+        'num_shards': 15,
+        'platform_os': 'mac',
+        'is_fyi': False
+    },
+    'mac-m5-pro-perf': {
+        'description': 'Mac M5 PRO ARM',
+        'num_shards': 2,
         'platform_os': 'mac',
         'is_fyi': False
     },
@@ -836,9 +951,10 @@ PLATFORM_INFO = {
         'platform_os': 'win',
         'is_fyi': False
     },
+    # TODO(crbug.com/525430279): Use all 8 bots to test the Canary image.
     'android-brya-kano-i5-8gb-perf': {
         'description': 'Brya SKU kano_12th_Gen_IntelR_CoreTM_i5_1235U_8GB',
-        'num_shards': 4,
+        'num_shards': 8,
         'platform_os': 'android',
         'is_fyi': False
     },
@@ -856,7 +972,7 @@ PLATFORM_INFO = {
     },
     'android-pixel4-perf': {
         'description': 'Android R',
-        'num_shards': 44,
+        'num_shards': 38,
         'platform_os': 'android',
         'is_fyi': False
     },
@@ -869,31 +985,19 @@ PLATFORM_INFO = {
     },
     'android-pixel4_webview-perf': {
         'description': 'Android R',
-        'num_shards': 23,
+        'num_shards': 19,
         'platform_os': 'android',
         'is_fyi': False
     },
     'android-pixel4_webview-perf-pgo': {
         'description': 'Android R',
-        'num_shards': 20,
-        'platform_os': 'android',
-        'is_fyi': False
-    },
-    'android-pixel6-perf': {
-        'description': 'Android U',
-        'num_shards': 14,
+        'num_shards': 12,
         'platform_os': 'android',
         'is_fyi': False
     },
     'android-pixel6-perf-pgo': {
         'description': 'Android U',
         'num_shards': 8,
-        'platform_os': 'android',
-        'is_fyi': False
-    },
-    'android-pixel6-pro-perf': {
-        'description': 'Android T',
-        'num_shards': 10,
         'platform_os': 'android',
         'is_fyi': False
     },
@@ -906,7 +1010,7 @@ PLATFORM_INFO = {
     },
     'android-pixel-fold-perf': {
         'description': 'Android U',
-        'num_shards': 10,
+        'num_shards': 8,
         'platform_os': 'android',
         'is_fyi': False
     },
@@ -946,15 +1050,15 @@ PLATFORM_INFO = {
         'platform_os': 'android',
         'is_fyi': False
     },
-    'android-pixel25-ultra-perf': {
+    'android-pixel10-perf': {
         'description': 'Android B',
-        'num_shards': 4,
+        'num_shards': 25,
         'platform_os': 'android',
         'is_fyi': False
     },
-    'android-pixel25-ultra-xl-perf': {
+    'android-pixel10_webview-perf': {
         'description': 'Android B',
-        'num_shards': 3,
+        'num_shards': 23,
         'platform_os': 'android',
         'is_fyi': False
     },
@@ -990,6 +1094,8 @@ PLATFORM_INFO = {
     },
 }
 
+# TODO: add more details.
+BENCHMARK_INFO = {k: {} for k, v in _BENCHMARKS_CONFIG_FACTORIES.items()}
 
 def LoadAllScheduleFiles() -> set[_PerfPlatform]:
   schedule_dir = pathlib.Path(__file__).resolve().parent / 'schedule'

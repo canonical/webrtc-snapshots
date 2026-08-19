@@ -32,7 +32,6 @@ TEST_TARGET_ALLOWLIST: list[str] = [
     '//chrome/browser/glic/e2e_test:glic_internal_e2e_interactive_ui_tests',
     '//chrome/browser/mac:install_sh_test',
     '//chrome/browser/metrics/perf:profile_provider_unittest',
-    '//chrome/browser/privacy_sandbox/notice:fuzz_tests',
     '//chrome/browser/web_applications:web_application_fuzztests',
     '//chromecast/media/base:video_plane_controller_test',
     '//chromecast/metrics:cast_metrics_unittest',
@@ -140,7 +139,7 @@ GTEST_FILE_NAME_GLOB: str = '*{test,tests}*.{cc,mm,java}'
 
 # Regex version of `(PREF_MAPPING_FILE_GLOB) | (GTEST_FILE_GLOB)`
 TEST_FILE_NAME_REGEX: re.Pattern[str] = re.compile(
-    r'(.*tests?.*\.(cc|mm|java)$)' + r'|(' + PREF_MAPPING_FILE_PATTERN + r')',
+    r'.*(?:tests?.*\.(?:cc|mm)|Test\.java|' + PREF_MAPPING_FILE_PATTERN + ')$',
     flags=re.IGNORECASE)
 
 _PREF_MAPPING_GTEST_FILTER: str = '*PolicyPrefsTest.PolicyToPrefsMapping*'
@@ -161,6 +160,11 @@ GTEST_TEST_DEFINITION_MACRO_REGEX = re.compile(
 JUNIT_TEST_ANNOTATION_REGEX = re.compile(r'^\s*@Test', flags=re.MULTILINE)
 
 ## ENUMS ##
+
+
+class TestType(Enum):
+  GTEST = 1
+  WEB = 2
 
 
 class TestValidity(Enum):

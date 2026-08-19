@@ -6,7 +6,11 @@ import argparse
 import json
 import os
 import sys
+import tempfile
+import contextlib
+import logging
 
+import finders.file_finder as file_finder
 import utils.command_util as command
 import utils.constants as const
 
@@ -78,12 +82,52 @@ def _ParseRefsOutput(output: str) -> list[str]:
   return targets
 
 
-def FindTestTargets(target_cache: TargetCache,
-                    out_dir: str,
-                    paths: list[str],
-                    run_all: bool = False,
-                    run_changed: bool = False,
-                    target_index: int | None = None) -> tuple[list[str], bool]:
+def _FindTestTargetsViaGnRefs(out_dir: str, gn_paths: list[str]) -> list[str]:
+  gn_path: str = os.path.join(str(const.DEPOT_TOOLS_DIR), 'gn.py')
+
+  cmd: list[str] = [
+      sys.executable,
+      gn_path,
+      'refs',
+      out_dir,
+      '--all',
+      '--relation=source',
+  ]
+
+  is_cpp_only = all(
+      p.endswith(('.cc', '.mm', '.cpp', '.h', '.m')) for p in gn_paths)
+  if not is_cpp_only:
+    cmd.append('--relation=input')
+
+  response_file = None
+  if len(gn_paths) > 100:
+    cm = tempfile.NamedTemporaryFile(mode='w', delete=False)
+  else:
+    cm = contextlib.nullcontext()
+    cmd.extend(gn_paths)
+
+  with cm as tmp_file:
+    if tmp_file:
+      tmp_file.write('\n'.join(gn_paths))
+      cmd.append(f'@{tmp_file.name}')
+
+    targets: list[str] = _ParseRefsOutput(command.RunCommand(cmd))
+    test_targets = _TestTargetsFromGnRefs(targets)
+
+    if not test_targets and targets:
+      test_targets = _ParseRefsOutput(
+          command.RunCommand(cmd + ['--type=executable']))
+  return test_targets
+
+
+def FindTestTargets(
+    target_cache: TargetCache,
+    out_dir: str,
+    paths: list[str],
+    run_all: bool = False,
+    run_changed: bool = False,
+    target_index: int | None = None,
+    orig_paths: list[str] | None = None) -> tuple[list[str], bool]:
   run_all: bool = run_all or run_changed
 
   # Normalize paths, so they can be cached.
@@ -93,28 +137,15 @@ def FindTestTargets(target_cache: TargetCache,
   if not test_targets:
     used_cache = False
 
-    # Use gn refs to recursively find all targets that depend on |path|, filter
-    # internal gn targets, and match against well-known test suffixes, falling
-    # back to a list of known test targets if that fails.
-    gn_path: str = os.path.join(str(const.DEPOT_TOOLS_DIR), 'gn.py')
+    web_test_paths = {p for p in paths if file_finder.IsWebTestFile(p)}
+    gn_paths = [p for p in paths if p not in web_test_paths]
+    test_targets = []
 
-    cmd: list[str] = [
-        sys.executable,
-        gn_path,
-        'refs',
-        out_dir,
-        '--all',
-        '--relation=source',
-        '--relation=input',
-    ] + paths
-    targets: list[str] = _ParseRefsOutput(command.RunCommand(cmd))
-    test_targets = _TestTargetsFromGnRefs(targets)
+    if gn_paths:
+      test_targets = _FindTestTargetsViaGnRefs(out_dir, gn_paths)
 
-    # If no targets were identified as tests by looking at their names, ask GN
-    # if any are executables.
-    if not test_targets and targets:
-      test_targets = _ParseRefsOutput(
-          command.RunCommand(cmd + ['--type=executable']))
+    if web_test_paths:
+      test_targets.append('//blink_tests')
 
   if not test_targets:
     command.ExitWithMessage(
@@ -128,15 +159,20 @@ def FindTestTargets(target_cache: TargetCache,
 
   if len(test_targets) > 1:
     if run_all:
-      print(f'Warning, found {len(test_targets)} test targets.',
-            file=sys.stderr)
-      if len(test_targets) > 10:
-        command.ExitWithMessage('Your query likely involves non-test sources.')
-      print('Trying to run all of them!', file=sys.stderr)
+      logging.warning(f'Found {len(test_targets)} test targets.')
+      if len(test_targets) > 10 and not run_changed:
+        if len(test_targets) < 50:
+          logging.info('Targets found:')
+          for t in test_targets:
+            logging.info(f'  {t}')
+        command.ExitWithMessage(
+            'Your query may involve non-test sources. Use --target to choose'
+            ' one explicitly.')
+      logging.info('Trying to run all of them!')
     elif target_index is not None and 0 <= target_index < len(test_targets):
       test_targets = [test_targets[target_index]]
     else:
-      test_targets = [command.HaveUserPickTarget(paths, test_targets)]
+      test_targets = [command.HaveUserPickTarget(orig_paths, test_targets)]
 
   # Remove the // prefix to turn GN label into ninja target.
   test_targets_gn: list[str] = [t[2:] for t in test_targets]

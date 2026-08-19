@@ -37,7 +37,8 @@ from pathlib import Path
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'clang',
                  'scripts'))
-from build import (AddZlibToPath, GetLibXml2Dirs, CheckoutGitRepo)
+from build import (AddZlibToPath, CheckoutGitRepo, GetLatestCommit,
+                   GetLibXml2Dirs)
 
 from update_rust import (CHROMIUM_DIR, CRUBIT_REVISION, RUST_TOOLCHAIN_OUT_DIR)
 
@@ -61,9 +62,7 @@ EXE = '.exe' if sys.platform == 'win32' else ''
 def GetLatestCrubitCommit():
     """Get the latest commit hash in the Crubit repo."""
     url = CRUBIT_GIT + '/+/refs/heads/upstream/main?format=JSON'
-    main = json.loads(
-        urllib.request.urlopen(url).read().decode("utf-8").replace(")]}'", ""))
-    return main['commit']
+    return GetLatestCommit(url)
 
 
 def GetCcBindingsFromRsRustFlags():
@@ -114,6 +113,7 @@ def BuildCrubit(rust_sysroot, out_dir, skip_checkout):
 
     print(f'Building cc_bindings_from_rs ...')
     cargo_args = ['build', '--release', '--verbose']
+    cargo_args += ['--locked']  # `Cargo.lock` added to Crubit in b/510364826
     cargo_args += ['--bin', 'cc_bindings_from_rs']
     cargo_args += ['--target-dir', target_dir]
     cargo_args += ['--manifest-path', CC_BINDINGS_FROM_RS_CARGO_TOML_PATH]
@@ -134,14 +134,20 @@ def BuildCrubit(rust_sysroot, out_dir, skip_checkout):
         shutil.copy(os.path.join(release_dir, bin),
                     os.path.join(RUST_TOOLCHAIN_OUT_DIR, 'bin', bin))
 
+    # `crubit_target_dir` below helps ensure that Chromium can use the same
+    # `#include` paths as other Crubit clients like google3 - e.g.
+    # `#include "third_party/crubit/support/rs_std/slice_ref.h"`.
     print(f'Installing `crubit/support` to {RUST_TOOLCHAIN_OUT_DIR} ...')
-    crubit_support_install_dir = os.path.join(RUST_TOOLCHAIN_OUT_DIR, 'lib',
-                                              'crubit', 'support')
-    os.makedirs(crubit_support_install_dir, exist_ok=True)
-    crubit_support_src_dir = os.path.join(CRUBIT_SRC_DIR, 'support')
-    shutil.copytree(crubit_support_src_dir,
-                    crubit_support_install_dir,
-                    dirs_exist_ok=True)
+    crubit_target_dir = os.path.join(RUST_TOOLCHAIN_OUT_DIR, 'lib',
+                                     'third_party', 'crubit')
+    for item in ["BUILD.gn", "LICENSE", "crubit.gni", "support"]:
+        source_path = os.path.join(CRUBIT_SRC_DIR, item)
+        target_path = os.path.join(crubit_target_dir, item)
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        if os.path.isdir(source_path):
+            shutil.copytree(source_path, target_path, dirs_exist_ok=True)
+        else:
+            shutil.copy2(source_path, target_path)
 
     return 0
 

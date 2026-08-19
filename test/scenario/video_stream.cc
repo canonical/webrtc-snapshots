@@ -24,6 +24,7 @@
 #include "api/environment/environment.h"
 #include "api/make_ref_counted.h"
 #include "api/media_types.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
@@ -69,12 +70,10 @@
 namespace webrtc {
 namespace test {
 namespace {
-enum : int {  // The first valid value is 1.
-  kTransportSequenceNumberExtensionId = 1,
-  kAbsSendTimeExtensionId,
-  kVideoContentTypeExtensionId,
-  kVideoRotationRtpExtensionId,
-};
+constexpr RtpHeaderExtensionId kTransportSequenceNumberExtensionId(1);
+constexpr RtpHeaderExtensionId kAbsSendTimeExtensionId(2);
+constexpr RtpHeaderExtensionId kVideoContentTypeExtensionId(3);
+constexpr RtpHeaderExtensionId kVideoRotationRtpExtensionId(4);
 
 uint8_t CodecTypeToPayloadType(VideoCodecType codec_type) {
   switch (codec_type) {
@@ -525,7 +524,7 @@ VideoSendStream::Stats SendVideoStream::GetStats() const {
 ColumnPrinter SendVideoStream::StatsPrinter() {
   return ColumnPrinter::Lambda(
       "video_target_rate video_sent_rate width height",
-      [this](SimpleStringBuilder& sb) {
+      [this](StringBuilder& sb) {
         VideoSendStream::Stats video_stats = send_stream_->GetStats();
         int width = 0;
         int height = 0;

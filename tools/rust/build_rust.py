@@ -56,9 +56,10 @@ sys.path.append(
                  'scripts'))
 
 from build import (AddCMakeToPath, AddZlibToPath, CheckoutGitRepo, CopyFile,
-                   DownloadDebianSysroot, GetLibXml2Dirs, GitCherryPick,
-                   GitRevert, LLVM_DIR, IsGitAncestorToHead,
-                   LLVM_BUILD_TOOLS_DIR, RunCommand)
+                   DownloadDebianSysroot, FetchUrl, GetLibXml2Dirs,
+                   GitCherryPick, GitRevert, LLVM_DIR, IsGitAncestorToHead,
+                   LLVM_BUILD_TOOLS_DIR, RunCommand,
+                   DEFAULT_MACOSX_DEPLOYMENT_TARGET, GetLatestCommit)
 from update import (CHROMIUM_DIR, DownloadAndUnpack, EnsureDirExists,
                     GetDefaultHostOs, RmTree, ReadStampFile, WriteStampFile,
                     UpdatePackage, STAMP_FILENAME as LLVM_STAMP_FILENAME,
@@ -76,16 +77,9 @@ EXCLUDED_TESTS = [
     os.path.join('tests', 'codegen-llvm', 'common_prim_int_ptr.rs'),
     # Temporarily disabled due to https://crbug.com/433249564
     os.path.join('tests', 'codegen-llvm', 'enum', 'enum-discriminant-eq.rs'),
-    # Temporarily disabled due to https://crbug.com/446928953
-    os.path.join('tests', 'codegen-llvm', 'issues',
-                 'issue-122600-ptr-discriminant-update.rs'),
-    os.path.join('tests', 'codegen-llvm', 'vec_pop_push_noop.rs'),
-    os.path.join('tests', 'codegen-llvm', 'vecdeque_pop_push.rs'),
-    # Temporarily disabled due to https://crbug.com/453668132
-    os.path.join('tests', 'codegen-llvm', 'simd-intrinsic', 'simd-intrinsic-generic-scatter.rs'),
-    os.path.join('tests', 'codegen-llvm', 'simd-intrinsic', 'simd-intrinsic-generic-gather.rs'),
-    os.path.join('tests', 'codegen-llvm', 'simd-intrinsic', 'simd-intrinsic-generic-masked-store.rs'),
-    os.path.join('tests', 'codegen-llvm', 'simd-intrinsic', 'simd-intrinsic-generic-masked-load.rs'),
+    # Temporarily disabled due to https://crbug.com/522257311
+    os.path.join('tests', 'codegen-llvm', 'issues', 'issue-118306.rs'),
+    os.path.join('tests', 'codegen-llvm', 'pow_known_base.rs'),
 ]
 EXCLUDED_TESTS_WINDOWS = [
     # Temporarily disabled due to https://crbug.com/379308086
@@ -97,6 +91,9 @@ EXCLUDED_TESTS_WINDOWS = [
 EXCLUDED_TESTS_MAC = [
 ]
 EXCLUDED_TESTS_MAC_ARM64 = [
+    # Temporarily disabled due to https://crbug.com/507812580
+    os.path.join('tests', 'ui', 'allocator',
+                 'regression-abort-on-free-issue-150898.rs'),
 ]
 
 CLANG_SCRIPTS_DIR = os.path.join(CHROMIUM_DIR, 'tools', 'clang', 'scripts')
@@ -211,8 +208,7 @@ def VerifyStage0JsonHash(stage0_json_url=None):
     hasher = hashlib.sha256()
     if stage0_json_url:
         print(stage0_json_url)
-        base64_text = urllib.request.urlopen(stage0_json_url).read().decode(
-            "utf-8")
+        base64_text = FetchUrl(stage0_json_url).decode("utf-8")
         stage0 = base64.b64decode(base64_text)
         hasher.update(stage0)
     else:
@@ -245,8 +241,8 @@ def FetchBetaPackage(name, rust_git_hash, triple=None):
     STAGE0_JSON_URL = (
         'https://chromium.googlesource.com/external/github.com/'
         'rust-lang/rust/+/{GIT_HASH}/src/stage0?format=TEXT')
-    base64_text = urllib.request.urlopen(
-        STAGE0_JSON_URL.format(GIT_HASH=rust_git_hash)).read().decode("utf-8")
+    base64_text = FetchUrl(
+        STAGE0_JSON_URL.format(GIT_HASH=rust_git_hash)).decode("utf-8")
     stage0 = base64.b64decode(base64_text).decode("utf-8")
     lines = stage0.splitlines()
 
@@ -376,6 +372,13 @@ class XPy:
             # and then the clang linker can't find `-lSystem`, unless we set the
             # `SDKROOT`.
             self._env['SDKROOT'] = sdk_path
+
+            self._env[
+                'MACOSX_DEPLOYMENT_TARGET'] = DEFAULT_MACOSX_DEPLOYMENT_TARGET
+
+            # Due to an interaction with Homebrew installed `liblzma.dylib`, we
+            # must tell lzma-sys explicitly to build it from source.
+            self._env['LZMA_API_STATIC'] = '1'
 
         if zlib_path:
             self._env['CFLAGS'] += f' -I{zlib_path}'
@@ -560,9 +563,7 @@ def GetLatestRustCommit():
         'https://chromium.googlesource.com/external/' +
         'github.com/rust-lang/rust/+/refs/heads/main?format=JSON'  # nocheck
     )
-    main = json.loads(
-        urllib.request.urlopen(url).read().decode("utf-8").replace(")]}'", ""))
-    return main['commit']
+    return GetLatestCommit(url)
 
 
 def RustTargetTriple():
@@ -655,25 +656,6 @@ def GitApplyCherryPicks():
     # cherry-pick fixes into it, then point RUST_SRC_DIR at that fork
     # with `GitMoveSubmoduleBranch()`.
     #############################
-
-    # TODO(crbug.com/474940921): Remove once
-    # https://github.com/rust-lang/rust/pull/150998 lands and we roll past it.
-    GitCherryPick(RUST_SRC_DIR, '6ca950136de7abd91cc1820b5a7f7109fe568016',
-                  'https://github.com/rust-lang/rust.git')
-    # TODO(crbug.com/474940920): Remove once
-    # https://github.com/rust-lang/rust/pull/151072 lands and we roll past it.
-    GitCherryPick(RUST_SRC_DIR, '5435e8188ce1bf0912b3a98a54e316e391d3ca27',
-                  'https://github.com/rust-lang/rust.git')
-    # TODO(crbug.com/483350674): Remove once
-    # https://github.com/rust-lang/rust/pull/152404 lands and we roll past it.
-    GitCherryPick(RUST_SRC_DIR, 'aefb9a9ae261dae8d84b801c9396dd571a75339a',
-                  'https://github.com/rust-lang/rust.git')
-
-    # TODO(crbug.com/477565811): Remove once the outline atomics situation is
-    # resolved. This cherry-picks
-    # https://github.com/zmodem/rust/commit/b01caa5309eb7d47bbd2a0b4ae63f7d065be1963
-    GitCherryPick(RUST_SRC_DIR, 'b01caa5309eb7d47bbd2a0b4ae63f7d065be1963',
-                  'https://github.com/zmodem/rust.git', 'zmodem')
 
     print('Finished applying cherry-picks.')
 
@@ -895,6 +877,28 @@ def main():
 
         VendorForStdlib(cargo_bin)
 
+    # Create git-commit-info in the source directory so that builds
+    # from tarballs (which lack .git) can set rustc's version info.
+    if os.path.exists(os.path.join(RUST_SRC_DIR, '.git')):
+        if args.skip_checkout:
+            git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
+                                               cwd=RUST_SRC_DIR,
+                                               text=True).strip()
+        else:
+            git_hash = checkout_revision
+        git_short_hash = git_hash[:9]
+        git_date = subprocess.check_output([
+            'git', 'log', '-1', '--date=short', '--pretty=format:%cd',
+            f'{git_hash}'
+        ],
+                                           cwd=RUST_SRC_DIR,
+                                           text=True).strip()
+
+        with open(os.path.join(RUST_SRC_GIT_COMMIT_INFO_FILE_PATH), 'w') as f:
+            f.write(f'{git_hash}\n')
+            f.write(f'{git_short_hash}\n')
+            f.write(f'{git_date}\n')
+
     # Gnrt needs the checkout to be up-to-date, workspace submodules to be
     # synced for cargo to work, and the cargo binary itself. All this is done,
     # so quit.
@@ -969,7 +973,10 @@ def main():
             print('Building bindgen...')
             build_cmd = [
                 sys.executable,
-                os.path.join(THIS_DIR, 'build_bindgen.py')
+                os.path.join(THIS_DIR, 'build_bindgen.py'),
+                # TODO(crbug.com/512812284): unskip the test once we roll
+                # bindgen.
+                "--skip-test"
             ]
             TeeCmd(build_cmd, log)
 

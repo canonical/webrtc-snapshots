@@ -20,8 +20,6 @@
 #include <vector>
 
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
-#include "api/field_trials.h"
 #include "api/make_ref_counted.h"
 #include "api/scoped_refptr.h"
 #include "api/test/mock_video_encoder.h"
@@ -48,6 +46,7 @@
 #include "modules/video_coding/svc/scalable_video_controller.h"
 #include "modules/video_coding/svc/svc_rate_allocator.h"
 #include "rtc_base/checks.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -151,7 +150,7 @@ class TestAv1Decoder {
 };
 
 TEST(LibaomAv1Test, EncodeDecode) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   TestAv1Decoder decoder(env, /*decoder_id=*/0);
   std::unique_ptr<VideoEncoder> encoder = CreateLibaomAv1Encoder(env);
   VideoCodec codec_settings = DefaultCodecSettings();
@@ -179,11 +178,10 @@ TEST(LibaomAv1Test, EncodeDecode) {
 }
 
 TEST(LibaomAv1Test, EncodeDecodeWithSpeedController) {
-  EnvironmentFactory factory;
-  factory.Set(std::make_unique<FieldTrials>(
-      "WebRTC-EncoderSpeed/"
-      "dynamic_speed:true,av1_camera:high,av1_screenshare:low/"));
-  const Environment env = factory.Create();
+  const Environment env = CreateTestEnvironment(
+      {.field_trials =
+           "WebRTC-EncoderSpeed/"
+           "dynamic_speed:true,av1_camera:high,av1_screenshare:low/"});
 
   TestAv1Decoder decoder(env, /*decoder_id=*/0);
   std::unique_ptr<VideoEncoder> encoder = CreateLibaomAv1Encoder(env);
@@ -212,11 +210,10 @@ TEST(LibaomAv1Test, EncodeDecodeWithSpeedController) {
 }
 
 TEST(LibaomAv1Test, InitReleaseRepeatedly) {
-  EnvironmentFactory factory;
-  factory.Set(FieldTrials::Create(
-      "WebRTC-EncoderSpeed/"
-      "dynamic_speed:true,av1_camera:high,av1_screenshare:low/"));
-  const Environment env = factory.Create();
+  const Environment env = CreateTestEnvironment(
+      {.field_trials =
+           "WebRTC-EncoderSpeed/"
+           "dynamic_speed:true,av1_camera:high,av1_screenshare:low/"});
 
   std::unique_ptr<VideoEncoder> encoder = CreateLibaomAv1Encoder(env);
   VideoCodec codec_settings = DefaultCodecSettings();
@@ -240,7 +237,7 @@ TEST(LibaomAv1Test, InitReleaseRepeatedly) {
 }
 
 TEST(LibaomAv1Test, RejectsNativeFramesWithUnequalChromaStrides) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   std::unique_ptr<VideoEncoder> encoder = CreateLibaomAv1Encoder(env);
   VideoCodec codec_settings = DefaultCodecSettings();
   ASSERT_EQ(encoder->InitEncode(&codec_settings, DefaultEncoderSettings()),
@@ -283,7 +280,7 @@ TEST(LibaomAv1Test, RejectsNativeFramesWithUnequalChromaStrides) {
 }
 
 TEST(LibaomAv1Test, RejectsI420FramesWithUnequalChromaStrides) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   std::unique_ptr<VideoEncoder> encoder = CreateLibaomAv1Encoder(env);
   VideoCodec codec_settings = DefaultCodecSettings();
   ASSERT_EQ(encoder->InitEncode(&codec_settings, DefaultEncoderSettings()),
@@ -369,7 +366,7 @@ TEST_P(LibaomAv1SvcTest, EncodeAndDecodeAllDecodeTargets) {
   size_t num_decode_targets =
       svc_controller->DependencyStructure().num_decode_targets;
 
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   std::unique_ptr<VideoEncoder> encoder = CreateLibaomAv1Encoder(env);
   VideoCodec codec_settings = DefaultCodecSettings();
   codec_settings.SetScalabilityMode(GetParam().GetScalabilityMode());
@@ -442,7 +439,7 @@ TEST_P(LibaomAv1SvcTest, SetRatesMatchMeasuredBitrate) {
   }
 
   std::unique_ptr<VideoEncoder> encoder =
-      CreateLibaomAv1Encoder(CreateEnvironment());
+      CreateLibaomAv1Encoder(CreateTestEnvironment());
   ASSERT_TRUE(encoder);
   VideoCodec codec_settings = DefaultCodecSettings();
   codec_settings.SetScalabilityMode(param.GetScalabilityMode());

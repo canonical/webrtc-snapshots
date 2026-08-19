@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "api/environment/environment.h"
+#include "api/transport/ecn_marking.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
@@ -81,6 +82,11 @@ void LogScreamSimulation::OnPacketSent(const LoggedPacketInfo& packet) {
     scream_->OnPacketSent(packet_info->data_in_flight);
     data_in_flight_ = packet_info->data_in_flight;
   }
+
+  if (last_log_state_time_.IsInfinite() ||
+      packet.log_packet_time - last_log_state_time_ >= TimeDelta::Millis(25)) {
+    LogState(packet.log_packet_time);
+  }
 }
 
 void LogScreamSimulation::OnTransportFeedback(
@@ -92,7 +98,8 @@ void LogScreamSimulation::OnTransportFeedback(
                                                    feedback_time);
   if (msg.has_value()) {
     scream_->OnTransportPacketsFeedback(*msg);
-    LogState(*msg);
+    UpdateFeedbackHistory(*msg);
+    LogState(msg->feedback_time);
   }
 }
 
@@ -105,7 +112,8 @@ void LogScreamSimulation::OnCongestionControlFeedback(
           feedback.congestion_feedback, feedback_time);
   if (msg.has_value()) {
     scream_->OnTransportPacketsFeedback(*msg);
-    LogState(*msg);
+    UpdateFeedbackHistory(*msg);
+    LogState(msg->feedback_time);
   }
 }
 
@@ -123,10 +131,11 @@ void LogScreamSimulation::OnIceConfig(
       // ScreamNetworkController::OnNetworkRouteChange.
       scream_.emplace(env_);
       scream_->SetTargetBitrateConstraints(
-          /*min=*/DataRate::Zero() /*max=*/, DataRate::PlusInfinity(),
+          /*min=*/DataRate::Zero(), /*max=*/DataRate::PlusInfinity(),
           /*start=*/DataRate::KilobitsPerSec(300));
       local_candidate_type_ = candidate.local_candidate_type;
       remote_candidate_type_ = candidate.remote_candidate_type;
+      feedback_history_.clear();
     }
   }
 }
@@ -159,17 +168,65 @@ void LogScreamSimulation::ProcessEventsInLog(
   processor.ProcessEventsInOrder();
 }
 
-void LogScreamSimulation::LogState(const TransportPacketsFeedback& msg) {
-  state_.emplace_back(State{
+void LogScreamSimulation::UpdateFeedbackHistory(
+    const TransportPacketsFeedback& msg) {
+  TimeDelta rtt = scream_->rtt();
+  while (!feedback_history_.empty() &&
+         feedback_history_.front().time < msg.feedback_time - rtt) {
+    feedback_history_.pop_front();
+  }
+
+  int lost_count = 0;
+  int recovered_count = 0;
+  int ce_marked_count = 0;
+  for (const auto& packet : msg.packet_feedbacks) {
+    if (packet.reported_lost_for_the_first_time) {
+      lost_count++;
+    }
+    if (packet.reported_recovered_for_the_first_time) {
+      recovered_count++;
+    }
+    if (packet.ecn == EcnMarking::kCe) {
+      ce_marked_count++;
+    }
+  }
+
+  feedback_history_.push_back(FeedbackEvent{
       .time = msg.feedback_time,
+      .lost_count = lost_count,
+      .recovered_count = recovered_count,
+      .ce_marked_count = ce_marked_count,
+  });
+}
+
+void LogScreamSimulation::LogState(Timestamp log_time) {
+  int total_lost = 0;
+  int total_recovered = 0;
+  int total_ce_marked = 0;
+  for (const auto& event : feedback_history_) {
+    total_lost += event.lost_count;
+    total_recovered += event.recovered_count;
+    total_ce_marked += event.ce_marked_count;
+  }
+
+  int last_feedback_lost_count =
+      feedback_history_.empty() ? 0 : feedback_history_.back().lost_count;
+  int last_feedback_recovered_count =
+      feedback_history_.empty() ? 0 : feedback_history_.back().recovered_count;
+  int last_feedback_ce_marked_count =
+      feedback_history_.empty() ? 0 : feedback_history_.back().ce_marked_count;
+
+  state_.emplace_back(State{
+      .time = log_time,
       .target_rate = scream_->target_rate(),
       .pacing_rate = scream_->pacing_rate(),
-      .send_rate =
-          send_rate_tracker_.Rate(msg.feedback_time).value_or(DataRate::Zero()),
+      .send_rate = send_rate_tracker_.Rate(log_time).value_or(DataRate::Zero()),
+      .received_rate = scream_->received_rate(),
       .ref_window = scream_->ref_window(),
       .ref_window_i = scream_->ref_window_i(),
       .max_allowed_ref_window = scream_->max_allowed_ref_window(),
       .max_data_in_flight = scream_->max_data_in_flight(),
+      .is_application_limited = scream_->is_application_limited(),
       .data_in_flight = data_in_flight_,
       .send_window_usage = send_window_usage_,
       .smoothed_rtt = scream_->delay_based_congestion_control().rtt(),
@@ -190,7 +247,16 @@ void LogScreamSimulation::LogState(const TransportPacketsFeedback& msg) {
           scream_->last_ref_window_increase_scale_factor(),
       .l4s_alpha = scream_->l4s_alpha(),
       .l4s_alpha_v = scream_->delay_based_congestion_control().l4s_alpha_v(),
+      .loss_congestion_level = scream_->loss_congestion_level(),
+      .packets_lost_per_rtt = total_lost,
+      .packets_recovered_per_rtt = total_recovered,
+      .ce_marked_per_rtt = total_ce_marked,
+      .packets_lost_per_feedback = last_feedback_lost_count,
+      .packets_recovered_per_feedback = last_feedback_recovered_count,
+      .ce_marked_per_feedback = last_feedback_ce_marked_count,
   });
+
+  last_log_state_time_ = log_time;
 }
 
 }  // namespace webrtc

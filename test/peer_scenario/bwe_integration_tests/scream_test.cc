@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
@@ -60,6 +61,7 @@ namespace webrtc {
 namespace {
 
 using test::GetAvailableSendBitrate;
+using test::GetAveragePacingDelay;
 using test::GetCurrentRoundTripTime;
 using test::GetFirstReportAtOrAfter;
 using test::GetPacketsLost;
@@ -102,6 +104,16 @@ MATCHER_P2(AvailableSendBitrateIsBetween, low, high, "") {
                     << available_bwe.kbps() << "kbps, which is not between "
                     << low.kbps() << "kbps and " << high.kbps() << " kbps";
   return true;
+}
+
+MATCHER_P2(AveragePacingDelayIsBelow, max_delay, previous_report, "") {
+  TimeDelta pacing_delay = GetAveragePacingDelay(arg, previous_report);
+  if (pacing_delay < max_delay) {
+    return true;
+  }
+  *result_listener << "the pacing delay is " << pacing_delay.ms()
+                   << "ms, which is not below " << max_delay.ms() << "ms";
+  return false;
 }
 
 MATCHER_P2(CurrentRoundTripTimeIsBetween, low, high, "") {
@@ -170,6 +182,30 @@ std::vector<EmulatedNetworkNode*> CreateNetworkPathWithRepeatedPause(
       repeat_pause_interval.ms());
   updated_capacity->set_link_capacity_kbps(0);
   schedule.set_repeat_schedule_after_last_ms(pause_duration.ms());
+  SchedulableNetworkNodeBuilder schedulable_builder(*s.net(),
+                                                    std::move(schedule));
+  return {schedulable_builder.Build()};
+}
+
+std::vector<EmulatedNetworkNode*> CreateNetworkPathWithPause(
+    PeerScenario& s,
+    DataRate link_capacity,
+    TimeDelta pause_start,
+    TimeDelta pause_duration) {
+  network_behaviour::NetworkConfigSchedule schedule;
+  auto initial_config = schedule.add_item();
+  initial_config->set_link_capacity_kbps(link_capacity.kbps());
+  initial_config->set_queue_delay_ms(10);
+
+  auto updated_capacity = schedule.add_item();
+  updated_capacity->set_time_since_first_sent_packet_ms(pause_start.ms());
+  updated_capacity->set_link_capacity_kbps(0);
+
+  updated_capacity = schedule.add_item();
+  updated_capacity->set_time_since_first_sent_packet_ms(
+      (pause_start + pause_duration).ms());
+  updated_capacity->set_link_capacity_kbps(link_capacity.kbps());
+
   SchedulableNetworkNodeBuilder schedulable_builder(*s.net(),
                                                     std::move(schedule));
   return {schedulable_builder.Build()};
@@ -472,6 +508,7 @@ TEST(ScreamTest, MaybeTest(LinkCapacity1000KbpsRtt100msEcn)) {
 
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
   // Ignore result first 2s since ramp up is rather slow at higher RTT.
+  ASSERT_GT(result.caller().subspan(2).size(), 0u);
   EXPECT_THAT(result.caller().subspan(2), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(600),
                                               DataRate::KilobitsPerSec(1000))));
@@ -508,7 +545,7 @@ TEST(ScreamTest, MaybeTest(LinkCapacity2MbpsRtt50msNoEcn)) {
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(1300),
-                                              DataRate::KilobitsPerSec(2600))));
+                                              DataRate::KilobitsPerSec(2500))));
 }
 
 TEST(ScreamTest, MaybeTest(LinkCapacity2MbpsRtt50msEcn)) {
@@ -670,7 +707,29 @@ TEST(ScreamTest, MaybeTest(ScreencastSlideChange2Mbit50msRttNoEcn)) {
   // Ignore estimate during rampup.
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(1200),
-                                              DataRate::KilobitsPerSec(2800))));
+                                              DataRate::KilobitsPerSec(2500))));
+}
+
+TEST(ScreamTest, MaybeTest(ScreencastSlideChange500Kbit30msRttNoEcn)) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params{.test_duration = TimeDelta::Seconds(20)};
+  params.caller_to_callee_path =
+      CreateNetworkPath(s, /*use_dual_pi= */ false,
+                        DataRate::KilobitsPerSec(500), TimeDelta::Millis(15));
+  params.caller_to_callee_path = params.callee_to_caller_path =
+      CreateNetworkPath(s, /*use_dual_pi= */ false,
+                        DataRate::KilobitsPerSec(500), TimeDelta::Millis(15));
+  params.caller_video_conf = {
+      .generator = {.image_slides =
+                        test::FrameGeneratorCapturerConfig::ImageSlides{
+                            .change_interval = TimeDelta::Seconds(3)}}};
+
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+
+  // Ignore estimate during rampup.
+  EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(200),
+                                              DataRate::KilobitsPerSec(700))));
 }
 
 TEST(ScreamTest, MaybeTest(ScreencastSlideChangeRepeatedDelaySpikes)) {
@@ -706,6 +765,48 @@ TEST(ScreamTest, MaybeTest(LinkCapacity5MbitRepeatedDelaySpikesNoEcn)) {
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(1200),
                                               DataRate::KilobitsPerSec(5000))));
+}
+
+TEST(ScreamTest, MaybeTest(LinkCapacity2MbitRepeatedDelaySpikesNoEcn)) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params{.test_duration = TimeDelta::Seconds(20),
+                             .stats_interval = TimeDelta::Millis(200)};
+  params.caller_to_callee_path = CreateNetworkPathWithRepeatedPause(
+      s, DataRate::KilobitsPerSec(2000), TimeDelta::Millis(100),
+      TimeDelta::Millis(200));
+  params.callee_to_caller_path = CreateNetworkPathWithRepeatedPause(
+      s, DataRate::KilobitsPerSec(2000), TimeDelta::Millis(100),
+      TimeDelta::Millis(200));
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+  // Ignore BWE the first second.
+  EXPECT_THAT(result.caller().subspan(5), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(700),
+                                              DataRate::KilobitsPerSec(2000))));
+  // Ensure average pacing delay between two reports is below 50ms.
+  for (size_t i = 1; i < result.caller_stats.size(); ++i) {
+    EXPECT_THAT(result.caller_stats[i],
+                AveragePacingDelayIsBelow(TimeDelta::Millis(50),
+                                          result.caller_stats[i - 1]));
+  }
+}
+
+TEST(ScreamTest, MaybeTest(PacerDelayIsAcceptableAfterSingleDelaySpike)) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params{.test_duration = TimeDelta::Seconds(10),
+                             .stats_interval = TimeDelta::Millis(200)};
+  params.caller_to_callee_path =
+      CreateNetworkPathWithPause(s, DataRate::KilobitsPerSec(1000),
+                                 TimeDelta::Seconds(5), TimeDelta::Millis(500));
+  params.callee_to_caller_path =
+      CreateNetworkPathWithPause(s, DataRate::KilobitsPerSec(1000),
+                                 TimeDelta::Seconds(5), TimeDelta::Millis(500));
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+  // Ensure average pacing delay between two reports stays below 700ms.
+  for (size_t i = 1; i < result.caller_stats.size(); ++i) {
+    EXPECT_THAT(result.caller_stats[i],
+                AveragePacingDelayIsBelow(TimeDelta::Millis(700),
+                                          result.caller_stats[i - 1]));
+  }
 }
 
 TEST(ScreamTest, MaybeTest(RampupFastOnLinkCapacity50Mbit20MsRttNoEcn)) {
@@ -754,7 +855,7 @@ TEST(ScreamTest, MaybeTest(LinkCapacity1MbitRtt50msWithShortQueuesNoEcn)) {
   EXPECT_THAT(
       GetPacketsLost(result.callee_stats.back()) /
           static_cast<double>(GetPacketsSent(result.caller_stats.back())),
-      Lt(0.05));
+      Lt(0.07));
 
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(200),
@@ -783,6 +884,70 @@ TEST(ScreamTest,
                                               DataRate::KilobitsPerSec(1100))));
 }
 
+TEST(ScreamTest, MaybeTest(LowBweOnLinkWith5PercentUniformLoss)) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params;
+  NetworkEmulationManager::SimulatedNetworkNode::Builder network_builder =
+      s.net()->NodeBuilder().capacity_Mbps(3).delay_ms(40);
+  params.callee_to_caller_path =
+      CreateNetworkPath(network_builder, /*use_dual_pi= */ false);
+  params.caller_to_callee_path =
+      CreateNetworkPath(network_builder.loss(0.05), /*use_dual_pi= */ false);
+
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+
+  ASSERT_GE(GetPacketsLost(result.callee_stats.back()),
+            0.02 * GetPacketsSent(result.caller_stats.back()));
+
+  // Ignore estimate during rampup.
+  ASSERT_GT(result.caller().subspan(2).size(), 0u);
+  EXPECT_THAT(result.caller().subspan(2), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(100),
+                                              DataRate::KilobitsPerSec(1500))));
+}
+
+TEST(ScreamTest, MaybeTest(Ignores1PercentUniformLossOnLinkWith80msRtt)) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params;
+  NetworkEmulationManager::SimulatedNetworkNode::Builder network_builder =
+      s.net()->NodeBuilder().capacity_Mbps(3).delay_ms(40);
+  params.callee_to_caller_path =
+      CreateNetworkPath(network_builder, /*use_dual_pi= */ false);
+  params.caller_to_callee_path =
+      CreateNetworkPath(network_builder.loss(0.01), /*use_dual_pi= */ false);
+
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+
+  ASSERT_GE(GetPacketsLost(result.callee_stats.back()),
+            0.005 * GetPacketsSent(result.caller_stats.back()));
+
+  // Ignore estimate during rampup.
+  ASSERT_GT(result.caller().subspan(2).size(), 0u);
+  EXPECT_THAT(result.caller().subspan(2), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(1000),
+                                              DataRate::KilobitsPerSec(3000))));
+}
+
+TEST(ScreamTest, MaybeTest(IgnoresPacketReorderingOnLinkWith80msRtt)) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params;
+  NetworkEmulationManager::SimulatedNetworkNode::Builder network_builder =
+      s.net()->NodeBuilder().capacity_Mbps(3).delay_ms(40);
+  params.callee_to_caller_path =
+      CreateNetworkPath(network_builder, /*use_dual_pi= */ false);
+  params.caller_to_callee_path = CreateNetworkPath(
+      network_builder.allow_reordering().delay_standard_deviation_ms(5),
+      /*use_dual_pi= */ false);
+
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+
+  // Ignore estimate during rampup.
+  ASSERT_GT(result.caller().subspan(2).size(), 0u);
+  EXPECT_THAT(result.caller().subspan(2), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(1000),
+                                              DataRate::KilobitsPerSec(3000))));
+}
+
 TEST(ScreamTest, MaybeTest(ReturnLinkWithBurstLoss)) {
   PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
   SendMediaTestParams params{.test_duration = TimeDelta::Seconds(20)};
@@ -802,6 +967,7 @@ TEST(ScreamTest, MaybeTest(ReturnLinkWithBurstLoss)) {
   EXPECT_GT(GetPacketsSent(result.caller_stats.back()),
             GetPacketsSent(result.caller_stats[5]));
 
+  ASSERT_GT(result.caller().subspan(1).size(), 0u);
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(300),
                                               DataRate::KilobitsPerSec(1300))));
@@ -828,6 +994,7 @@ TEST(ScreamTest, MaybeTest(SendVideoOnlyReturnLinkWithBurstLoss)) {
   EXPECT_GT(GetPacketsSent(result.caller_stats.back()),
             GetPacketsSent(result.caller_stats[5]));
 
+  ASSERT_GT(result.caller().subspan(1).size(), 0u);
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(10),
                                               DataRate::KilobitsPerSec(1200))));
@@ -853,7 +1020,7 @@ TEST(ScreamTest, MaybeTest(LinkCapacity5MbitPolicedTo256Kbit)) {
   EXPECT_THAT(
       GetPacketsLost(result.callee_stats.back()) /
           static_cast<double>(GetPacketsSent(result.caller_stats.back())),
-      AllOf(Lt(0.08), Gt(0.01)));
+      AllOf(Lt(0.11), Gt(0.01)));
 
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(150),

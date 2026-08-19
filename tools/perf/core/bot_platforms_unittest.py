@@ -7,6 +7,8 @@ import re
 import tempfile
 import pathlib
 import sys
+import subprocess
+import json
 
 from pathlib import Path
 
@@ -73,7 +75,8 @@ class BotPlatformTest(unittest.TestCase):
         self.assertEqual(len(bot_configs), 1)
         config = bot_configs[0]
         self.assertEqual(config.name, 'speedometer3.crossbench')
-        self.assertSequenceEqual(config.arguments, ("--extra-flag", "--other"))
+        self.assertSequenceEqual(
+            config.flags, ("--extra-flag", "--other", "--enable-field-trials"))
 
   def testLoadScheduleFileWithFlagValues(self):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -92,8 +95,9 @@ class BotPlatformTest(unittest.TestCase):
         self.assertEqual(len(bot_configs), 1)
         config = bot_configs[0]
         self.assertEqual(config.name, 'speedometer3.crossbench')
-        self.assertSequenceEqual(config.arguments,
-                                 ("--extra-flag=1", "--other=value"))
+        self.assertSequenceEqual(
+            config.flags,
+            ("--extra-flag=1", "--other=value", "--enable-field-trials"))
 
   def testLoadScheduleFileWithFlagValuesCommas(self):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -116,9 +120,10 @@ class BotPlatformTest(unittest.TestCase):
         self.assertEqual(len(bot_configs), 1)
         config = bot_configs[0]
         self.assertEqual(config.name, 'speedometer3.crossbench')
-        self.assertSequenceEqual(config.arguments,
-                                 ("--extra-flag=1", "--other=value",
-                                  "--js-flags=--no-opt,--sparkplug"))
+        self.assertSequenceEqual(
+            config.flags,
+            ("--extra-flag=1", "--other=value",
+             "--js-flags=--no-opt,--sparkplug", "--enable-field-trials"))
 
   def testLoadScheduleFileDuplicateBot(self):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -157,6 +162,32 @@ class BotPlatformTest(unittest.TestCase):
             'Duplicate config name "%s" in platform "%s" (crossbench)' %
             (config.name, platform.name))
         seen_names.add(config.name)
+
+  def testCrossbenchNamesValid(self):
+    cb_dir = pathlib.Path(path_util.GetCrossBenchDir())
+    cb_path = cb_dir / "cb.py"
+
+    try:
+      output = subprocess.check_output(
+          [cb_path, 'describe', 'benchmark', '--json'],
+          stderr=subprocess.DEVNULL)
+      benchmarks_info = json.loads(output)
+    except Exception as e:
+      self.skipTest("Could not run crossbench to get benchmark names: %s" % e)
+
+    valid_names = set(benchmarks_info.keys())
+    for info in benchmarks_info.values():
+      aliases = info.get('aliases', [])
+      if isinstance(aliases, list):
+        valid_names.update(aliases)
+
+    for platform in bot_platforms.ALL_PLATFORMS:
+      for config in platform.crossbench:
+        self.assertIn(
+            config.crossbench_name, valid_names,
+            'Invalid crossbench_name "%s" in config "%s" for platform "%s". '
+            'Valid names are: %s' % (config.crossbench_name, config.name,
+                                     platform.name, sorted(valid_names)))
 
   def testUniquePlatformNames(self):
     seen_names = set()

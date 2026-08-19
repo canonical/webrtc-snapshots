@@ -127,14 +127,6 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//ash/public/cpp/app_list/app_list_metrics.cc:SearchSessionConclusion) -->
 
-<variants name="LauncherUISurface">
-  <variant name=".AppsSearch" summary="App tiles search"/>
-  <variant name=".AppsZeroState" summary="App tiles zero-state"/>
-  <variant name=".Chip" summary="Suggestion chips"/>
-  <variant name=".ListSearch" summary="Results list search"/>
-  <variant name=".ListZeroState" summary="Results list zero-state"/>
-</variants>
-
 <variants name="SearchAction">
   <variant name="Abandon" summary="abandon"/>
   <variant name="Ignore" summary="ignore"/>
@@ -229,7 +221,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="AppPreloadService.ServerResponseCodes"
-    enum="CombinedHttpResponseAndNetErrorCode" expires_after="2026-07-26">
+    enum="CombinedHttpResponseAndNetErrorCode" expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <summary>
@@ -328,7 +320,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Apps.AppInstallService.WebAppInstaller.InstallResult{AppInstallSurface}"
-    enum="WebAppInstallResultCode" expires_after="2026-07-12">
+    enum="AppInstallServiceWebAppInstallResult" expires_after="2026-07-12">
   <owner>alancutter@chromium.org</owner>
   <owner>crosdev-commerce-eng@google.com</owner>
   <summary>
@@ -338,7 +330,7 @@ chromium-metrics-reviews@google.com.
   <token key="AppInstallSurface" variants="AppInstallSurface"/>
 </histogram>
 
-<histogram name="Apps.AppLaunch" enum="AppLaunch" expires_after="2026-07-26">
+<histogram name="Apps.AppLaunch" enum="AppLaunch" expires_after="2026-11-29">
   <owner>tapted@chromium.org</owner>
   <owner>benwells@chromium.org</owner>
   <summary>
@@ -348,7 +340,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppLaunch.ChromeAppsDeprecationCheck"
-    enum="ChromeAppDeprecationLaunchOutcome" expires_after="2026-09-06">
+    enum="ChromeAppDeprecationLaunchOutcome" expires_after="2026-11-15">
   <owner>giovax@google.com</owner>
   <owner>src/apps/DEPRECATION_OWNERS</owner>
   <summary>
@@ -358,7 +350,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppLaunchPerAppType" enum="AppType"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <summary>
@@ -368,7 +360,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppLaunchPerAppTypeV2" enum="AppTypeV2"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <summary>
@@ -382,33 +374,6 @@ chromium-metrics-reviews@google.com.
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <summary>Records an app launch grouped by launch source.</summary>
-</histogram>
-
-<histogram name="Apps.AppList.AggregatedMlAppRankFail" units="units"
-    expires_after="M92">
-  <owner>pdyson@chromium.org</owner>
-  <summary>
-    The number of apps the were not able to be ranked by the Aggregated ML app
-    ranker (Top Cat).
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppList.AggregatedMlAppRankSuccess" units="units"
-    expires_after="M92">
-  <owner>pdyson@chromium.org</owner>
-  <summary>
-    The number of apps successfully ranked by the Aggregated ML app ranker (Top
-    Cat).
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppList.AggregatedSearchRankerError"
-    enum="AggregatedSearchRankerError" expires_after="2020-12-01">
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    The type of errors that occur during the inference of Search Ranking
-    aggregated model.
-  </summary>
 </histogram>
 
 <histogram name="Apps.AppList.AnnotationStorage.DatabaseSize" units="MB"
@@ -525,27 +490,6 @@ chromium-metrics-reviews@google.com.
   <owner>chromeos-launcher-search@google.com</owner>
   <summary>
     The type of errors that occur in storage. Logged once per error.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppList.AnswerCardSearchProvider.SearchAnswerLoadingTime"
-    units="ms" expires_after="2021-03-15">
-  <owner>jennyz@chromium.org</owner>
-  <owner>newcomer@chromium.org</owner>
-  <summary>
-    The time between sending an answer card request and receiving the
-    notification that answer card has finished loading.
-  </summary>
-</histogram>
-
-<histogram
-    name="Apps.AppList.AnswerCardSearchProvider.SearchAnswerNavigationTime"
-    units="ms" expires_after="2021-04-04">
-  <owner>jennyz@chromium.org</owner>
-  <owner>newcomer@chromium.org</owner>
-  <summary>
-    The time between sending an answer card request and receiving the
-    notification navigation has been finished with a valid answer card.
   </summary>
 </histogram>
 
@@ -830,42 +774,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Apps.AppList.ItemSuggestCache.ResponseSize" units="bytes"
-    expires_after="2027-03-01">
-  <owner>chenjih@google.com</owner>
-  <owner>chromeos-launcher-search@google.com</owner>
-  <summary>
-    Records the size of a response from the ItemSuggest API. Reported once per
-    successful response. Will not be reported if the response exceeds the
-    maximum size, instead check Apps.AppList.ItemSuggestCache.Status. Warning:
-    this histogram was expired from 2024-09-01 to 2025-03-11; data may be
-    missing.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppList.ItemSuggestCache.Status"
-    enum="ItemSuggestCacheStatus" expires_after="2027-03-01">
-  <owner>chenjih@google.com</owner>
-  <owner>chromeos-launcher-search@google.com</owner>
-  <summary>
-    Records the outcome of a call to ItemSuggest. Reported once per call to
-    UpdateCache that passes the minimum time between udpates check.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppList.ItemSuggestCache.UpdateCacheLatency" units="ms"
-    expires_after="2027-03-01">
-  <owner>chenjih@google.com</owner>
-  <owner>chromeos-launcher-search@google.com</owner>
-  <summary>
-    Records the latency from the start of a call to UpdateCache to the time when
-    results are finalised. Reported once each time results are successfully
-    obtained, which corresponds to a kOk status being recorded in
-    Apps.AppList.ItemSuggestCache.Status. Warning: this histogram was expired
-    from 2024-11-03 to 2025-01-29; data may be missing.
-  </summary>
-</histogram>
-
 <histogram name="Apps.AppList.Keyword.NumberOfKeywordsInQuery" units="count"
     expires_after="2024-12-08">
   <owner>chenjih@chromium.org</owner>
@@ -899,7 +807,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppList.NumberOfApps" units="count"
-    expires_after="2026-07-26">
+    expires_after="2026-09-27">
   <owner>tbarzic@chromium.org</owner>
   <owner>mmourgos@chromium.org</owner>
   <owner>gzadina@google.com</owner>
@@ -1522,93 +1430,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Apps.AppList.UserEvent.Query" enum="Boolean"
-    expires_after="2023-07-31">
-  <owner>tby@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    Emits true when the user enters a query into the Chrome OS launcher search
-    box. Entering any number of characters is considered only one query, but
-    deleting the contents of the search box and starting again is recorded as a
-    new query.
-
-    This metric stopped collecting data in November 2021, but has not yet been
-    marked obsolete because the historical data is still being used for
-    analysis.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppList.UserEvent.TypeAbandon{LauncherUISurface}"
-    enum="AppListSearchResult" expires_after="2023-07-31">
-  <owner>tby@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    Emitted after an impression, if the user then closes the launcher or moves
-    to a different view without launching any search result. This is emitted
-    once per abandon, per displayed result. Records the displayed result's type.
-    See Apps.AppList.UserEvent.TypeImpression for more details.
-
-    This metric is completed by a histogram suffix describing which UI surface
-    the results are recorded from. {LauncherUISurface}
-
-    This metric stopped collecting data in November 2021, but has not yet been
-    marked obsolete because the historical data is still being used for
-    analysis.
-  </summary>
-  <token key="LauncherUISurface" variants="LauncherUISurface">
-    <variant name=""/>
-  </token>
-</histogram>
-
-<histogram name="Apps.AppList.UserEvent.TypeImpression{LauncherUISurface}"
-    enum="AppListSearchResult" expires_after="2023-07-31">
-  <owner>tby@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    When a set of results is displayed for 2 seconds and the user has probably
-    seen it, or the user interacted with the results and has definitely seen it,
-    we consider it an impression.
-
-    Emitted once per impression for each displayed result. Records the type of
-    the displayed result, eg. native app or omnibox bookmark.
-
-    The Apps.AppList.UserEvent.Type* metrics are directly comparable
-    per-result-type. So, for example, (launches / impressions) for a result type
-    gives an accurate CTR.
-
-    This metric is completed by a histogram suffix describing which UI surface
-    the results are recorded from. {LauncherUISurface}
-
-    This metric stopped collecting data in November 2021, but has not yet been
-    marked obsolete because the historical data is still being used for
-    analysis.
-  </summary>
-  <token key="LauncherUISurface" variants="LauncherUISurface">
-    <variant name=""/>
-  </token>
-</histogram>
-
-<histogram name="Apps.AppList.UserEvent.TypeLaunch{LauncherUISurface}"
-    enum="AppListSearchResult" expires_after="2023-07-31">
-  <owner>tby@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    Emitted after an impression, if the user launches a result. Records the type
-    of the launched result. See Apps.AppList.UserEvent.TypeImpression for more
-    details.
-
-    This metric is completed by a histogram suffix describing which UI surface
-    the results are recorded from. {LauncherUISurface}
-
-    This metric stopped collecting data in November 2021, but has not yet been
-    marked obsolete because the historical data is still being used for
-    analysis.
-  </summary>
-  <token key="LauncherUISurface" variants="LauncherUISurface">
-    <variant name=""/>
-  </token>
-</histogram>
-
 <histogram name="Apps.AppList.ZeroStateDriveProvider.Relevance" units="score"
     expires_after="2027-03-01">
   <owner>chenjih@google.com</owner>
@@ -1654,15 +1475,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Apps.AppList.ZeroStateSuggestionOpenType"
-    enum="AppListSearchResult" expires_after="2021-03-15">
-  <owner>jennyz@chromium.org</owner>
-  <owner>newcomer@chromium.org</owner>
-  <summary>
-    The type of the app list suggestion that was opened by user in zero state.
-  </summary>
-</histogram>
-
 <histogram name="Apps.AppListAppLaunchedV2{AppListState}"
     enum="AppListLaunchedFrom" expires_after="2026-01-18">
   <owner>tbarzic@chromium.org</owner>
@@ -1694,16 +1506,6 @@ chromium-metrics-reviews@google.com.
   <summary>
     The different ways to move an app in app list's apps grid. Logged when the
     app moving succeeds.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppListAppTypeClicked" enum="AppListAppType"
-    expires_after="2023-04-24">
-  <owner>charleszhao@chromium.org</owner>
-  <owner>pdyson@chromium.org</owner>
-  <summary>
-    The type of app clicked in the launcher on ChromeOS, recorded after the icon
-    is clicked, before it is launched.
   </summary>
 </histogram>
 
@@ -2008,39 +1810,6 @@ chromium-metrics-reviews@google.com.
   <summary>The state of a Play Store app search request.</summary>
 </histogram>
 
-<histogram name="Apps.AppListRecommendedResponse"
-    enum="ReinstallResponseParseResult" expires_after="2022-01-02">
-  <owner>napper@chromium.org</owner>
-  <owner>robsc@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    Response when parsing the recommended app list from Play Store for candidate
-    app list, recorded every time a response from the play store is parsed in
-    client.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppListRecommendedResponse.Count" units="units"
-    expires_after="2022-02-20">
-  <owner>napper@chromium.org</owner>
-  <owner>robsc@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    Number of responses from server in Apps.AppListRecommendedResponse.count
-    when fetching appListRecommendded GetAppReinstallCandidates.
-  </summary>
-</histogram>
-
-<histogram name="Apps.AppListRecommendedResponse.Latency" units="ms"
-    expires_after="2022-02-27">
-  <owner>napper@chromium.org</owner>
-  <owner>robsc@chromium.org</owner>
-  <owner>thanhdng@chromium.org</owner>
-  <summary>
-    Milliseconds elapsed to fetch appListRecommended GetAppReinstallCandidates.
-  </summary>
-</histogram>
-
 <histogram name="Apps.AppListSearchAutocomplete" enum="SearchBoxTextMatch"
     expires_after="2024-04-28">
   <owner>yulunwu@chromium.org</owner>
@@ -2103,7 +1872,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppsCount.{AppType}" units="Apps"
-    expires_after="2026-09-06">
+    expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <component>1389907</component>
@@ -2132,6 +1901,23 @@ chromium-metrics-reviews@google.com.
   <token key="InstallReason" variants="InstallReason"/>
 </histogram>
 
+<histogram name="Apps.AppShim.LaunchResult.{LaunchMode}"
+    enum="AppShimLaunchResult" expires_after="2027-03-01">
+  <owner>mek@chromium.org</owner>
+  <owner>pwa-team@google.com</owner>
+  <summary>
+    Records the success or failure of launching the App Shim. Recorded when the
+    launch process completes (either successfully connecting, or giving up). If
+    the first launch attempt fails, Chrome may attempt to recreate the shim and
+    retry. Success after recreation is recorded as a separate bucket.
+  </summary>
+  <token key="LaunchMode">
+    <variant name="Background"
+        summary="Background launch (e.g. notifications)"/>
+    <variant name="Normal" summary="Normal foreground launch"/>
+  </token>
+</histogram>
+
 <histogram name="Apps.AppShim.MacSecurityFrameworkOSStatus.{Operation}"
     enum="MacSecurityFrameworkOSStatus" expires_after="2027-01-01">
   <owner>mek@chromium.org</owner>
@@ -2150,7 +1936,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppShimRegistry.HmacKeyStore.LoadResult"
-    enum="AppShimRegistryGetHmacKeyResult" expires_after="2026-08-26">
+    enum="AppShimRegistryGetHmacKeyResult" expires_after="2026-12-27">
   <owner>mek@chromium.org</owner>
   <owner>src/chrome/browser/web_applications/OWNERS</owner>
   <summary>
@@ -2161,7 +1947,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.AppShimRegistry.HmacKeyStore.SaveResult"
-    enum="AppShimRegistrySaveHmacKeyResult" expires_after="2026-08-26">
+    enum="AppShimRegistrySaveHmacKeyResult" expires_after="2026-12-27">
   <owner>mek@chromium.org</owner>
   <owner>src/chrome/browser/web_applications/OWNERS</owner>
   <summary>
@@ -2170,10 +1956,23 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Apps.AppShimRegistry.VerifyCdHashResult"
+    enum="AppShimRegistryVerifyCdHashResult" expires_after="2026-10-01">
+  <owner>dmurph@google.com</owner>
+  <owner>pwa-team@google.com</owner>
+  <summary>
+    The result of verifying the code directory hash for an app. Logged once per
+    app shim connection (launch) when Chrome verifies the ad-hoc signature of
+    the connecting app shim.
+  </summary>
+</histogram>
+
 <histogram name="Apps.AppShimSignatureValidationResult"
-    enum="WebAppShimSignatureValidationResult" expires_after="2026-07-26">
+    enum="WebAppShimSignatureValidationResult" expires_after="2026-11-29">
   <owner>markrowe@chromium.org</owner>
   <owner>chrome-platform-security-core@google.com</owner>
+  <owner>dmurph@google.com</owner>
+  <owner>pwa-team@google.com</owner>
   <summary>
     Records the result of validating the code signature of a web app shim
     connecting to the browser on macOS.
@@ -2217,7 +2016,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.ContextMenuExecuteCommand.{ContextMenuFromApp}{Mode}"
-    enum="ChromeOSUICommands" expires_after="2026-08-23">
+    enum="ChromeOSUICommands" expires_after="2027-01-03">
   <owner>tbarzic@chromium.org</owner>
   <owner>newcomer@chromium.org</owner>
   <owner>mmourgos@chromium.org</owner>
@@ -2266,7 +2065,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.CreateShortcutIcon.Linux.Result"
-    enum="WebAppCreateShortcutIconLinuxResult" expires_after="2026-08-30">
+    enum="WebAppCreateShortcutIconLinuxResult" expires_after="2026-11-01">
   <owner>estade@chromium.org</owner>
   <owner>pwa-team@google.com</owner>
   <summary>
@@ -2277,7 +2076,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.CreateShortcuts.Linux.Result"
-    enum="WebAppCreateShortcutLinuxResult" expires_after="2026-09-13">
+    enum="WebAppCreateShortcutLinuxResult" expires_after="2026-11-15">
   <owner>phillis@chromium.org</owner>
   <owner>cmumford@chromium.org</owner>
   <summary>
@@ -2289,7 +2088,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.CreateShortcuts.Mac.CopyShortcutResult"
-    enum="CopyShortcutResult" expires_after="2026-08-02">
+    enum="CopyShortcutResult" expires_after="2026-12-06">
   <owner>mek@chromium.org</owner>
   <owner>pwa-team@google.com</owner>
   <summary>
@@ -2300,7 +2099,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.CreateShortcuts.Mac.Result2"
-    enum="WebAppCreateShortcutMacResult" expires_after="2026-07-26">
+    enum="WebAppCreateShortcutMacResult" expires_after="2026-11-29">
   <owner>mek@chromium.org</owner>
   <owner>pwa-team@google.com</owner>
   <summary>
@@ -2309,7 +2108,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.CreateShortcuts.Mac.UpdateSignatureResult"
-    enum="UpdateSignatureResult" expires_after="2026-09-06">
+    enum="UpdateSignatureResult" expires_after="2026-11-15">
   <owner>mek@chromium.org</owner>
   <owner>pwa-team@google.com</owner>
   <summary>
@@ -2319,7 +2118,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.DefaultAppLaunch{DefaultAppLaunchSource}"
-    enum="DefaultAppName" expires_after="2026-08-30">
+    enum="DefaultAppName" expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <owner>cros-device-enablement@google.com</owner>
@@ -2377,7 +2176,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.FileHandler.Registration.Linux.Result"
-    enum="FileHandlerRegistrationLinuxResult" expires_after="2026-08-02">
+    enum="FileHandlerRegistrationLinuxResult" expires_after="2026-12-06">
   <owner>estade@chromium.org</owner>
   <owner>pwa-team@google.com</owner>
   <summary>
@@ -2388,7 +2187,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.FileHandler.Registration.Win.Result"
-    enum="FileHandlerRegistrationWinResult" expires_after="2026-08-02">
+    enum="FileHandlerRegistrationWinResult" expires_after="2026-12-06">
   <owner>estade@chromium.org</owner>
   <owner>pwa-team@google.com</owner>
   <summary>
@@ -2421,7 +2220,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.FullRestoreWindowCount2" units="count"
-    expires_after="2026-08-30">
+    expires_after="2027-01-03">
   <owner>dandersson@chromium.org</owner>
   <owner>fanafan@chromium.org</owner>
   <owner>chromeos-wm-corexp@google.com</owner>
@@ -2524,7 +2323,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.MediaApp.Load.OtherOpenWindowCount" units="windows"
-    expires_after="2026-08-09">
+    expires_after="2026-12-13">
   <owner>tapted@chromium.org</owner>
   <owner>patricialor@chromium.org</owner>
   <summary>
@@ -2580,7 +2379,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.OobeAppRecommendationsService.ServerResponseCodes"
-    enum="CombinedHttpResponseAndNetErrorCode" expires_after="2026-07-06">
+    enum="CombinedHttpResponseAndNetErrorCode" expires_after="2026-11-15">
   <owner>bohdanty@google.com</owner>
   <owner>cros-oobe@google.com</owner>
   <summary>
@@ -2726,7 +2525,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.RestoredAppLaunch" enum="AppType"
-    expires_after="2026-08-30">
+    expires_after="2027-01-03">
   <owner>dandersson@chromium.org</owner>
   <owner>fanafan@chromium.org</owner>
   <owner>chromeos-wm-corexp@google.com</owner>
@@ -2737,7 +2536,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.RestoreInitSetting" enum="RestoreSetting"
-    expires_after="2026-08-30">
+    expires_after="2027-01-03">
   <owner>dandersson@chromium.org</owner>
   <owner>fanafan@chromium.org</owner>
   <owner>chromeos-wm-corexp@google.com</owner>
@@ -2748,7 +2547,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.RestoreSetting" enum="RestoreSetting"
-    expires_after="2026-08-30">
+    expires_after="2027-01-03">
   <owner>dandersson@chromium.org</owner>
   <owner>fanafan@chromium.org</owner>
   <owner>chromeos-wm-corexp@google.com</owner>
@@ -2840,7 +2639,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.SessionRestoreExitResult" enum="SessionRestoreExitResult"
-    expires_after="2026-08-30">
+    expires_after="2026-11-01">
   <owner>dandersson@chromium.org</owner>
   <owner>fanafan@chromium.org</owner>
   <owner>chromeos-wm-corexp@google.com</owner>
@@ -2851,7 +2650,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.SessionRestoreWindowCount"
-    enum="SessionRestoreWindowCount" expires_after="2026-07-26">
+    enum="SessionRestoreWindowCount" expires_after="2026-11-29">
   <owner>dandersson@chromium.org</owner>
   <owner>fanafan@chromium.org</owner>
   <owner>chromeos-wm-corexp@google.com</owner>
@@ -2930,7 +2729,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.UsageTime.{AppType}" units="ms"
-    expires_after="2026-09-06">
+    expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <component>1389907</component>
@@ -2942,7 +2741,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.UsageTimeV2.{AppTypeV2}" units="ms"
-    expires_after="2026-09-06">
+    expires_after="2026-11-29">
   <owner>ovn@google.com</owner>
   <owner>lt-web-apps-team@google.com</owner>
   <component>1389907</component>

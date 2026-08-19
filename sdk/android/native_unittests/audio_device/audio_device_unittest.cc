@@ -1187,7 +1187,7 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
 // TODO(https://crbug.com/webrtc/15537): test randomly fails.
 TEST(JavaAudioDeviceTest, DISABLED_TestRunningTwoAdmsSimultaneously) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  const Environment webrtc_env = CreateEnvironment();
+  const Environment webrtc_env = CreateTestEnvironment();
   ScopedJavaLocalRef<jobject> context = GetAppContext(jni);
 
   // Create and start the first ADM.
@@ -1218,3 +1218,5 @@ TEST(JavaAudioDeviceTest, DISABLED_TestRunningTwoAdmsSimultaneously) {
 }  // namespace jni
 
 }  // namespace webrtc
+
+DEFINE_JNI(BuildInfo)

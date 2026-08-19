@@ -21,6 +21,7 @@
 
 #include "absl/algorithm/container.h"
 #include "api/environment/environment.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
@@ -60,10 +61,7 @@
 
 namespace webrtc {
 namespace {
-enum : int {  // The first valid value is 1.
-  kVideoContentTypeExtensionId = 1,
-};
-}  // namespace
+constexpr RtpHeaderExtensionId kVideoContentTypeExtensionId(1);
 
 class StatsEndToEndTest : public test::CallTest {
  public:
@@ -392,7 +390,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
 }
 
 TEST_F(StatsEndToEndTest, TimingFramesAreReported) {
-  static const int kExtensionId = 5;
+  static constexpr RtpHeaderExtensionId kExtensionId(5);
   RegisterRtpExtension(
       RtpExtension(RtpExtension::kVideoTimingUri, kExtensionId));
 
@@ -560,7 +558,9 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
     CreateReceiveTransport(test.GetReceiveTransportConfig(), &test);
     CreateSendTransport(test.GetReceiveTransportConfig(), &test);
 
-    receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    network_thread()->BlockingCall([this]() {
+      receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    });
     CreateSendConfig(1, 0, 0);
     CreateMatchingReceiveConfigs();
 
@@ -756,7 +756,9 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
     CreateFrameGeneratorCapturer(test::VideoTestConstants::kDefaultFramerate,
                                  test::VideoTestConstants::kDefaultWidth,
                                  test::VideoTestConstants::kDefaultHeight);
-    receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    network_thread()->BlockingCall([this]() {
+      receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    });
     Start();
   });
 
@@ -784,4 +786,5 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
     DestroyCalls();
   });
 }
+}  // namespace
 }  // namespace webrtc

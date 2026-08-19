@@ -140,12 +140,6 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Open"/>
 </enum>
 
-<enum name="FileStorageRequestType">
-  <int value="0" label="Save Request"/>
-  <int value="1" label="Restore Request"/>
-  <int value="2" label="Delete Request"/>
-</enum>
-
 <enum name="FoundBuyableProductAnnotation">
   <summary>
     Whether a buyable product annotation was found in the response from an
@@ -209,6 +203,11 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="7-14 days"/>
   <int value="4" label="14-30 days"/>
   <int value="5" label="More than 30 days"/>
+</enum>
+
+<enum name="KeyboardTabSwitchMode">
+  <int value="0" label="Standard"/>
+  <int value="1" label="MRU"/>
 </enum>
 
 <enum name="NewTabType">
@@ -349,9 +348,19 @@ chromium-metrics-reviews@google.com.
   <int value="8" label="What's new"/>
   <int value="9" label="Keyboard shortcut"/>
   <int value="10" label="New tab button"/>
+  <int value="11" label="Link click shortcut"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/split_tab_metrics.h:SplitTabCreatedSource) -->
+
+<!-- LINT.IfChange(SplitTabLayout) -->
+
+<enum name="SplitTabLayout">
+  <int value="0" label="Side by side"/>
+  <int value="1" label="Stacked"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/split_tabs/split_tab_visual_data.h:SplitTabLayout) -->
 
 <!-- LINT.IfChange(SplitViewMenuEntry) -->
 
@@ -363,9 +372,23 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Close end tab"/>
   <int value="4" label="Exit split"/>
   <int value="5" label="Send feedback"/>
+  <int value="6" label="Toggle orientation"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/split_tab_menu_model.h:SplitViewMenuEntry) -->
+
+<!-- LINT.IfChange(StorageLoadWarningCode) -->
+
+<enum name="StorageLoadWarningCode">
+  <int value="0" label="Unknown"/>
+  <int value="1" label="Parse error"/>
+  <int value="2" label="Multiple unique nodes error"/>
+  <int value="3" label="Tree too deep error"/>
+  <int value="4" label="Unknown collection type error"/>
+  <int value="5" label="Missing root node with tabs error"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/tab/tab_storage_type.h:StorageLoadWarningCode) -->
 
 <enum name="TabActivationTypes">
   <int value="0" label="Activate a tab"/>
@@ -382,6 +405,16 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(chrome/browser/ui/views/tabs/dragging/tab_drag_controller.h:TabDragDestination) -->
+
+<!-- LINT.IfChange(TabDragPinnedness) -->
+
+<enum name="TabDragPinnedness">
+  <int value="0" label="All unpinned"/>
+  <int value="1" label="All pinned"/>
+  <int value="2" label="Mixed"/>
+</enum>
+
+<!-- LINT.ThenChange(chrome/browser/ui/views/tabs/dragging/tab_drag_controller.h:TabDragPinnedness) -->
 
 <!-- LINT.IfChange(TabGroupingTransitionType) -->
 
@@ -428,19 +461,6 @@ chromium-metrics-reviews@google.com.
   <int value="5" label="Skipped (Empty URL)"/>
 </enum>
 
-<enum name="TabScreenshotAction">
-  <int value="0" label="User took no actions">
-    User made a screenshot, but did not take any actions with it before
-    navigating away or closing the tab.
-  </int>
-  <int value="1" label="Opened sharing">
-    User took a screenshot then tried to share.
-  </int>
-  <int value="2" label="Download IPH provided">
-    User was provided in product help for Downloads after taking a screenshot.
-  </int>
-</enum>
-
 <enum name="TabSearchCloseActions">
   <int value="0" label="User did not close via Tab Search UI">
     The UI was dismissed via interactions outside what is offered by the Tab
@@ -459,15 +479,6 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="User opened the Tab Search UI via touch gesture"/>
 </enum>
 
-<!-- LINT.IfChange(TabSearchPosition) -->
-
-<enum name="TabSearchPosition">
-  <int value="0" label="Leading"/>
-  <int value="1" label="Trailing"/>
-</enum>
-
-<!-- LINT.ThenChange(//chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.h:TabSearchPositionEnum) -->
-
 <enum name="TabSearchRecentlyClosedItemOpenAction">
   <int value="0"
       label="Opened a recently closed item from an unfiltered item list"/>
@@ -484,6 +495,21 @@ chromium-metrics-reviews@google.com.
   <int value="0" label="Switch to tab from unfiltered tab list"/>
   <int value="1" label="Switch to tab from filtered search tab list"/>
 </enum>
+
+<!-- LINT.IfChange(TabSearchWebUIAction) -->
+
+<enum name="TabSearchWebUIAction">
+  <int value="0" label="Opened recently closed item from filtered list"/>
+  <int value="1" label="Switched to tab from filtered list"/>
+  <int value="2" label="Closed tab from filtered list"/>
+  <int value="3" label="Opened recently closed item from unfiltered list"/>
+  <int value="4" label="Switched to tab from unfiltered list"/>
+  <int value="5" label="Closed tab from unfiltered list"/>
+  <int value="6" label="Switched to other window tab from filtered list"/>
+  <int value="7" label="Switched to other window tab from unfiltered list"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/resources/tab_search/tab_search_page.ts:TabSearchUserAction) -->
 
 <enum name="TabStateFlatBufferDeserializeResult">
   <int value="0" label="Success"/>
@@ -546,9 +572,10 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="SystemContextMenu"/>
   <int value="3" label="TabContextMenu"/>
   <int value="4" label="MacViewMenu"/>
+  <int value="5" label="WhatsNew"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_metrics.h:VerticalTabStripEntryPoint) -->
+<!-- LINT.ThenChange(//chrome/browser/ui/tabs/vertical_tab_strip_metrics.h:VerticalTabStripEntryPoint) -->
 
 </enums>
 

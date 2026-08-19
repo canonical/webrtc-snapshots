@@ -12,12 +12,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from typing import Dict, List, Tuple, Optional
+import re
+
+from typing import cast, Dict, List, Tuple, Optional
 from xml.dom import minidom
 
 import setup_modules  # pylint: disable=unused-import
 
 import chromium_src.tools.metrics.common.xml_utils as xml_utils
+
 
 class Error(Exception):
   pass
@@ -66,6 +69,23 @@ class Action(object):
     self.obsolete = obsolete
     self.from_suffix = from_suffix
     self.tokens = tokens or []
+
+  def _as_equality_tuple(self):
+    return (
+        self.name,
+        self.description,
+        self.owners,
+        self.not_user_triggered,
+        self.obsolete,
+        self.from_suffix,
+        # Basic token comparison: number of tokens
+        len(self.tokens or []),
+    )
+
+  def __eq__(self, other):
+    if not isinstance(other, Action):
+      return False
+    return self._as_equality_tuple() == other._as_equality_tuple()
 
 
 class Variants(object):
@@ -202,7 +222,7 @@ def _ExtractText(parent_dom: minidom.Element, tag_name: str) -> List[str]:
 
 def ParseActionFile(
     file_content: str
-) -> Tuple[Dict[str, Action], List[minidom.Node], Dict[str, List[Variant]]]:
+) -> Tuple[Dict[str, Action], List[minidom.Comment], Dict[str, List[Variant]]]:
   """Parse the XML data currently stored in the file.
 
   Args:
@@ -220,13 +240,14 @@ def ParseActionFile(
   """
   dom = minidom.parseString(file_content)
 
-  comment_nodes: List[minidom.Node] = []
+  comment_nodes: List[minidom.Comment] = []
   # Get top-level comments. It is assumed that all comments are placed before
   # <actions> tag. Therefore the loop will stop if it encounters a non-comment
   # node.
   for node in dom.childNodes:
     if node.nodeType == minidom.Node.COMMENT_NODE:
-      comment_nodes.append(node)
+      comment_node = cast(minidom.Comment, node)
+      comment_nodes.append(comment_node)
     else:
       break
 
@@ -298,8 +319,7 @@ def _CreateActionFromVariant(action: Action, variant: Variant,
 
   new_tokens = [new_token for new_token in action.tokens if new_token != token]
 
-  return Action(new_name, new_action_description,
-                list(action.owners) if action.owners else [],
+  return Action(new_name, new_action_description, action.owners,
                 action.not_user_triggered, action.obsolete, new_tokens)
 
 
@@ -314,8 +334,8 @@ def _CreateActionVariantsFor(action: Action) -> Dict[str, Action]:
 
   current_token = action.tokens[0]
   if not current_token.variants:
-    raise ValueError(f"Action {action} does not have variants"
-                     " for {current_token.key} token.")
+    raise ValueError(f'Action {action} does not have variants'
+                     f' for {current_token.key} token.')
 
   for variant in current_token.variants:
     ret_val |= _CreateActionVariantsFor(
@@ -371,3 +391,27 @@ def CreateActionsFromVariants(
     expanded_actions |= _CreateActionVariantsFor(action)
 
   return expanded_actions
+
+
+def ExtractOwners(owners_list: list[str]) -> tuple[list[str], bool]:
+  """Validates owners from a list of strings.
+
+  Args:
+    owners_list: A list of strings from <owner> tags.
+
+  Returns:
+    A tuple (owners_list, has_valid_owner), where owners_list is the input list
+    and has_valid_owner is true if there is at least one valid email.
+  """
+
+  # Basic validation to ensure the owner is a properly formatted email address.
+  BASIC_EMAIL_REGEXP = r'^[\w\-\+\%\.]+\@[\w\-\+\%\.]+$'
+  email_pattern = re.compile(BASIC_EMAIL_REGEXP)
+  has_valid_owner = False
+
+  for owner_text in owners_list:
+    if email_pattern.match(owner_text):
+      has_valid_owner = True
+      break  # Found at least one valid owner
+
+  return owners_list, has_valid_owner

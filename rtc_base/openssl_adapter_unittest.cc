@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -27,6 +26,7 @@
 #include "rtc_base/socket_address.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_stream_adapter.h"  // IWYU pragma: keep
+#include "rtc_base/strings/string_builder.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/run_loop.h"
@@ -132,14 +132,17 @@ TEST(OpenSSLAdapterTest, TestTransformAlpnProtocols) {
 
   // One protocol test.
   std::vector<std::string> alpn_protos{"h2"};
-  std::stringstream expected_response;
-  expected_response << static_cast<char>(2) << "h2";
-  EXPECT_EQ(expected_response.str(), TransformAlpnProtocols(alpn_protos));
+  StringBuilder sb;
+  sb << static_cast<char>(2) << "h2";
+  std::string expected_response = sb.Release();
+  EXPECT_EQ(expected_response, TransformAlpnProtocols(alpn_protos));
 
   // Standard protocols test (h2,http/1.1).
   alpn_protos.push_back("http/1.1");
-  expected_response << static_cast<char>(8) << "http/1.1";
-  EXPECT_EQ(expected_response.str(), TransformAlpnProtocols(alpn_protos));
+  StringBuilder sb2;
+  sb2 << static_cast<char>(2) << "h2" << static_cast<char>(8) << "http/1.1";
+  expected_response = sb2.Release();
+  EXPECT_EQ(expected_response, TransformAlpnProtocols(alpn_protos));
 }
 
 // Verifies that SSLStart works when OpenSSLAdapter is started in standalone
@@ -196,9 +199,8 @@ TEST(OpenSSLAdaptorTest, TestRealSSLConnection) {
   EXPECT_TRUE(connect_result == 0 || ssl_adapter->IsBlocking());
 
   // Wait for SSL handshake to complete.
-  EXPECT_THAT(WaitUntil([&] { return handler.IsSSLConnected(); },
-                        ::testing::IsTrue(), {.timeout = kTimeout}),
-              IsRtcOk())
+  EXPECT_TRUE(WaitUntil([&] { return handler.IsSSLConnected(); },
+                        {.timeout = kTimeout}))
       << "SSL handshake failed. Socket state: " << ssl_adapter->GetState()
       << ", Has error: " << handler.HasError();
 

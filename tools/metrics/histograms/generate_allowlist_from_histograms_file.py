@@ -7,6 +7,7 @@ import argparse
 import os
 import sys
 import xml.dom.minidom
+from pathlib import Path
 
 import setup_modules  # pylint: disable=unused-import
 
@@ -56,8 +57,8 @@ def _GenerateStaticFile(file_path, namespace, values, allow_list_name):
     String with the generated header file content.
   """
   values = sorted(values, key=lambda d: str(d))
-  include_guard = file_path.replace('\\', '_').replace('/', '_').replace(
-      '.', '_').upper() + "_"
+  include_guard = file_path.replace("\\", "_").replace("/", "_").replace(
+      ".", "_").upper() + "_"
 
   values_string = "\n".join(
       ["  \"{name}\",".format(name=value) for value in values])
@@ -86,7 +87,7 @@ def _GenerateValueList(histograms, tag, allow_list_name):
   if tag == "variant":
     return [value.get("name") for value in values[allow_list_name]]
 
-  return [b.get('key') for b in values[allow_list_name].get('buckets', [{}])]
+  return [b.get("key") for b in values[allow_list_name].get("buckets", [{}])]
 
 
 def _GenerateFile(arguments):
@@ -108,8 +109,8 @@ def _GenerateFile(arguments):
 
   static_check_header_file_content = _GenerateStaticFile(
       arguments.file, arguments.namespace, values, arguments.allow_list_name)
-  with open(os.path.join(arguments.output_dir, arguments.file),
-            "w") as generated_file:
+  output_path = Path(arguments.output_dir) / arguments.file
+  with open(output_path, "w") as generated_file:
     generated_file.write(static_check_header_file_content)
 
 

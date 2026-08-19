@@ -14,19 +14,20 @@ import re
 
 import setup_modules  # pylint: disable=unused-import
 
+from chromium_src.components.autofill.core.browser.data_model.autofill_ai.entity_schema_parser import parse_entity_schema
 import chromium_src.tools.metrics.common.path_util as path_util
 import chromium_src.tools.metrics.histograms.update_histogram_enum as update_histogram_enum
 
-from chromium_src.components.autofill.core.browser.data_model.autofill_ai.entity_schema_parser import parse_entity_schema
 
-AUTOFILL_AI_ENTITY_DIR = \
-    'components/autofill/core/browser/data_model/autofill_ai'
+AUTOFILL_AI_ENTITY_DIR = (
+    'components/autofill/core/browser/data_model/autofill_ai')
 
 FIELD_TYPES_PATH = 'components/autofill/core/browser/field_types.h'
-FIELD_PREDICTION_GROUPS_PATH = \
-    'components/autofill/core/browser/metrics/prediction_quality_metrics.cc'
+FIELD_PREDICTION_GROUPS_PATH = (
+    'components/autofill/core/browser/metrics/prediction_quality_metrics.cc')
 ENTITY_SCHEMA_PATH = AUTOFILL_AI_ENTITY_DIR + '/entity_schema.json'
 PREDICTION_SOURCE_PATH = 'components/autofill/core/browser/autofill_field.h'
+
 
 def ReadEnum(filename, first_line, last_line_exclusive):
   """Extracts an enum from a file.
@@ -106,12 +107,12 @@ def GenerateAutofillFieldPredictionQualityByFieldType():
     result[256 * enum_id + 5] = f'{enum_name}: False Positive (Ambiguous)'
     result[256 * enum_id + 6] = f'{enum_name}: False Positive (Unknown)'
     result[256 * enum_id + 7] = f'{enum_name}: False Positive (Empty)'
-    result[256 * enum_id + 8] = f'{enum_name}: False Negative (Mismatch)'
-    result[256 * enum_id + 9] = f'{enum_name}: False Negative (Unknown)'
+    result[256 * enum_id + 8] = f'{enum_name}: False Negative (Unknown)'
+    result[256 * enum_id + 9] = f'{enum_name}: False Negative (Mismatch)'
   return result
 
 
-def GenerateAutofillDataUtilizationByFieldType(field_types):
+def GenerateAutofillDataUtilizationByFieldType(field_types: dict[int, str]):
   result = {}
   for enum_id, enum_name in field_types.items():
     result[64 * enum_id +

@@ -23,6 +23,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
 #include "api/rtc_error.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -61,18 +62,14 @@ void RemoveExtensionMapForMid(
 }
 
 RTCError VerifyExtensionIds(const RtpHeaderExtensions& extensions) {
-  using ExtensionsUsed = std::bitset<1 + RtpExtension::kMaxId>;
+  using ExtensionsUsed = std::bitset<1 + RtpHeaderExtensionId::kMaxId.value()>;
   ExtensionsUsed id_used;
   for (const auto& extension : extensions) {
-    if (extension.id == 0) {
-      continue;
-    }
-    if (extension.id < RtpExtension::kMinId ||
-        extension.id > RtpExtension::kMaxId) {
+    if (!extension.id.Valid()) {
       return RTCError::InvalidParameter()
              << "Bad extension ID: " << extension.ToString();
     }
-    ExtensionsUsed::reference entry = id_used[extension.id];
+    ExtensionsUsed::reference entry = id_used[extension.id.value()];
     if (entry) {
       return RTCError::InvalidParameter()
              << "Duplicate extension ID: " << extension.ToString();
@@ -116,8 +113,9 @@ void RtpTransport::ChangePacketTransport(
     transport_to_change->UnsubscribeNetworkRouteChanged(this);
     transport_to_change->UnsubscribeWritableState(this);
     transport_to_change->UnsubscribeSentPacket(this);
-    // Reset the network route of the old transport.
-    SendNetworkRouteChanged(std::optional<NetworkRoute>());
+    // Reset the network route of the old transport. Passing nullopt clears
+    // the route and notifies subscribers that the transport is disconnected.
+    NotifyNetworkRouteChanged(std::optional<NetworkRoute>());
   }
   if (new_packet_transport) {
     new_packet_transport->SubscribeReadyToSend(
@@ -144,11 +142,22 @@ void RtpTransport::ChangePacketTransport(
             OnSentPacket(transport, info);
           }
         });
-    // Set the network route for the new transport.
-    SendNetworkRouteChanged(new_packet_transport->network_route());
+    NotifyNetworkRouteChanged(new_packet_transport->network_route());
   }
 
   transport_to_change = new_packet_transport;
+}
+
+void RtpTransport::NotifyNetworkRouteChanged(
+    std::optional<NetworkRoute> network_route) {
+  if (update_network_route_on_srtp_activation_) {
+    // Call virtual OnNetworkRouteChanged rather than SendNetworkRouteChanged
+    // directly so that subclass overrides (e.g., SrtpTransport) can process
+    // the route (such as appending SRTP overhead) before notifying subscribers.
+    OnNetworkRouteChanged(network_route);
+  } else {
+    SendNetworkRouteChanged(network_route);
+  }
 }
 
 void RtpTransport::SetRtcpPacketTransportOwned(
@@ -239,9 +248,6 @@ RTCError RtpTransport::VerifyRtpHeaderExtensionMap(
   }
 
   for (const auto& new_extension : extensions) {
-    if (new_extension.id == 0) {
-      continue;
-    }
     // TODO: bugs.webrtc.org/503013383 - Introduce checking against IDs that are
     // currently not present in the SDP, but have been used in previous
     // negotiation rounds. Reusing extensions with a different ID is a protocol
@@ -428,6 +434,12 @@ void RtpTransport::OnRtcpPacketReceived(
 void RtpTransport::OnReadPacket(PacketTransportInternal* transport,
                                 const ReceivedIpPacket& received_packet) {
   TRACE_EVENT0("webrtc", "RtpTransport::OnReadPacket");
+
+  // DTLS-decrypted application data is not RTP/RTCP.
+  // TODO: bugs.webrtc.org/517079993 - follow RFC 7983 design.
+  if (received_packet.decryption_info() == ReceivedIpPacket::kDtlsDecrypted) {
+    return;
+  }
 
   // When using RTCP multiplexing we might get RTCP packets on the RTP
   // transport. We check the RTP payload type to determine if it is RTCP.

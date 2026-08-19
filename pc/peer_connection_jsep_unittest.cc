@@ -43,6 +43,8 @@
 #include "pc/test/fake_audio_capture_module.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/thread.h"
+#include "test/create_test_environment.h"
+#include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/pc/sctp/fake_sctp_transport.h"
@@ -90,6 +92,7 @@ class PeerConnectionJsepTest : public ::testing::Test {
     dependencies.network_thread = network_thread_.get();
     dependencies.signaling_thread = Thread::Current();
     dependencies.adm = FakeAudioCaptureModule::Create();
+    dependencies.env = CreateTestEnvironment();
     EnableMediaWithDefaults(dependencies);
     dependencies.sctp_factory = std::make_unique<FakeSctpTransportFactory>();
     return dependencies;
@@ -101,13 +104,28 @@ class PeerConnectionJsepTest : public ::testing::Test {
     return CreatePeerConnection(config);
   }
 
+  WrapperPtr CreatePeerConnection(absl::string_view field_trials) {
+    RTCConfiguration config;
+    config.sdp_semantics = SdpSemantics::kUnifiedPlan;
+    return CreatePeerConnection(config, field_trials);
+  }
+
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
+    return CreatePeerConnection(config, "");
+  }
+
+  WrapperPtr CreatePeerConnection(const RTCConfiguration& config,
+                                  absl::string_view field_trials) {
     scoped_refptr<PeerConnectionFactoryInterface> pc_factory =
         CreateModularPeerConnectionFactory(
             CreatePeerConnectionFactoryDependencies());
     auto observer = std::make_unique<MockPeerConnectionObserver>();
-    auto result = pc_factory->CreatePeerConnectionOrError(
-        config, PeerConnectionDependencies(observer.get()));
+    PeerConnectionDependencies pc_deps(observer.get());
+    if (!field_trials.empty()) {
+      pc_deps.trials = CreateTestFieldTrialsPtr(field_trials);
+    }
+    auto result =
+        pc_factory->CreatePeerConnectionOrError(config, std::move(pc_deps));
     if (!result.ok()) {
       return nullptr;
     }
@@ -1031,6 +1049,20 @@ TEST_P(RecycleMediaSectionTest, PendingLocalRejectedAndNotRejectedRemote) {
   EXPECT_EQ(second_mid, caller_second_transceiver->mid());
 }
 
+TEST_F(PeerConnectionJsepTest, LocallyRejectedTransceiverDoesNotCrash) {
+  auto caller = CreatePeerConnection();
+  auto transceiver = caller->AddTransceiver(MediaType::AUDIO);
+
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  transceiver->StopInternal();
+
+  // The reoffer will have a rejected media section.
+  // Setting it as local description triggers
+  // MaybeHandleLocallyRejectedTransceiver.
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+}
+
 // Test that an m= section is *not* recycled if the media section is only
 // rejected in the pending remote description and there is no current local
 // description.
@@ -1191,7 +1223,9 @@ TEST_F(PeerConnectionJsepTest, OfferAnswerWithChangedMids) {
   constexpr char kFirstMid[] = "nondefaultmid";
   constexpr char kSecondMid[] = "randommid";
 
-  auto caller = CreatePeerConnection();
+  // Munging allowed: kMid (25)
+  auto caller =
+      CreatePeerConnection("WebRTC-NoSdpMangleAllowForTesting/Enabled,25/");
   caller->AddAudioTrack("a");
   caller->AddAudioTrack("b");
   auto callee = CreatePeerConnection();
@@ -1233,7 +1267,9 @@ TEST_F(PeerConnectionJsepTest, CreateOfferGeneratesUniqueMidIfAlreadyTaken) {
 
   // Now, do an offer/answer with one track which has the MID set to the default
   // second MID.
-  auto caller = CreatePeerConnection();
+  // Munging allowed: kMid (25)
+  auto caller =
+      CreatePeerConnection("WebRTC-NoSdpMangleAllowForTesting/Enabled,25/");
   caller->AddAudioTrack("a");
   auto callee = CreatePeerConnection();
 
@@ -2336,6 +2372,69 @@ TEST_F(PeerConnectionJsepTest,
   callee->AddTransceiver(MediaType::VIDEO);
   callee->CreateDataChannel("dummy");
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest, RollbackFollowedByAddTrack) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  RtpTransceiverInit init;
+  init.direction = RtpTransceiverDirection::kSendRecv;
+  RtpEncodingParameters encoding;
+  encoding.rid = "hi";
+  init.send_encodings.push_back(encoding);
+  caller->AddTransceiver(MediaType::VIDEO, init);
+
+  auto video_track = caller->CreateVideoTrack("v");
+  caller->pc()->GetTransceivers()[0]->sender()->SetTrack(video_track.get());
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  ASSERT_EQ(caller->pc()->GetTransceivers().size(), 1u);
+
+  // Create and apply local offer.
+  ASSERT_TRUE(caller->CreateOfferAndSetAsLocal());
+
+  // Rollback.
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateRollback()));
+
+  // Add track to the video transceiver.
+  auto video_track2 = caller->CreateVideoTrack("v2");
+  caller->pc()->GetTransceivers()[0]->sender()->SetTrack(video_track2.get());
+
+  // Verify no crash and operation succeeds.
+  EXPECT_TRUE(caller->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest, RollbackAfterSetParametersDoesNotStopAudio) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->AddAudioTrack("a");
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  ASSERT_EQ(caller->pc()->GetTransceivers().size(), 1u);
+  auto transceiver = caller->pc()->GetTransceivers()[0];
+
+  auto params = transceiver->sender()->GetParameters();
+  ASSERT_FALSE(params.encodings.empty());
+  EXPECT_NE(params.encodings[0].ssrc, std::nullopt);
+
+  // Verify init_send_encodings are empty BEFORE SetParameters.
+  EXPECT_TRUE(transceiver->sender()->init_send_encodings().empty());
+  EXPECT_EQ(transceiver->sender()->SetParameters(params).type(),
+            RTCErrorType::NONE);
+
+  // Verify that init_send_encodings are empty because no initial encodings were
+  // provided during transceiver creation.
+  EXPECT_TRUE(transceiver->sender()->init_send_encodings().empty());
+
+  ASSERT_TRUE(caller->CreateOfferAndSetAsLocal());
+
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateRollback()));
+
+  EXPECT_FALSE(transceiver->stopping());
+  EXPECT_EQ(transceiver->receiver()->track()->state(),
+            MediaStreamTrackInterface::kLive);
 }
 
 TEST_F(PeerConnectionJsepTest, RollbackRemoteDataChannelThenAddDataChannel) {

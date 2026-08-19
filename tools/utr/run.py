@@ -24,6 +24,7 @@ import random
 import re
 import sys
 
+import builder_utils
 import builders
 import cipd
 import recipe
@@ -84,8 +85,9 @@ def add_common_args(parser):
                       'in those files.')
   parser.add_argument('--builder',
                       '-b',
-                      required=True,
-                      help='Name of the builder we want to replicate.')
+                      help='Name of the builder we want to replicate. '
+                      'If omitted, will attempt to infer it from the gn '
+                      'args in the build directory or host machine dimensions.')
   parser.add_argument(
       '--project',
       '-p',
@@ -106,6 +108,11 @@ def add_common_args(parser):
       help='Path to the build dir to use for compilation and/or for invoking '
       'test binaries. Will use a build dir in //out/ named after the builder '
       'if not specified: //out/UTR${{builder_name}}')
+  parser.add_argument(
+      '--checkout-dir',
+      type=pathlib.Path,
+      help='Path to the source checkout directory to build and test against. '
+      'Defaults to the current checkout root.')
   parser.add_argument(
       '--recipe-dir',
       '--recipe-path',
@@ -238,10 +245,12 @@ def parse_args(args=None):
       args.project = 'chromium'
     elif re.fullmatch(r'chrome(-m\d+)?', args.project):
       args.project = 'chrome'
+    elif args.project == 'dawn':
+      pass
     else:
       parser.error(
-          f'Unknown project: "{args.project}". Please select "chrome" or '
-          '"chromium".')
+          f'Unknown project: "{args.project}". Please select "chrome", '
+          '"chromium", or "dawn".')
   return args
 
 
@@ -253,6 +262,7 @@ def main():
 @tracer.start_as_current_span('chromium.tools.utr.main')
 def _main_impl():
   args = parse_args()
+  src_dir = args.checkout_dir.resolve() if args.checkout_dir else _SRC_DIR
   logging.basicConfig(level=logging.DEBUG if args.verbosity else logging.INFO,
                       format='%(message)s',
                       handlers=[
@@ -262,24 +272,50 @@ def _main_impl():
                                       markup=True)
                       ])
 
-  cipd_bin_path = _SRC_DIR.joinpath('third_party', 'depot_tools', '.cipd_bin')
+  # Check for depot_tools in whatever repo we are running in and fall back to
+  # the Chromium checkout's version if it is not found. This is intended to
+  # support non-Chromium repos such as Dawn which are otherwise compatible with
+  # the UTR.
+  cipd_bin_path = src_dir.joinpath('third_party', 'depot_tools', '.cipd_bin')
+  if not cipd_bin_path.exists():
+    cipd_bin_path = _SRC_DIR.joinpath('third_party', 'depot_tools', '.cipd_bin')
   if not cipd_bin_path.exists():
     logging.warning(
-        ".cipd_bin folder not found. 'gclient sync' may need to be run")
+        ".cipd_bin folder not found. To resolve missing dependencies in a "
+        "remote workspace, please run 'gclient sync -D' and ensure "
+        "your session is authenticated with Context Aware Access (CAA).")
   else:
     os.environ["PATH"] = str(cipd_bin_path) + os.pathsep + os.environ["PATH"]
 
   if not recipe.check_luci_context_auth():
     return 1
 
+  builder_name = args.builder
+  bucket_name = args.bucket
+  if not builder_name:
+    if args.build_dir:
+      bucket_name, builder_name = builder_utils.guess_builder(args.build_dir)
+      if bucket_name and builder_name:
+        logging.info('Inferred builder: %s (bucket: %s)', builder_name,
+                     bucket_name)
+      else:
+        logging.error(
+            'Could not infer builder from GN args in %s. '
+            'Please specify a builder via -b/--builder.', args.build_dir)
+        return 1
+    else:
+      logging.error('Please specify a builder via -b/--builder'
+                    ' or provide a build dir via -o/--build-dir to infer one.')
+      return 1
+
   builder_props, project = builders.find_builder_props(
-      args.builder, bucket_name=args.bucket, project_name=args.project)
+      builder_name, bucket_name=bucket_name, project_name=args.project)
   if not builder_props:
     return 1
 
   build_dir = args.build_dir
   if not args.build_dir:
-    build_dir = _SRC_DIR.joinpath('out', 'UTR' + '_'.join(args.builder.split()))
+    build_dir = src_dir.joinpath('out', 'UTR' + '_'.join(builder_name.split()))
     logging.info('[cyan]Using the following build dir:[/]')
     logging.getLogger('basic_logger').info(build_dir)
     logging.info('')
@@ -296,8 +332,8 @@ def _main_impl():
         recipes_path,
         builder_props,
         project,
-        args.bucket,
-        args.builder,
+        bucket_name,
+        builder_name,
         args.tests,
         skip_compile,
         skip_test,
@@ -312,6 +348,7 @@ def _main_impl():
         no_siso=args.no_siso,
         use_autoninja=not skip_compile and args.use_autoninja,
         omit_default_test_args=args.omit_default_test_args,
+        src_dir=src_dir,
     )
     exit_code, error_msg = recipe_runner.run_recipe(
         filter_stdout=args.verbosity < 2)

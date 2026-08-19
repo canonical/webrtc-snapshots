@@ -603,7 +603,7 @@ class BlinkPerfLoading(_BlinkPerfBenchmark):
     return 'UNSCHEDULED_blink_perf.loading'
 
 
-@benchmark.Info(emails=['ayui@chromium.org'],
+@benchmark.Info(emails=['fergal@chromium.org', 'stevebe@microsoft.com'],
                 component='Blink>Storage',
                 documentation_url='https://bit.ly/blink-perf-benchmarks')
 class BlinkPerfOWPStorage(_BlinkPerfBenchmark):
@@ -614,13 +614,16 @@ class BlinkPerfOWPStorage(_BlinkPerfBenchmark):
   def Name(cls):
     return 'blink_perf.owp_storage'
 
-  # This ensures that all blobs >= 20MB will be transported by files.
   def SetExtraBrowserOptions(self, options):
     options.AppendExtraBrowserArgs([
+        # This ensures that all blobs >= 20MB will be transported by files.
+        # TODO(crbug.com/517803856): Fix switch names and the above comment.
         '--blob-transport-by-file-trigger=307300',
         '--blob-transport-min-file-size=2048',
         '--blob-transport-max-file-size=10240',
-        '--blob-transport-shared-memory-max-size=30720'
+        '--blob-transport-shared-memory-max-size=30720',
+        # Enables tests to optionally exercise database cold-open.
+        '--idb-expedite-backing-store-shutdown',
     ])
 
 

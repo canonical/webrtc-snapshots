@@ -239,6 +239,16 @@ _BENCHMARKS = [
         can_run=True,
         test_filter='*ExampleRobolectricTest*',
     ),
+    Benchmark(
+        name='al_cc',
+        from_string=
+        '#include "chrome/browser/android/compositor/compositor_view.h"',
+        to_string=(
+            '#include "chrome/browser/android/compositor/compositor_view.h"\n'
+            '// random_comment<sub>'),
+        change_file='chrome/browser/android/compositor/compositor_view.cc',
+        can_install=True,
+    ),
 ]
 
 _BENCHMARK_FROM_NAME = {benchmark.name: benchmark for benchmark in _BENCHMARKS}

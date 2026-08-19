@@ -30,6 +30,7 @@
 #include "api/field_trials_view.h"
 #include "api/make_ref_counted.h"
 #include "api/numerics/samples_stats_counter.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -92,11 +93,7 @@ using test::GetGlobalMetricsLogger;
 using test::ImprovementDirection;
 using test::Unit;
 
-enum : int {  // The first valid value is 1.
-  kTransportSequenceNumberExtensionId = 1,
-};
-
-}  // namespace
+constexpr RtpHeaderExtensionId kTransportSequenceNumberExtensionId(1);
 
 class CallPerfTest : public test::CallTest {
  public:
@@ -266,7 +263,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
                  });
 
     audio_send_transport = std::make_unique<test::PacketTransport>(
-        send_env_, task_queue(), sender_call_.get(), observer.get(),
+        send_env_, network_thread(), sender_call_.get(), observer.get(),
         test::PacketTransport::kSender, audio_pt_map,
         std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
@@ -275,7 +272,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     audio_send_transport->SetReceiver(receiver_call_->Receiver());
 
     video_send_transport = std::make_unique<test::PacketTransport>(
-        send_env_, task_queue(), sender_call_.get(), observer.get(),
+        send_env_, network_thread(), sender_call_.get(), observer.get(),
         test::PacketTransport::kSender, video_pt_map,
         std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
@@ -284,7 +281,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     video_send_transport->SetReceiver(receiver_call_->Receiver());
 
     receive_transport = std::make_unique<test::PacketTransport>(
-        recv_env_, task_queue(), receiver_call_.get(), observer.get(),
+        recv_env_, network_thread(), receiver_call_.get(), observer.get(),
         test::PacketTransport::kReceiver, payload_type_map_,
         std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
@@ -1081,4 +1078,5 @@ TEST_F(CallPerfTest, TestEncodeFramerateVp8SimulcastLowerInputFps) {
                       /*max_framerates=*/{14, 20});
 }
 
+}  // namespace
 }  // namespace webrtc

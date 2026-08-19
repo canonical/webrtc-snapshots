@@ -20,10 +20,10 @@
 #include "api/media_stream_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/pending_task_safety_flag.h"
+#include "api/video/adapted_video_track_source.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
-#include "media/base/adapted_video_track_source.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
@@ -77,10 +77,30 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(Thread* signaling_thread,
       signaling_thread_(signaling_thread),
       is_screencast_(is_screencast),
       align_timestamps_(align_timestamps),
-      safety_(PendingTaskSafetyFlag::Create()) {
+      safety_(PendingTaskSafetyFlag::CreateAttachedToTaskQueue(
+          /*alive=*/true,
+          signaling_thread)) {
+  RTC_DCHECK(signaling_thread_);
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
 }
-AndroidVideoTrackSource::~AndroidVideoTrackSource() = default;
+
+AndroidVideoTrackSource::~AndroidVideoTrackSource() {
+  RTC_LOG(LS_INFO) << "AndroidVideoTrackSource dtor";
+
+  // TODO(b/403168866): This is a workaround to ensure
+  // safety_flag_->SetNotAlive() is called on the signaling thread.
+  //
+  // In production code, this object should always be destroyed on the signaling
+  // thread. However, during teardown in instrumentation tests, calling
+  // VideoSource.dispose() from Java drops the last reference to this object on
+  // the Java test thread. This trigger destruction on the wrong thread, which
+  // would cause a crash due to the sequence checker DCHECK in SetNotAlive().
+  if (signaling_thread_->IsCurrent()) {
+    safety_->SetNotAlive();
+  } else {
+    signaling_thread_->BlockingCall([&] { safety_->SetNotAlive(); });
+  }
+}
 
 bool AndroidVideoTrackSource::is_screencast() const {
   return is_screencast_.load();
@@ -195,3 +215,5 @@ void AndroidVideoTrackSource::AdaptOutputFormat(
 
 }  // namespace jni
 }  // namespace webrtc
+
+DEFINE_JNI(NativeAndroidVideoTrackSource)

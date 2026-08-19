@@ -80,7 +80,8 @@
             "loadline_tablet.crossbench": {
                 "crossbench_name": "loadline-tablet-fast",
                 "arguments": [
-                    "--cool-down-threshold=moderate"
+                    "--cool-down-threshold=moderate",
+                    "--enable-field-trials"
                 ]
             }
         }
@@ -94,7 +95,7 @@
                 "abridged": false
             },
             "rendering.mobile": {
-                "end": 113,
+                "end": 116,
                 "abridged": false
             }
         }
@@ -102,8 +103,8 @@
     "3": {
         "benchmarks": {
             "rendering.mobile": {
-                "begin": 113,
-                "end": 266,
+                "begin": 116,
+                "end": 274,
                 "abridged": false
             }
         }
@@ -111,19 +112,19 @@
     "4": {
         "benchmarks": {
             "rendering.mobile": {
-                "begin": 266,
+                "begin": 274,
+                "abridged": false
+            },
+            "rendering.mobile.notracing": {
+                "abridged": false
+            },
+            "speedometer3": {
                 "abridged": false
             }
         }
     },
     "5": {
         "benchmarks": {
-            "rendering.mobile.notracing": {
-                "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
-            },
             "speedometer3-future": {
                 "abridged": false
             },
@@ -135,7 +136,8 @@
             },
             "system_health.memory_mobile": {
                 "end": 14,
-                "abridged": false
+                "abridged": false,
+                "pageset_repeat": 3
             }
         }
     },
@@ -144,7 +146,8 @@
             "system_health.memory_mobile": {
                 "begin": 14,
                 "end": 62,
-                "abridged": false
+                "abridged": false,
+                "pageset_repeat": 3
             }
         }
     },
@@ -152,10 +155,12 @@
         "benchmarks": {
             "system_health.memory_mobile": {
                 "begin": 62,
-                "abridged": false
+                "abridged": false,
+                "pageset_repeat": 3
             },
             "system_health.webview_startup": {
-                "abridged": false
+                "abridged": false,
+                "pageset_repeat": 20
             },
             "v8.browsing_mobile": {
                 "abridged": false
@@ -172,18 +177,18 @@
         }
     },
     "extra_infos": {
-        "num_stories": 1118,
-        "predicted_min_shard_time": 3601.0,
-        "predicted_min_shard_index": 4,
-        "predicted_max_shard_time": 5490.0,
+        "num_stories": 1124,
+        "predicted_min_shard_time": 3725.0,
+        "predicted_min_shard_index": 7,
+        "predicted_max_shard_time": 5520.0,
         "predicted_max_shard_index": 1,
-        "shard #0": 3992.0,
-        "shard #1": 5490.0,
-        "shard #2": 3730.0,
-        "shard #3": 3734.0,
-        "shard #4": 3601.0,
-        "shard #5": 3919.0,
-        "shard #6": 3735.0,
-        "shard #7": 3689.0
+        "shard #0": 3991.0,
+        "shard #1": 5520.0,
+        "shard #2": 3729.0,
+        "shard #3": 3739.0,
+        "shard #4": 3763.0,
+        "shard #5": 3736.0,
+        "shard #6": 3732.0,
+        "shard #7": 3725.0
     }
 }

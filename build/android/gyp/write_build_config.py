@@ -355,7 +355,6 @@ class _TransitiveValuesBuilder:
         _TransitiveValuesBuilder(apk_under_test_params).Build(),
         retain_processed_jars=self._params.get('proguard_enabled'),
         retain_unprocessed_jars=True,
-        retain_resource_zips=True,
         retain_android_manifests=True)
 
 
@@ -512,7 +511,10 @@ def _SuffixAssets(config, target_config):
 
   all_assets = target_config['assets'] + target_config['uncompressed_assets']
   suffix = '+' + target_config['package_name'] + '+'
-  suffix_names = {x.split(':', 1)[1].replace(suffix, '') for x in all_assets}
+  suffix_names = {
+      x.split(':', 1)[1].replace(suffix, '')
+      for x in all_assets if 'pinlist.meta' not in x
+  }
   config['assets'] = helper(suffix_names, suffix, config['assets'])
   config['uncompressed_assets'] = helper(suffix_names, suffix,
                                          config['uncompressed_assets'])

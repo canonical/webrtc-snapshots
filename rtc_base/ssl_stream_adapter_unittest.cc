@@ -34,7 +34,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "api/crypto/crypto_options.h"
-#include "api/field_trials.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/test/rtc_error_matchers.h"
@@ -51,7 +50,7 @@
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
-#include "test/create_test_field_trials.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/time_controller/simulated_time_controller.h"
@@ -410,7 +409,8 @@ class BufferQueueStream : public StreamInterface {
   BufferQueue buffer_;
 };
 
-constexpr int kBufferCapacity = 1;
+// DTLS1.3 can also write ACK message, so we need to have a buffer of 2.
+constexpr int kBufferCapacity = 2;
 constexpr size_t kDefaultBufferSize = 2048;
 
 class SSLStreamAdapterTestBase : public ::testing::Test {
@@ -473,19 +473,16 @@ class SSLStreamAdapterTestBase : public ::testing::Test {
   void InitializeClientAndServerStreams(
       absl::string_view client_experiment = "",
       absl::string_view server_experiment = "") {
-    // Note: `client_ssl_` and `server_ssl_` may be non-nullptr.
+    client_ssl_ = SSLStreamAdapter::Create(
+        CreateTestEnvironment(
+            {.field_trials = client_experiment, .time = &time_controller_}),
+        CreateClientStream(), /*handshake_error=*/nullptr);
 
-    // The field trials are read when the OpenSSLStreamAdapter is initialized.
-    {
-      FieldTrials trial = CreateTestFieldTrials(client_experiment);
-      client_ssl_ =
-          SSLStreamAdapter::Create(CreateClientStream(), nullptr, &trial);
-    }
-    {
-      FieldTrials trial = CreateTestFieldTrials(server_experiment);
-      server_ssl_ =
-          SSLStreamAdapter::Create(CreateServerStream(), nullptr, &trial);
-    }
+    server_ssl_ = SSLStreamAdapter::Create(
+        CreateTestEnvironment(
+            {.field_trials = server_experiment, .time = &time_controller_}),
+        CreateServerStream(), /*handshake_error=*/nullptr);
+
     client_ssl_->SetEventCallback(
         [this](int events, int err) { OnClientEvent(events, err); });
     server_ssl_->SetEventCallback(
@@ -585,14 +582,12 @@ class SSLStreamAdapterTestBase : public ::testing::Test {
 
     // Now run the handshake
     if (expect_success) {
-      EXPECT_THAT(WaitUntil(
-                      [&] {
-                        return (client_ssl_->GetState() == SS_OPEN) &&
-                               (server_ssl_->GetState() == SS_OPEN);
-                      },
-                      ::testing::IsTrue(),
-                      {.timeout = handshake_wait_, .clock = &time_controller_}),
-                  IsRtcOk());
+      EXPECT_TRUE(WaitUntil(
+          [&] {
+            return (client_ssl_->GetState() == SS_OPEN) &&
+                   (server_ssl_->GetState() == SS_OPEN);
+          },
+          {.timeout = handshake_wait_, .clock = &time_controller_}));
     } else {
       EXPECT_THAT(
           WaitUntil([&] { return client_ssl_->GetState(); },
@@ -635,13 +630,12 @@ class SSLStreamAdapterTestBase : public ::testing::Test {
     while (client_ssl_->GetState() == SS_OPENING &&
            (time_controller_.GetClock()->CurrentTime() - time_start <
             TimeDelta::Minutes(60))) {
-      EXPECT_THAT(WaitUntil(
-                      [&] {
-                        return !((client_ssl_->GetState() == SS_OPEN) &&
-                                 (server_ssl_->GetState() == SS_OPEN));
-                      },
-                      ::testing::IsTrue(), {.clock = &time_controller_}),
-                  IsRtcOk());
+      EXPECT_TRUE(WaitUntil(
+          [&] {
+            return !((client_ssl_->GetState() == SS_OPEN) &&
+                     (server_ssl_->GetState() == SS_OPEN));
+          },
+          {.clock = &time_controller_}));
       time_controller_.AdvanceTime(time_increment);
     }
     EXPECT_EQ(client_ssl_->GetState(), SS_CLOSED);
@@ -666,14 +660,11 @@ class SSLStreamAdapterTestBase : public ::testing::Test {
     ASSERT_EQ(0, client_ssl_->StartSSL());
 
     // Now run the handshake.
-    EXPECT_THAT(WaitUntil(
-                    [&] {
-                      return client_ssl_->IsTlsConnected() &&
-                             server_ssl_->IsTlsConnected();
-                    },
-                    ::testing::IsTrue(),
-                    {.timeout = handshake_wait_, .clock = &time_controller_}),
-                IsRtcOk());
+    EXPECT_TRUE(WaitUntil(
+        [&] {
+          return client_ssl_->IsTlsConnected() && server_ssl_->IsTlsConnected();
+        },
+        {.timeout = handshake_wait_, .clock = &time_controller_}));
 
     // Until the identity has been verified, the state should still be
     // SS_OPENING and writes should return SR_BLOCK.

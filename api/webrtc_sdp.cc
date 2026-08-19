@@ -19,6 +19,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -26,6 +27,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/nullability.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -35,9 +37,11 @@
 #include "api/media_types.h"
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/sctp_transport_interface.h"
+#include "api/uma_metrics.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "media/base/rid_description.h"
@@ -52,6 +56,7 @@
 #include "pc/simulcast_sdp_serializer.h"
 #include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/containers/flat_set.h"
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
@@ -61,6 +66,7 @@
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -95,6 +101,9 @@ const char kAttributeMsid[] = "msid";
 const char kAttributeBundleOnly[] = "bundle-only";
 const char kAttributeRtcpMux[] = "rtcp-mux";
 const char kAttributeRtcpReducedSize[] = "rtcp-rsize";
+const char kAttributeRtcpXr[] = "rtcp-xr";
+const char kRtcpXrFormatRcvrRtt[] = "rcvr-rtt";
+const char kRtcpXrFormatRcvrRttPrefix[] = "rcvr-rtt=";
 const char kAttributeSsrc[] = "ssrc";
 const char kSsrcAttributeCname[] = "cname";
 const char kAttributeExtmapAllowMixed[] = "extmap-allow-mixed";
@@ -129,6 +138,10 @@ const char kAttributeInactive[] = "inactive";
 const char kAttributeSctpPort[] = "sctp-port";
 const char kAttributeMaxMessageSize[] = "max-message-size";
 const int kDefaultSctpMaxMessageSize = 65536;
+// 32 is a safe upper bound. Standard groups (FID, FEC-FR, SIM) use <= 3 SSRCs.
+// This allows a buffer for custom semantics while preventing resource
+// exhaustion.
+constexpr size_t kMaxSsrcsPerGroup = 32;
 
 // draft-hancke-tsvwg-snap
 const char kAttributeSctpSnap[] = "sctp-init";
@@ -141,11 +154,15 @@ constexpr absl::string_view kAttributeSimulcast = "simulcast";
 constexpr absl::string_view kAttributeRid = "rid";
 const char kAttributePacketization[] = "packetization";
 
+// https://www.rfc-editor.org/rfc/rfc9335.html
+const char kAttributeCryptex[] = "cryptex";
+
 // Experimental flags
 const char kAttributeXGoogleFlag[] = "x-google-flag";
 const char kValueConference[] = "conference";
 
 const char kAttributeRtcpRemoteEstimate[] = "remote-net-estimate";
+const char kAttributeSframe[] = "sframe";
 
 // StringBuilder doesn't have a << overload for chars, while
 // split and tokenize_first both take a char delimiter. To
@@ -203,6 +220,11 @@ bool IsTokenChar(char ch) {
   return ch == 0x21 || (ch >= 0x23 && ch <= 0x27) || ch == 0x2a || ch == 0x2b ||
          ch == 0x2d || ch == 0x2e || (ch >= 0x30 && ch <= 0x39) ||
          (ch >= 0x41 && ch <= 0x5a) || (ch >= 0x5e && ch <= 0x7e);
+}
+
+void ReportSdpBandwidth(SdpBandwidthCategory category) {
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.SdpBandwidth", category,
+                            kSdpBandwidthMax);
 }
 
 struct SsrcInfo {
@@ -695,6 +717,9 @@ bool ParseSctpPort(absl::string_view line,
   if (!FromString(fields[1], sctp_port)) {
     return ParseFailed(line, "Invalid sctp port value.", error);
   }
+  if (!IsValidPort(*sctp_port)) {
+    return ParseFailed(line, "Invalid sctp port value.", error);
+  }
   return true;
 }
 
@@ -710,6 +735,9 @@ bool ParseSctpMaxMessageSize(absl::string_view line,
     return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
   }
   if (!FromString(fields[1], max_message_size)) {
+    return ParseFailed(line, "Invalid SCTP max message size.", error);
+  }
+  if (*max_message_size < 0) {
     return ParseFailed(line, "Invalid SCTP max message size.", error);
   }
   return true;
@@ -740,6 +768,29 @@ void WriteSctpInit(const std::vector<uint8_t>& cookie, StringBuilder* os) {
   *os << kSdpDelimiterColon << Base64Encode(cookie);
 }
 
+bool IsValidAbsoluteUri(absl::string_view uri) {
+  for (size_t i = 0; i < uri.size(); ++i) {
+    char c = uri[i];
+    if (absl::ascii_iscntrl(c)) {
+      return false;
+    }
+    if (c == '%') {
+      if (i + 2 >= uri.size()) {
+        return false;
+      }
+      char decoded[1];
+      if (hex_decode(decoded, uri.substr(i + 1, 2)) != 1) {
+        return false;
+      }
+      if (absl::ascii_iscntrl(decoded[0])) {
+        return false;
+      }
+      i += 2;
+    }
+  }
+  return true;
+}
+
 bool ParseExtmap(absl::string_view line,
                  RtpExtension* extmap,
                  SdpParseError* error) {
@@ -763,6 +814,9 @@ bool ParseExtmap(absl::string_view line,
   if (!GetValueFromString(line, sub_fields[0], &value, error)) {
     return false;
   }
+  if (!RtpHeaderExtensionId(value).Valid()) {
+    return ParseFailed(line, "Extension ID is not in valid range.", error);
+  }
 
   bool encrypted = false;
   if (uri == RtpExtension::kEncryptHeaderExtensionsUri) {
@@ -782,7 +836,11 @@ bool ParseExtmap(absl::string_view line,
     }
   }
 
-  *extmap = RtpExtension(uri, value, encrypted);
+  if (!IsValidAbsoluteUri(uri)) {
+    return ParseFailed(line, "URI contains invalid characters.", error);
+  }
+
+  *extmap = RtpExtension(uri, RtpHeaderExtensionId(value), encrypted);
   return true;
 }
 
@@ -1001,10 +1059,10 @@ bool GetMinValue(const std::vector<int>& values, int* value) {
   return true;
 }
 
-bool GetParameter(const std::string& name,
+bool GetParameter(absl::string_view name,
                   const CodecParameterMap& params,
                   int* value) {
-  std::map<std::string, std::string>::const_iterator found = params.find(name);
+  CodecParameterMap::const_iterator found = params.find(std::string(name));
   if (found == params.end()) {
     return false;
   }
@@ -1065,8 +1123,13 @@ void AddPacketizationLine(const Codec& codec, std::string* message) {
   AddLine(os.str(), message);
 }
 
-void AddRtcpFbLines(const Codec& codec, std::string* message) {
+void AddRtcpFbLines(const Codec& codec,
+                    const FeedbackParams& skip_params,
+                    std::string* message) {
   for (const FeedbackParam& param : codec.feedback_params.params()) {
+    if (skip_params.Has(param)) {
+      continue;
+    }
     StringBuilder os;
     WriteRtcpFbHeader(codec.id, &os);
     os << " " << param.id();
@@ -1122,6 +1185,24 @@ void BuildRtpmap(const MediaContentDescription* media_desc,
                  std::string* message) {
   RTC_DCHECK(message != nullptr);
   RTC_DCHECK(media_desc != nullptr);
+
+  FeedbackParams common_fb_params;
+  if (use_wildcard) {
+    if (media_desc->rtcp_fb_ack_ccfb()) {
+      common_fb_params.Add(FeedbackParam("ack", "ccfb"));
+    }
+    const std::vector<Codec>& codecs = media_desc->codecs();
+    if (!codecs.empty()) {
+      FeedbackParams intersection = codecs[0].feedback_params;
+      for (size_t i = 1; i < codecs.size(); ++i) {
+        intersection.Intersect(codecs[i].feedback_params);
+      }
+      for (const auto& param : intersection.params()) {
+        common_fb_params.Add(param);
+      }
+    }
+  }
+
   StringBuilder os;
   if (media_type == MediaType::VIDEO) {
     for (Codec codec : media_desc->codecs()) {
@@ -1143,7 +1224,7 @@ void BuildRtpmap(const MediaContentDescription* media_desc,
         AddLine(os.str(), message);
       }
       AddPacketizationLine(codec, message);
-      AddRtcpFbLines(codec, message);
+      AddRtcpFbLines(codec, common_fb_params, message);
       AddFmtpLine(codec, message);
     }
   } else if (media_type == MediaType::AUDIO) {
@@ -1170,7 +1251,7 @@ void BuildRtpmap(const MediaContentDescription* media_desc,
         os << "/" << codec.channels;
       }
       AddLine(os.str(), message);
-      AddRtcpFbLines(codec, message);
+      AddRtcpFbLines(codec, common_fb_params, message);
       AddFmtpLine(codec, message);
       int minptime = 0;
       if (GetParameter(kCodecParamMinPTime, codec.params, &minptime)) {
@@ -1202,12 +1283,14 @@ void BuildRtpmap(const MediaContentDescription* media_desc,
     }
   }
   if (use_wildcard) {
-    if (media_desc->rtcp_fb_ack_ccfb()) {
-      // RFC 8888 section 6
-      InitAttrLine(kAttributeRtcpFb, &os);
-      os << kSdpDelimiterColon;
-      os << "* ack ccfb";
-      AddLine(os.str(), message);
+    for (const FeedbackParam& param : common_fb_params.params()) {
+      StringBuilder os_fb;
+      WriteRtcpFbHeader(kWildcardPayloadType, &os_fb);
+      os_fb << " " << param.id();
+      if (!param.param().empty()) {
+        os_fb << " " << param.param();
+      }
+      AddLine(os_fb.str(), message);
     }
   }
 }
@@ -1224,9 +1307,14 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   // The attribute MUST be either on session level or media level. We support
   // responding on both levels, however, we don't respond on media level if it's
   // set on session level.
-  if (media_desc->extmap_allow_mixed_enum() ==
-      MediaContentDescription::kMedia) {
+  if (media_desc->extmap_allow_mixed_level() ==
+      MediaContentDescription::AttributeLevel::kMedia) {
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
+    AddLine(os.str(), message);
+  }
+  if (media_desc->cryptex_level() ==
+      MediaContentDescription::AttributeLevel::kMedia) {
+    InitAttrLine(kAttributeCryptex, &os);
     AddLine(os.str(), message);
   }
   BuildRtpHeaderExtensions(media_desc->rtp_header_extensions(), message);
@@ -1296,6 +1384,25 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     AddLine(os.str(), message);
   }
 
+  // RFC 3611
+  // a=rtcp-xr:rcvr-rtt=all
+  if (media_desc->receive_non_sender_rtt()) {
+    InitAttrLine(kAttributeRtcpXr, &os);
+    os << kSdpDelimiterColon << kRtcpXrFormatRcvrRtt << "=all";
+    AddLine(os.str(), message);
+    // Interim backward-compat: also advertise the non-standard
+    // a=rtcp-fb:<pt> rrtr for peers that do not understand rtcp-xr. rrtr is
+    // no longer carried as a codec feedback param (the parser folds it into
+    // receive_non_sender_rtt), so it is emitted here from the flag rather
+    // than via AddRtcpFbLines.
+    for (const Codec& codec : media_desc->codecs()) {
+      StringBuilder fb_os;
+      WriteRtcpFbHeader(codec.id, &fb_os);
+      fb_os << " " << kRtcpFbParamRrtr;
+      AddLine(fb_os.str(), message);
+    }
+  }
+
   if (media_desc->conference_mode()) {
     InitAttrLine(kAttributeXGoogleFlag, &os);
     os << kSdpDelimiterColon << kValueConference;
@@ -1304,6 +1411,13 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
 
   if (media_desc->remote_estimate()) {
     InitAttrLine(kAttributeRtcpRemoteEstimate, &os);
+    AddLine(os.str(), message);
+  }
+
+  // draft-ietf-avtcore-rtp-sframe-02 §6
+  // a=sframe
+  if (media_desc->sframe_enabled()) {
+    InitAttrLine(kAttributeSframe, &os);
     AddLine(os.str(), message);
   }
 
@@ -1387,6 +1501,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
                            const MediaType media_type,
                            const std::vector<Candidate>& candidates,
                            int msid_signaling,
+                           bool use_wildcard,
                            std::string* message) {
   RTC_DCHECK(message);
   if (!content_info) {
@@ -1470,9 +1585,8 @@ void BuildMediaDescription(const ContentInfo* content_info,
   if (IsDtlsSctp(media_desc->protocol())) {
     BuildSctpContentAttributes(media_desc, message);
   } else if (IsRtpProtocol(media_desc->protocol())) {
-    // TODO: issues.webrtc.org/48979442 - Make this field trial controlled
     BuildRtpContentAttributes(media_desc, media_type, msid_signaling,
-                              /* use_wildcard= */ false, message);
+                              use_wildcard, message);
   }
 }
 
@@ -1572,8 +1686,8 @@ bool ParseFingerprintAttribute(absl::string_view line,
   absl::c_transform(algorithm, algorithm.begin(), ::tolower);
 
   // The second field is the digest value. De-hexify it.
-  *fingerprint = SSLFingerprint::CreateUniqueFromRfc4572(algorithm, fields[1]);
-  if (!*fingerprint) {
+  *fingerprint = SSLFingerprint::CreateFromRfc4572(algorithm, fields[1]);
+  if (*fingerprint == nullptr) {
     return ParseFailed(line, "Failed to create fingerprint from the digest.",
                        error);
   }
@@ -1613,6 +1727,8 @@ bool ParseSessionDescription(absl::string_view message,
 
   desc->set_msid_signaling(kMsidSignalingNotUsed);
   desc->set_extmap_allow_mixed(false);
+  desc->set_cryptex(false);
+
   // RFC 4566
   // v=  (protocol version)
   line = GetLineWithType(message, pos, kLineTypeVersion);
@@ -1764,6 +1880,8 @@ bool ParseSessionDescription(absl::string_view message,
         return false;
       }
       session_extmaps->push_back(extmap);
+    } else if (HasAttribute(*aline, kAttributeCryptex)) {
+      desc->set_cryptex(true);
     }
   }
   return true;
@@ -1855,13 +1973,13 @@ void RemoveDuplicateRidDescriptions(const std::vector<int>& payload_types,
 // If a group of alternatives is empty after removing layers, the group should
 // be removed altogether.
 SimulcastLayerList RemoveRidsFromSimulcastLayerList(
-    const std::set<std::string>& to_remove,
+    const flat_set<absl::string_view>& to_remove,
     const SimulcastLayerList& layers) {
   SimulcastLayerList result;
   for (const std::vector<SimulcastLayer>& vector : layers) {
     std::vector<SimulcastLayer> new_layers;
     for (const SimulcastLayer& layer : vector) {
-      if (to_remove.find(layer.rid) == to_remove.end()) {
+      if (!to_remove.contains(layer.rid)) {
         new_layers.push_back(layer);
       }
     }
@@ -1879,13 +1997,14 @@ SimulcastLayerList RemoveRidsFromSimulcastLayerList(
 // 2. They do not appear in the list of `valid_rids`.
 void RemoveInvalidRidsFromSimulcast(
     const std::vector<RidDescription>& valid_rids,
-    SimulcastDescription* simulcast) {
+    SimulcastDescription* absl_nonnull simulcast) {
   RTC_DCHECK(simulcast);
-  std::set<std::string> to_remove;
   std::vector<SimulcastLayer> all_send_layers =
       simulcast->send_layers().GetAllLayers();
   std::vector<SimulcastLayer> all_receive_layers =
       simulcast->receive_layers().GetAllLayers();
+  // `to_remove` must be declared after the vectors because it holds views.
+  flat_set<absl::string_view> to_remove;
 
   // If a rid appears in both send and receive directions, remove it from both.
   // This algorithm runs in O(n^2) time, but for small n (as is the case with
@@ -2129,6 +2248,10 @@ bool ParseSsrcGroupAttribute(absl::string_view line,
   const size_t expected_min_fields = 2;
   if (fields.size() < expected_min_fields) {
     return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
+  }
+  // fields[0] is semantics, remaining fields are SSRCs.
+  if (fields.size() - 1 > kMaxSsrcsPerGroup) {
+    return ParseFailed(line, "Too many SSRCs in ssrc-group", error);
   }
   std::string semantics;
   if (!GetValue(fields[0], kAttributeSsrcGroup, &semantics, error)) {
@@ -2434,6 +2557,14 @@ bool ParseRtcpFbAttribute(absl::string_view line,
   }
   const FeedbackParam feedback_param(id, param);
 
+  // The non-standard "rrtr" rtcp-fb is the legacy way of signaling receiver
+  // reference time reports (RFC 3611). Translate it to the single internal
+  // flag rather than storing it as a per-codec feedback param.
+  if (id == kRtcpFbParamRrtr) {
+    media_desc->set_receive_non_sender_rtt(true);
+    return true;
+  }
+
   if (media_type == MediaType::AUDIO || media_type == MediaType::VIDEO) {
     UpdateCodec(media_desc, payload_type, feedback_param);
   }
@@ -2484,7 +2615,7 @@ void UpdateFromMediaSectionWideSettings(MediaContentDescription* desc) {
   }
 }
 
-void AddAudioAttribute(const std::string& name,
+void AddAudioAttribute(absl::string_view name,
                        absl::string_view value,
                        MediaContentDescription* desc) {
   RTC_DCHECK(desc);
@@ -2493,7 +2624,7 @@ void AddAudioAttribute(const std::string& name,
   }
   std::vector<Codec> codecs = desc->codecs();
   for (Codec& codec : codecs) {
-    codec.params[name] = std::string(value);
+    codec.SetParam(name, value);
   }
   desc->set_codecs(codecs);
 }
@@ -2566,17 +2697,17 @@ bool ParseContent(absl::string_view message,
       }
       int b = 0;
       if (!GetValueFromString(*line, bandwidth, &b, error)) {
+        ReportSdpBandwidth(kSdpBandwidthParseFailure);
         return false;
       }
-      // TODO(deadbeef): Historically, applications may be setting a value
-      // of -1 to mean "unset any previously set bandwidth limit", even
-      // though ommitting the "b=AS" entirely will do just that. Once we've
-      // transitioned applications to doing the right thing, it would be
-      // better to treat this as a hard error instead of just ignoring it.
-      if (bandwidth_type == kApplicationSpecificBandwidth && b == -1) {
-        RTC_LOG(LS_WARNING) << "Ignoring \"b=AS:-1\"; will be treated as \"no "
-                               "bandwidth limit\".";
-        continue;
+      if (b == 0) {
+        ReportSdpBandwidth(kSdpBandwidthZero);
+      } else if (b > 0 && b <= INT_MAX / 1000) {
+        ReportSdpBandwidth(kSdpBandwidthSmall);
+      } else if (b > INT_MAX / 1000) {
+        ReportSdpBandwidth(kSdpBandwidthLarge);
+      } else {
+        ReportSdpBandwidth(kSdpBandwidthNegative);
       }
       if (b < 0) {
         return ParseFailed(
@@ -2698,8 +2829,25 @@ bool ParseContent(absl::string_view message,
         media_desc->set_rtcp_mux(true);
       } else if (HasAttribute(*line, kAttributeRtcpReducedSize)) {
         media_desc->set_rtcp_reduced_size(true);
+      } else if (HasAttribute(*line, kAttributeRtcpXr)) {
+        // RFC 3611: a=rtcp-xr:<format>[ <format>]... Consume the rcvr-rtt
+        // format (receiver reference time report); accept rcvr-rtt=all and
+        // rcvr-rtt=sender. Match whole space-separated tokens, not a
+        // substring, and require the '=' so partial matches are rejected.
+        std::string xr_value;
+        if (GetValue(*line, kAttributeRtcpXr, &xr_value, error)) {
+          for (absl::string_view format :
+               split(xr_value, kSdpDelimiterSpaceChar)) {
+            if (absl::StartsWith(format, kRtcpXrFormatRcvrRttPrefix)) {
+              media_desc->set_receive_non_sender_rtt(true);
+              break;
+            }
+          }
+        }
       } else if (HasAttribute(*line, kAttributeRtcpRemoteEstimate)) {
         media_desc->set_remote_estimate(true);
+      } else if (HasAttribute(*line, kAttributeSframe)) {
+        media_desc->set_sframe_enabled(true);
       } else if (HasAttribute(*line, kAttributeSsrcGroup)) {
         if (!ParseSsrcGroupAttribute(*line, &ssrc_groups, error)) {
           return false;
@@ -2739,8 +2887,8 @@ bool ParseContent(absl::string_view message,
       } else if (HasAttribute(*line, kAttributeSendRecv)) {
         media_desc->set_direction(RtpTransceiverDirection::kSendRecv);
       } else if (HasAttribute(*line, kAttributeExtmapAllowMixed)) {
-        media_desc->set_extmap_allow_mixed_enum(
-            MediaContentDescription::kMedia);
+        media_desc->set_extmap_allow_mixed_level(
+            MediaContentDescription::AttributeLevel::kMedia);
       } else if (HasAttribute(*line, kAttributeExtmap)) {
         RtpExtension extmap;
         if (!ParseExtmap(*line, &extmap, error)) {
@@ -2811,6 +2959,9 @@ bool ParseContent(absl::string_view message,
         // Ignore and do not log a=rtcp line.
         // JSEP  section 5.8.2 (media section parsing) says to ignore it.
         continue;
+      } else if (HasAttribute(*line, kAttributeCryptex)) {
+        media_desc->set_cryptex_level(
+            MediaContentDescription::AttributeLevel::kMedia);
       } else {
         // Unrecognized attribute in RTP protocol.
         RTC_LOG(LS_VERBOSE) << "Ignored line: " << *line;
@@ -2953,7 +3104,9 @@ std::unique_ptr<MediaContentDescription> ParseContentDescription(
     return nullptr;
   }
 
-  media_desc->set_extmap_allow_mixed_enum(MediaContentDescription::kNo);
+  media_desc->set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kNone);
+  media_desc->set_cryptex_level(MediaContentDescription::AttributeLevel::kNone);
   if (!ParseContent(message, media_type, mline_index, protocol, payload_types,
                     pos, content_name, bundle_only, msid_signaling,
                     media_desc.get(), transport, candidates, error)) {
@@ -3265,6 +3418,10 @@ std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
     AddLine(os.str(), &message);
   }
+  if (desc->cryptex()) {
+    InitAttrLine(kAttributeCryptex, &os);
+    AddLine(os.str(), &message);
+  }
 
   // MediaStream semantics.
   // TODO(bugs.webrtc.org/10421): Change to & kMsidSignalingSemantic
@@ -3312,7 +3469,8 @@ std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
     GetCandidatesByMindex(jdesc, ++mline_index, &candidates);
     BuildMediaDescription(&content, desc->GetTransportInfoByName(content.mid()),
                           content.media_description()->type(), candidates,
-                          desc->msid_signaling(), &message);
+                          desc->msid_signaling(),
+                          jdesc.encoding_options().use_wildcard, &message);
   }
   return message;
 }

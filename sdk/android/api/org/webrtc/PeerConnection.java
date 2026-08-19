@@ -20,10 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.webrtc.CandidatePairChangeEvent;
-import org.webrtc.DataChannel;
-import org.webrtc.MediaStreamTrack;
-import org.webrtc.RtpTransceiver;
+import org.jni_zero.NativeMethods;
 
 /**
  * Java-land version of the PeerConnection APIs; wraps the C++ API
@@ -38,7 +35,7 @@ public class PeerConnection {
     GATHERING,
     COMPLETE;
 
-    @CalledByNative("IceGatheringState")
+    @CalledByNative
     static IceGatheringState fromNativeIndex(int nativeIndex) {
       return values()[nativeIndex];
     }
@@ -54,7 +51,7 @@ public class PeerConnection {
     DISCONNECTED,
     CLOSED;
 
-    @CalledByNative("IceConnectionState")
+    @CalledByNative
     static IceConnectionState fromNativeIndex(int nativeIndex) {
       return values()[nativeIndex];
     }
@@ -69,7 +66,7 @@ public class PeerConnection {
     FAILED,
     CLOSED;
 
-    @CalledByNative("PeerConnectionState")
+    @CalledByNative
     static PeerConnectionState fromNativeIndex(int nativeIndex) {
       return values()[nativeIndex];
     }
@@ -90,7 +87,7 @@ public class PeerConnection {
     HAVE_REMOTE_PRANSWER,
     CLOSED;
 
-    @CalledByNative("SignalingState")
+    @CalledByNative
     static SignalingState fromNativeIndex(int nativeIndex) {
       return values()[nativeIndex];
     }
@@ -99,69 +96,69 @@ public class PeerConnection {
   /** Java version of PeerConnectionObserver. */
   public static interface Observer {
     /** Triggered when the SignalingState changes. */
-    @CalledByNative("Observer") void onSignalingChange(SignalingState newState);
+    @CalledByNative void onSignalingChange(SignalingState newState);
 
     /** Triggered when the IceConnectionState changes. */
-    @CalledByNative("Observer") void onIceConnectionChange(IceConnectionState newState);
+    @CalledByNative void onIceConnectionChange(IceConnectionState newState);
 
     /* Triggered when the standard-compliant state transition of IceConnectionState happens. */
-    @CalledByNative("Observer")
+    @CalledByNative
     default void onStandardizedIceConnectionChange(IceConnectionState newState) {}
 
     /** Triggered when the PeerConnectionState changes. */
-    @CalledByNative("Observer")
+    @CalledByNative
     default void onConnectionChange(PeerConnectionState newState) {}
 
     /** Triggered when the ICE connection receiving status changes. */
-    @CalledByNative("Observer") void onIceConnectionReceivingChange(boolean receiving);
+    @CalledByNative void onIceConnectionReceivingChange(boolean receiving);
 
     /** Triggered when the IceGatheringState changes. */
-    @CalledByNative("Observer") void onIceGatheringChange(IceGatheringState newState);
+    @CalledByNative void onIceGatheringChange(IceGatheringState newState);
 
     /** Triggered when a new ICE candidate has been found. */
-    @CalledByNative("Observer") void onIceCandidate(IceCandidate candidate);
+    @CalledByNative void onIceCandidate(IceCandidate candidate);
 
     /** Triggered when gathering of an ICE candidate failed. */
-    default @CalledByNative("Observer") void onIceCandidateError(IceCandidateErrorEvent event) {}
+    default @CalledByNative void onIceCandidateError(IceCandidateErrorEvent event) {}
 
     /** Triggered when some ICE candidates have been removed. */
-    @CalledByNative("Observer") void onIceCandidatesRemoved(IceCandidate[] candidates);
+    @CalledByNative void onIceCandidatesRemoved(IceCandidate[] candidates);
 
     /** Triggered when the ICE candidate pair is changed. */
-    @CalledByNative("Observer")
+    @CalledByNative
     default void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {}
 
     /** Triggered when media is received on a new stream from remote peer. */
-    @CalledByNative("Observer") void onAddStream(MediaStream stream);
+    @CalledByNative void onAddStream(MediaStream stream);
 
     /** Triggered when a remote peer close a stream. */
-    @CalledByNative("Observer") void onRemoveStream(MediaStream stream);
+    @CalledByNative void onRemoveStream(MediaStream stream);
 
     /** Triggered when a remote peer opens a DataChannel. */
-    @CalledByNative("Observer") void onDataChannel(DataChannel dataChannel);
+    @CalledByNative void onDataChannel(DataChannel dataChannel);
 
     /** Triggered when renegotiation is necessary. */
-    @CalledByNative("Observer") void onRenegotiationNeeded();
+    @CalledByNative void onRenegotiationNeeded();
 
     /**
      * Triggered when a new track is signaled by the remote peer, as a result of
      * setRemoteDescription.
      */
-    @CalledByNative("Observer")
+    @CalledByNative
     default void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams){};
 
     /**
      * Triggered when a previously added remote track is removed by the remote
      * peer, as a result of setRemoteDescription.
      */
-    @CalledByNative("Observer") default void onRemoveTrack(RtpReceiver receiver){};
+    @CalledByNative default void onRemoveTrack(RtpReceiver receiver){};
 
     /**
      * Triggered when the signaling from SetRemoteDescription indicates that a transceiver
      * will be receiving media from a remote endpoint. This is only called if UNIFIED_PLAN
      * semantics are specified. The transceiver will be disposed automatically.
      */
-    @CalledByNative("Observer") default void onTrack(RtpTransceiver transceiver){};
+    @CalledByNative default void onTrack(RtpTransceiver transceiver){};
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */
@@ -333,40 +330,40 @@ public class PeerConnection {
     }
 
     @Nullable
-    @CalledByNative("IceServer")
+    @CalledByNative
     List<String> getUrls() {
       return urls;
     }
 
     @Nullable
-    @CalledByNative("IceServer")
+    @CalledByNative
     String getUsername() {
       return username;
     }
 
     @Nullable
-    @CalledByNative("IceServer")
+    @CalledByNative
     String getPassword() {
       return password;
     }
 
-    @CalledByNative("IceServer")
+    @CalledByNative
     TlsCertPolicy getTlsCertPolicy() {
       return tlsCertPolicy;
     }
 
     @Nullable
-    @CalledByNative("IceServer")
+    @CalledByNative
     String getHostname() {
       return hostname;
     }
 
-    @CalledByNative("IceServer")
+    @CalledByNative
     List<String> getTlsAlpnProtocols() {
       return tlsAlpnProtocols;
     }
 
-    @CalledByNative("IceServer")
+    @CalledByNative
     List<String> getTlsEllipticCurves() {
       return tlsEllipticCurves;
     }
@@ -413,7 +410,7 @@ public class PeerConnection {
     }
 
     @Nullable
-    @CalledByNative("AdapterType")
+    @CalledByNative
     static AdapterType fromNativeIndex(int nativeIndex) {
       return BY_BITMASK.get(nativeIndex);
     }
@@ -627,219 +624,219 @@ public class PeerConnection {
       portAllocatorFlags = 0;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     IceTransportsType getIceTransportsType() {
       return iceTransportsType;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     List<IceServer> getIceServers() {
       return iceServers;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     BundlePolicy getBundlePolicy() {
       return bundlePolicy;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     PortPrunePolicy getTurnPortPrunePolicy() {
       return turnPortPrunePolicy;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     RtcCertificatePem getCertificate() {
       return certificate;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     RtcpMuxPolicy getRtcpMuxPolicy() {
       return rtcpMuxPolicy;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     TcpCandidatePolicy getTcpCandidatePolicy() {
       return tcpCandidatePolicy;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     CandidateNetworkPolicy getCandidateNetworkPolicy() {
       return candidateNetworkPolicy;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getAudioJitterBufferMaxPackets() {
       return audioJitterBufferMaxPackets;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getAudioJitterBufferFastAccelerate() {
       return audioJitterBufferFastAccelerate;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getIceConnectionReceivingTimeout() {
       return iceConnectionReceivingTimeout;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getIceBackupCandidatePairPingInterval() {
       return iceBackupCandidatePairPingInterval;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     KeyType getKeyType() {
       return keyType;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     ContinualGatheringPolicy getContinualGatheringPolicy() {
       return continualGatheringPolicy;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getIceCandidatePoolSize() {
       return iceCandidatePoolSize;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getPruneTurnPorts() {
       return pruneTurnPorts;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getPresumeWritableWhenFullyRelayed() {
       return presumeWritableWhenFullyRelayed;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getSurfaceIceCandidatesOnIceTransportTypeChanged() {
       return surfaceIceCandidatesOnIceTransportTypeChanged;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getIceCheckIntervalStrongConnectivity() {
       return iceCheckIntervalStrongConnectivityMs;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getIceCheckIntervalWeakConnectivity() {
       return iceCheckIntervalWeakConnectivityMs;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getIceCheckMinInterval() {
       return iceCheckMinInterval;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getIceUnwritableTimeout() {
       return iceUnwritableTimeMs;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getIceUnwritableMinChecks() {
       return iceUnwritableMinChecks;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getStunCandidateKeepaliveInterval() {
       return stunCandidateKeepaliveIntervalMs;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getStableWritableConnectionPingIntervalMs() {
       return stableWritableConnectionPingIntervalMs;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getDisableIPv6OnWifi() {
       return disableIPv6OnWifi;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getMaxIPv6Networks() {
       return maxIPv6Networks;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     TurnCustomizer getTurnCustomizer() {
       return turnCustomizer;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getEnableDscp() {
       return enableDscp;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getEnableCpuOveruseDetection() {
       return enableCpuOveruseDetection;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getSuspendBelowMinBitrate() {
       return suspendBelowMinBitrate;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     Integer getScreencastMinBitrate() {
       return screencastMinBitrate;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     AdapterType getNetworkPreference() {
       return networkPreference;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     SdpSemantics getSdpSemantics() {
       return sdpSemantics;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     CryptoOptions getCryptoOptions() {
       return cryptoOptions;
     }
 
     @Nullable
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     String getTurnLoggingId() {
       return turnLoggingId;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getEnableImplicitRollback() {
       return enableImplicitRollback;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     boolean getOfferExtmapAllowMixed() {
       return offerExtmapAllowMixed;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getPortAllocatorMinPort() {
       return portAllocatorMinPort;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     int getPortAllocatorMaxPort() {
       return portAllocatorMaxPort;
     }
 
-    @CalledByNative("RTCConfiguration")
+    @CalledByNative
     @PortAllocatorFlags
     int getPortAllocatorFlags() {
       return portAllocatorFlags;
@@ -866,46 +863,46 @@ public class PeerConnection {
 
   // JsepInterface.
   public SessionDescription getLocalDescription() {
-    return nativeGetLocalDescription();
+    return PeerConnectionJni.get().getLocalDescription(this);
   }
 
   public SessionDescription getRemoteDescription() {
-    return nativeGetRemoteDescription();
+    return PeerConnectionJni.get().getRemoteDescription(this);
   }
 
   public RtcCertificatePem getCertificate() {
-    return nativeGetCertificate();
+    return PeerConnectionJni.get().getCertificate(this);
   }
 
   public DataChannel createDataChannel(String label, DataChannel.Init init) {
-    return nativeCreateDataChannel(label, init);
+    return PeerConnectionJni.get().createDataChannel(this, label, init);
   }
 
   public void createOffer(SdpObserver observer, MediaConstraints constraints) {
-    nativeCreateOffer(observer, constraints);
+    PeerConnectionJni.get().createOffer(this, observer, constraints);
   }
 
   public void createAnswer(SdpObserver observer, MediaConstraints constraints) {
-    nativeCreateAnswer(observer, constraints);
+    PeerConnectionJni.get().createAnswer(this, observer, constraints);
   }
 
   public void setLocalDescription(SdpObserver observer) {
-    nativeSetLocalDescriptionAutomatically(observer);
+    PeerConnectionJni.get().setLocalDescriptionAutomatically(this, observer);
   }
 
   public void setLocalDescription(SdpObserver observer, SessionDescription sdp) {
-    nativeSetLocalDescription(observer, sdp);
+    PeerConnectionJni.get().setLocalDescription(this, observer, sdp);
   }
 
   public void setRemoteDescription(SdpObserver observer, SessionDescription sdp) {
-    nativeSetRemoteDescription(observer, sdp);
+    PeerConnectionJni.get().setRemoteDescription(this, observer, sdp);
   }
 
   /**
    * Tells the PeerConnection that ICE should be restarted.
    */
   public void restartIce() {
-    nativeRestartIce();
+    PeerConnectionJni.get().restartIce(this);
   }
 
   /**
@@ -916,7 +913,7 @@ public class PeerConnection {
    * be able to control the exact time when audio playout starts.
    */
   public void setAudioPlayout(boolean playout) {
-    nativeSetAudioPlayout(playout);
+    PeerConnectionJni.get().setAudioPlayout(this, playout);
   }
 
   /**
@@ -927,24 +924,26 @@ public class PeerConnection {
    * be able to control the exact time when audio recording starts.
    */
   public void setAudioRecording(boolean recording) {
-    nativeSetAudioRecording(recording);
+    PeerConnectionJni.get().setAudioRecording(this, recording);
   }
 
   public boolean setConfiguration(RTCConfiguration config) {
-    return nativeSetConfiguration(config);
+    return PeerConnectionJni.get().setConfiguration(this, config);
   }
 
   public boolean addIceCandidate(IceCandidate candidate) {
-    return nativeAddIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
+    return PeerConnectionJni.get()
+        .addIceCandidate(this, candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
   }
 
   public void addIceCandidate(IceCandidate candidate, AddIceObserver observer) {
-    nativeAddIceCandidateWithObserver(
-        candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp, observer);
+    PeerConnectionJni.get()
+        .addIceCandidateWithObserver(
+            this, candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp, observer);
   }
 
   public boolean removeIceCandidates(final IceCandidate[] candidates) {
-    return nativeRemoveIceCandidates(candidates);
+    return PeerConnectionJni.get().removeIceCandidates(this, candidates);
   }
 
   /**
@@ -953,7 +952,7 @@ public class PeerConnection {
    * use addTrack instead.
    */
   public boolean addStream(MediaStream stream) {
-    boolean ret = nativeAddLocalStream(stream.getNativeMediaStream());
+    boolean ret = PeerConnectionJni.get().addLocalStream(this, stream.getNativeMediaStream());
     if (!ret) {
       return false;
     }
@@ -967,7 +966,7 @@ public class PeerConnection {
    * removeTrack instead.
    */
   public void removeStream(MediaStream stream) {
-    nativeRemoveLocalStream(stream.getNativeMediaStream());
+    PeerConnectionJni.get().removeLocalStream(this, stream.getNativeMediaStream());
     localStreams.remove(stream);
   }
 
@@ -1012,7 +1011,7 @@ public class PeerConnection {
    * @return          A new RtpSender object if successful, or null otherwise.
    */
   public RtpSender createSender(String kind, String stream_id) {
-    RtpSender newSender = nativeCreateSender(kind, stream_id);
+    RtpSender newSender = PeerConnectionJni.get().createSender(this, kind, stream_id);
     if (newSender != null) {
       senders.add(newSender);
     }
@@ -1028,7 +1027,7 @@ public class PeerConnection {
     for (RtpSender sender : senders) {
       sender.dispose();
     }
-    senders = nativeGetSenders();
+    senders = PeerConnectionJni.get().getSenders(this);
     return Collections.unmodifiableList(senders);
   }
 
@@ -1041,7 +1040,7 @@ public class PeerConnection {
     for (RtpReceiver receiver : receivers) {
       receiver.dispose();
     }
-    receivers = nativeGetReceivers();
+    receivers = PeerConnectionJni.get().getReceivers(this);
     return Collections.unmodifiableList(receivers);
   }
 
@@ -1055,7 +1054,7 @@ public class PeerConnection {
     for (RtpTransceiver transceiver : transceivers) {
       transceiver.dispose();
     }
-    transceivers = nativeGetTransceivers();
+    transceivers = PeerConnectionJni.get().getTransceivers(this);
     return Collections.unmodifiableList(transceivers);
   }
 
@@ -1077,7 +1076,8 @@ public class PeerConnection {
     if (track == null || streamIds == null) {
       throw new NullPointerException("No MediaStreamTrack specified in addTrack.");
     }
-    RtpSender newSender = nativeAddTrack(track.getNativeMediaStreamTrack(), streamIds);
+    RtpSender newSender =
+        PeerConnectionJni.get().addTrack(this, track.getNativeMediaStreamTrack(), streamIds);
     if (newSender == null) {
       throw new IllegalStateException("C++ addTrack failed.");
     }
@@ -1094,7 +1094,7 @@ public class PeerConnection {
     if (sender == null) {
       throw new NullPointerException("No RtpSender specified for removeTrack.");
     }
-    return nativeRemoveTrack(sender.getNativeRtpSender());
+    return PeerConnectionJni.get().removeTrack(this, sender.getNativeRtpSender());
   }
 
   /**
@@ -1135,7 +1135,8 @@ public class PeerConnection {
       init = new RtpTransceiver.RtpTransceiverInit();
     }
     RtpTransceiver newTransceiver =
-        nativeAddTransceiverWithTrack(track.getNativeMediaStreamTrack(), init);
+        PeerConnectionJni.get()
+            .addTransceiverWithTrack(this, track.getNativeMediaStreamTrack(), init);
     if (newTransceiver == null) {
       throw new IllegalStateException("C++ addTransceiver failed.");
     }
@@ -1155,7 +1156,8 @@ public class PeerConnection {
     if (init == null) {
       init = new RtpTransceiver.RtpTransceiverInit();
     }
-    RtpTransceiver newTransceiver = nativeAddTransceiverOfType(mediaType, init);
+    RtpTransceiver newTransceiver =
+        PeerConnectionJni.get().addTransceiverOfType(this, mediaType, init);
     if (newTransceiver == null) {
       throw new IllegalStateException("C++ addTransceiver failed.");
     }
@@ -1166,7 +1168,8 @@ public class PeerConnection {
   // Older, non-standard implementation of getStats.
   @Deprecated
   public boolean getStats(StatsObserver observer, @Nullable MediaStreamTrack track) {
-    return nativeOldGetStats(observer, (track == null) ? 0 : track.getNativeMediaStreamTrack());
+    return PeerConnectionJni.get()
+        .oldGetStats(this, observer, (track == null) ? 0 : track.getNativeMediaStreamTrack());
   }
 
   /**
@@ -1174,7 +1177,7 @@ public class PeerConnection {
    * will replace old stats collection API when the new API has matured enough.
    */
   public void getStats(RTCStatsCollectorCallback callback) {
-    nativeNewGetStats(callback);
+    PeerConnectionJni.get().newGetStats(this, callback);
   }
 
   /**
@@ -1182,7 +1185,7 @@ public class PeerConnection {
    * will replace old stats collection API when the new API has matured enough.
    */
   public void getStats(RtpSender sender, RTCStatsCollectorCallback callback) {
-    nativeNewGetStatsSender(sender.getNativeRtpSender(), callback);
+    PeerConnectionJni.get().newGetStatsSender(this, sender.getNativeRtpSender(), callback);
   }
 
   /**
@@ -1190,7 +1193,7 @@ public class PeerConnection {
    * will replace old stats collection API when the new API has matured enough.
    */
   public void getStats(RtpReceiver receiver, RTCStatsCollectorCallback callback) {
-    nativeNewGetStatsReceiver(receiver.getNativeRtpReceiver(), callback);
+    PeerConnectionJni.get().newGetStatsReceiver(this, receiver.getNativeRtpReceiver(), callback);
   }
 
   /**
@@ -1198,7 +1201,7 @@ public class PeerConnection {
    * PeerConnection. Pass null to leave a value unchanged.
    */
   public boolean setBitrate(Integer min, Integer current, Integer max) {
-    return nativeSetBitrate(min, current, max);
+    return PeerConnectionJni.get().setBitrate(this, min, current, max);
   }
 
   /**
@@ -1211,7 +1214,7 @@ public class PeerConnection {
    * for future use.
    */
   public boolean startRtcEventLog(int file_descriptor, int max_size_bytes) {
-    return nativeStartRtcEventLog(file_descriptor, max_size_bytes);
+    return PeerConnectionJni.get().startRtcEventLog(this, file_descriptor, max_size_bytes);
   }
 
   /**
@@ -1219,29 +1222,29 @@ public class PeerConnection {
    * recorded, this call will have no effect.
    */
   public void stopRtcEventLog() {
-    nativeStopRtcEventLog();
+    PeerConnectionJni.get().stopRtcEventLog(this);
   }
 
   // TODO(fischman): add support for DTMF-related methods once that API
   // stabilizes.
   public SignalingState signalingState() {
-    return nativeSignalingState();
+    return PeerConnectionJni.get().signalingState(this);
   }
 
   public IceConnectionState iceConnectionState() {
-    return nativeIceConnectionState();
+    return PeerConnectionJni.get().iceConnectionState(this);
   }
 
   public PeerConnectionState connectionState() {
-    return nativeConnectionState();
+    return PeerConnectionJni.get().connectionState(this);
   }
 
   public IceGatheringState iceGatheringState() {
-    return nativeIceGatheringState();
+    return PeerConnectionJni.get().iceGatheringState(this);
   }
 
   public void close() {
-    nativeClose();
+    PeerConnectionJni.get().close(this);
   }
 
   /**
@@ -1263,7 +1266,7 @@ public class PeerConnection {
   public void dispose() {
     close();
     for (MediaStream stream : localStreams) {
-      nativeRemoveLocalStream(stream.getNativeMediaStream());
+      PeerConnectionJni.get().removeLocalStream(this, stream.getNativeMediaStream());
       stream.dispose();
     }
     localStreams.clear();
@@ -1279,12 +1282,12 @@ public class PeerConnection {
     }
     transceivers.clear();
     receivers.clear();
-    nativeFreeOwnedPeerConnection(nativePeerConnection);
+    PeerConnectionJni.get().freeOwnedPeerConnection(nativePeerConnection);
   }
 
   /** Returns a pointer to the native webrtc::PeerConnectionInterface. */
   public long getNativePeerConnection() {
-    return nativeGetNativePeerConnection();
+    return PeerConnectionJni.get().getNativePeerConnection(this);
   }
 
   @CalledByNative
@@ -1293,52 +1296,102 @@ public class PeerConnection {
   }
 
   public static long createNativePeerConnectionObserver(Observer observer) {
-    return nativeCreatePeerConnectionObserver(observer);
+    return PeerConnectionJni.get().createPeerConnectionObserver(observer);
   }
 
-  private native long nativeGetNativePeerConnection();
-  private native SessionDescription nativeGetLocalDescription();
-  private native SessionDescription nativeGetRemoteDescription();
-  private native RtcCertificatePem nativeGetCertificate();
-  private native DataChannel nativeCreateDataChannel(String label, DataChannel.Init init);
-  private native void nativeCreateOffer(SdpObserver observer, MediaConstraints constraints);
-  private native void nativeCreateAnswer(SdpObserver observer, MediaConstraints constraints);
-  private native void nativeSetLocalDescriptionAutomatically(SdpObserver observer);
-  private native void nativeSetLocalDescription(SdpObserver observer, SessionDescription sdp);
-  private native void nativeSetRemoteDescription(SdpObserver observer, SessionDescription sdp);
-  private native void nativeRestartIce();
-  private native void nativeSetAudioPlayout(boolean playout);
-  private native void nativeSetAudioRecording(boolean recording);
-  private native boolean nativeSetBitrate(Integer min, Integer current, Integer max);
-  private native SignalingState nativeSignalingState();
-  private native IceConnectionState nativeIceConnectionState();
-  private native PeerConnectionState nativeConnectionState();
-  private native IceGatheringState nativeIceGatheringState();
-  private native void nativeClose();
-  private static native long nativeCreatePeerConnectionObserver(Observer observer);
-  private static native void nativeFreeOwnedPeerConnection(long ownedPeerConnection);
-  private native boolean nativeSetConfiguration(RTCConfiguration config);
-  private native boolean nativeAddIceCandidate(
-      String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
-  private native void nativeAddIceCandidateWithObserver(
-      String sdpMid, int sdpMLineIndex, String iceCandidateSdp, AddIceObserver observer);
-  private native boolean nativeRemoveIceCandidates(final IceCandidate[] candidates);
-  private native boolean nativeAddLocalStream(long stream);
-  private native void nativeRemoveLocalStream(long stream);
-  private native boolean nativeOldGetStats(StatsObserver observer, long nativeTrack);
-  private native void nativeNewGetStats(RTCStatsCollectorCallback callback);
-  private native void nativeNewGetStatsSender(long sender, RTCStatsCollectorCallback callback);
-  private native void nativeNewGetStatsReceiver(long receiver, RTCStatsCollectorCallback callback);
-  private native RtpSender nativeCreateSender(String kind, String stream_id);
-  private native List<RtpSender> nativeGetSenders();
-  private native List<RtpReceiver> nativeGetReceivers();
-  private native List<RtpTransceiver> nativeGetTransceivers();
-  private native RtpSender nativeAddTrack(long track, List<String> streamIds);
-  private native boolean nativeRemoveTrack(long sender);
-  private native RtpTransceiver nativeAddTransceiverWithTrack(
-      long track, RtpTransceiver.RtpTransceiverInit init);
-  private native RtpTransceiver nativeAddTransceiverOfType(
-      MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init);
-  private native boolean nativeStartRtcEventLog(int file_descriptor, int max_size_bytes);
-  private native void nativeStopRtcEventLog();
+  @NativeMethods
+  interface Natives {
+    long getNativePeerConnection(PeerConnection caller);
+
+    SessionDescription getLocalDescription(PeerConnection caller);
+
+    SessionDescription getRemoteDescription(PeerConnection caller);
+
+    RtcCertificatePem getCertificate(PeerConnection caller);
+
+    DataChannel createDataChannel(PeerConnection caller, String label, DataChannel.Init init);
+
+    void createOffer(PeerConnection caller, SdpObserver observer, MediaConstraints constraints);
+
+    void createAnswer(PeerConnection caller, SdpObserver observer, MediaConstraints constraints);
+
+    void setLocalDescriptionAutomatically(PeerConnection caller, SdpObserver observer);
+
+    void setLocalDescription(PeerConnection caller, SdpObserver observer, SessionDescription sdp);
+
+    void setRemoteDescription(PeerConnection caller, SdpObserver observer, SessionDescription sdp);
+
+    void restartIce(PeerConnection caller);
+
+    void setAudioPlayout(PeerConnection caller, boolean playout);
+
+    void setAudioRecording(PeerConnection caller, boolean recording);
+
+    boolean setBitrate(PeerConnection caller, Integer min, Integer current, Integer max);
+
+    SignalingState signalingState(PeerConnection caller);
+
+    IceConnectionState iceConnectionState(PeerConnection caller);
+
+    PeerConnectionState connectionState(PeerConnection caller);
+
+    IceGatheringState iceGatheringState(PeerConnection caller);
+
+    void close(PeerConnection caller);
+
+    long createPeerConnectionObserver(Observer observer);
+
+    void freeOwnedPeerConnection(long ownedPeerConnection);
+
+    boolean setConfiguration(PeerConnection caller, RTCConfiguration config);
+
+    boolean addIceCandidate(
+        PeerConnection caller, String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
+
+    void addIceCandidateWithObserver(
+        PeerConnection caller,
+        String sdpMid,
+        int sdpMLineIndex,
+        String iceCandidateSdp,
+        AddIceObserver observer);
+
+    boolean removeIceCandidates(PeerConnection caller, final IceCandidate[] candidates);
+
+    boolean addLocalStream(PeerConnection caller, long stream);
+
+    void removeLocalStream(PeerConnection caller, long stream);
+
+    boolean oldGetStats(PeerConnection caller, StatsObserver observer, long nativeTrack);
+
+    void newGetStats(PeerConnection caller, RTCStatsCollectorCallback callback);
+
+    void newGetStatsSender(PeerConnection caller, long sender, RTCStatsCollectorCallback callback);
+
+    void newGetStatsReceiver(
+        PeerConnection caller, long receiver, RTCStatsCollectorCallback callback);
+
+    RtpSender createSender(PeerConnection caller, String kind, String stream_id);
+
+    List<RtpSender> getSenders(PeerConnection caller);
+
+    List<RtpReceiver> getReceivers(PeerConnection caller);
+
+    List<RtpTransceiver> getTransceivers(PeerConnection caller);
+
+    RtpSender addTrack(PeerConnection caller, long track, List<String> streamIds);
+
+    boolean removeTrack(PeerConnection caller, long sender);
+
+    RtpTransceiver addTransceiverWithTrack(
+        PeerConnection caller, long track, RtpTransceiver.RtpTransceiverInit init);
+
+    RtpTransceiver addTransceiverOfType(
+        PeerConnection caller,
+        MediaStreamTrack.MediaType mediaType,
+        RtpTransceiver.RtpTransceiverInit init);
+
+    boolean startRtcEventLog(PeerConnection caller, int file_descriptor, int max_size_bytes);
+
+    void stopRtcEventLog(PeerConnection caller);
+  }
 }

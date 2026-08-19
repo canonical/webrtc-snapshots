@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <optional>
 
-#include "api/environment/environment_factory.h"
 #include "api/make_ref_counted.h"
 #include "api/scoped_refptr.h"
 #include "api/test/create_frame_generator.h"
@@ -28,6 +27,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/include/video_error_codes.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -60,7 +60,7 @@ void SetDefaultSettings(VideoCodec* codec_settings) {
 }
 
 TEST(H264EncoderImplTest, CanInitializeWithDefaultParameters) {
-  H264EncoderImpl encoder(CreateEnvironment(), {});
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
@@ -71,7 +71,7 @@ TEST(H264EncoderImplTest, CanInitializeWithDefaultParameters) {
 
 TEST(H264EncoderImplTest, CanInitializeWithNonInterleavedModeExplicitly) {
   H264EncoderImpl encoder(
-      CreateEnvironment(),
+      CreateTestEnvironment(),
       {.packetization_mode = H264PacketizationMode::NonInterleaved});
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
@@ -83,7 +83,7 @@ TEST(H264EncoderImplTest, CanInitializeWithNonInterleavedModeExplicitly) {
 
 TEST(H264EncoderImplTest, CanInitializeWithSingleNalUnitModeExplicitly) {
   H264EncoderImpl encoder(
-      CreateEnvironment(),
+      CreateTestEnvironment(),
       {.packetization_mode = H264PacketizationMode::SingleNalUnit});
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
@@ -94,7 +94,7 @@ TEST(H264EncoderImplTest, CanInitializeWithSingleNalUnitModeExplicitly) {
 }
 
 TEST(H264EncoderImplTest, OnFrameDropped) {
-  H264EncoderImpl encoder(CreateEnvironment(), {});
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   // Set a very low bitrate to force frame drops.
@@ -142,7 +142,7 @@ TEST(H264EncoderImplTest, OnFrameDropped) {
 }
 
 TEST(H264EncoderImplTest, RejectsI420FramesWithUnequalChromaStrides) {
-  H264EncoderImpl encoder(CreateEnvironment(), {});
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   MockEncodedImageCallback callback;
@@ -167,7 +167,7 @@ TEST(H264EncoderImplTest, RejectsI420FramesWithUnequalChromaStrides) {
 }
 
 TEST(H264EncoderImplTest, RejectsNativeFramesWithUnequalChromaStrides) {
-  H264EncoderImpl encoder(CreateEnvironment(), {});
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   MockEncodedImageCallback callback;
@@ -201,6 +201,63 @@ TEST(H264EncoderImplTest, RejectsNativeFramesWithUnequalChromaStrides) {
                          .build();
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ENCODER_FAILURE, encoder.Encode(frame, nullptr));
+}
+
+TEST(H264EncoderImplTest, RejectsTooLargeResolution) {
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
+  VideoCodec codec_settings;
+  SetDefaultSettings(&codec_settings);
+
+  // Level 5.2 MaxFS is 36864 macroblocks.
+  // 4096 x 2304 = 256 x 144 macroblocks = 36864 macroblocks (Allowed).
+  codec_settings.width = 4096;
+  codec_settings.height = 2304;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder.InitEncode(&codec_settings, kSettings));
+
+  // 4096 x 2320 = 256 x 145 macroblocks = 37120 macroblocks (Too large).
+  codec_settings.width = 4096;
+  codec_settings.height = 2320;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERR_PARAMETER,
+            encoder.InitEncode(&codec_settings, kSettings));
+}
+
+TEST(H264EncoderImplTest, RejectsSkewedAspectRatioWidth) {
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
+  VideoCodec codec_settings;
+  SetDefaultSettings(&codec_settings);
+
+  // Level 5.2 Max width in macroblocks is 543 (8688 pixels).
+  // 8688 x 16 = 543 x 1 macroblocks = 543 macroblocks (Allowed).
+  codec_settings.width = 8688;
+  codec_settings.height = 16;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder.InitEncode(&codec_settings, kSettings));
+
+  // 8704 x 16 = 544 x 1 macroblocks = 544 macroblocks (Too wide).
+  codec_settings.width = 8704;
+  codec_settings.height = 16;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERR_PARAMETER,
+            encoder.InitEncode(&codec_settings, kSettings));
+}
+
+TEST(H264EncoderImplTest, RejectsSkewedAspectRatioHeight) {
+  H264EncoderImpl encoder(CreateTestEnvironment(), {});
+  VideoCodec codec_settings;
+  SetDefaultSettings(&codec_settings);
+
+  // Level 5.2 Max height in macroblocks is 543 (8688 pixels).
+  // 16 x 8688 = 1 x 543 macroblocks = 543 macroblocks (Allowed).
+  codec_settings.width = 16;
+  codec_settings.height = 8688;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder.InitEncode(&codec_settings, kSettings));
+
+  // 16 x 8704 = 1 x 544 macroblocks = 544 macroblocks (Too high).
+  codec_settings.width = 16;
+  codec_settings.height = 8704;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERR_PARAMETER,
+            encoder.InitEncode(&codec_settings, kSettings));
 }
 
 }  // anonymous namespace

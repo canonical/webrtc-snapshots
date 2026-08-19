@@ -26,74 +26,6 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
-<enum name="AutomaticBeaconOutcome">
-  <int value="0" label="Success"/>
-  <int value="1" label="No transient user activation"/>
-  <int value="2" label="Cross origin frame to mapped URL not opted in"/>
-</enum>
-
-<enum name="AXEventType">
-  <int value="0" label="None"/>
-  <int value="1" label="ActiveDescendantChanged"/>
-  <int value="2" label="Alert"/>
-  <int value="3" label="AriaAttributeChangedDeprecated"/>
-  <int value="4" label="AutocorrectionOccured"/>
-  <int value="5" label="Blur"/>
-  <int value="6" label="CheckedStateChanged"/>
-  <int value="7" label="ChildrenChanged"/>
-  <int value="8" label="Clicked"/>
-  <int value="9" label="ControlsChanged"/>
-  <int value="10" label="DocumentSelectionChanged"/>
-  <int value="11" label="DocumentTitleChanged"/>
-  <int value="12" label="EndOfTest"/>
-  <int value="13" label="ExpandedChanged"/>
-  <int value="14" label="Focus"/>
-  <int value="15" label="FocusAfterMenuClose"/>
-  <int value="16" label="FocusContext"/>
-  <int value="17" label="Hide"/>
-  <int value="18" label="HitTestResult"/>
-  <int value="19" label="Hover"/>
-  <int value="20" label="ImageFrameUpdated"/>
-  <int value="21" label="LayoutComplete"/>
-  <int value="22" label="LiveRegionCreated"/>
-  <int value="23" label="LiveRegionChanged"/>
-  <int value="24" label="LoadComplete"/>
-  <int value="25" label="LoadStart"/>
-  <int value="26" label="LocationChanged"/>
-  <int value="27" label="MediaStartedPlaying"/>
-  <int value="28" label="MediaStoppedPlaying"/>
-  <int value="29" label="MenuEnd"/>
-  <int value="30" label="MenuListValueChanged"/>
-  <int value="31" label="MenuPopupEnd"/>
-  <int value="32" label="MenuPopupStart"/>
-  <int value="33" label="MenuStart"/>
-  <int value="34" label="MouseCanceled"/>
-  <int value="35" label="MouseDragged"/>
-  <int value="36" label="MouseMoved"/>
-  <int value="37" label="MousePressed"/>
-  <int value="38" label="MouseReleased"/>
-  <int value="39" label="RowCollapsed"/>
-  <int value="40" label="RowCountChanged"/>
-  <int value="41" label="RowExpanded"/>
-  <int value="42" label="ScrollPositionChanged"/>
-  <int value="43" label="ScrolledToAnchor"/>
-  <int value="44" label="SelectedChildrenChanged"/>
-  <int value="45" label="Selection"/>
-  <int value="46" label="SelectionAdd"/>
-  <int value="47" label="SelectionRemove"/>
-  <int value="48" label="Show"/>
-  <int value="49" label="StateChanged"/>
-  <int value="50" label="TextChanged"/>
-  <int value="51" label="TextSelectionChanged"/>
-  <int value="52" label="TooltipClosed"/>
-  <int value="53" label="TooltipOpened"/>
-  <int value="54" label="TreeChanged"/>
-  <int value="55" label="ValueChanged"/>
-  <int value="56" label="WindowActivated"/>
-  <int value="57" label="WindowDeactivated"/>
-  <int value="58" label="WindowVisibilityChanged"/>
-</enum>
-
 <!-- LINT.IfChange(BackForwardCacheEntryMatchResult) -->
 
 <enum name="BackForwardCacheEntryMatchResult">
@@ -103,7 +35,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Match found and index match"/>
 </enum>
 
-<!-- LINT.ThenChange(//content/browser/renderer_host/back_forward_cache_impl.h:BackForwardCacheEntryMatchResult) -->
+<!-- LINT.ThenChange(//content/browser/back_forward_cache/back_forward_cache_impl.h:BackForwardCacheEntryMatchResult) -->
 
 <enum name="BackForwardCacheEvictedAfterDocumentRestoredReason">
   <int value="0" label="Restored"/>
@@ -234,6 +166,15 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Http(s) scheme"/>
 </enum>
 
+<!-- LINT.IfChange(ConnectionEstablishmentInitiator) -->
+
+<enum name="ConnectionEstablishmentInitiator">
+  <int value="0" label="kPreconnect"/>
+  <int value="1" label="kRequest"/>
+</enum>
+
+<!-- LINT.ThenChange(//services/network/public/mojom/connection_change_observer_client.mojom:ConnectionEstablishmentInitiator) -->
+
 <!-- LINT.IfChange(CookieChangeCause) -->
 
 <enum name="CookieChangeCause">
@@ -288,7 +229,7 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Cookies Not Changed"/>
 </enum>
 
-<!-- LINT.ThenChange(//content/browser/renderer_host/navigator.cc:DuplicateNavsCookieStatus) -->
+<!-- LINT.ThenChange(//content/common/content_navigation_policy.h:DuplicateNavsCookieStatus) -->
 
 <enum name="EarlyRFHSwapType">
   <int value="0" label="No early swap"/>
@@ -324,12 +265,6 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//content/public/browser/error_navigation_trigger.h:ErrorNavigationTrigger) -->
 
-<enum name="FencedFrameAutomaticBeaconEventType">
-  <int value="0" label="reserved.top_navigation"/>
-  <int value="1" label="reserved.top_navigation_start"/>
-  <int value="2" label="reserved.top_navigation_commit"/>
-</enum>
-
 <!-- LINT.IfChange(HistoryNavigationDirection) -->
 
 <enum name="HistoryNavigationDirection">
@@ -338,21 +273,12 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Same entry (e.g. session restore)"/>
 </enum>
 
-<!-- LINT.ThenChange(//content/browser/renderer_host/back_forward_cache_metrics.h:HistoryNavigationDirection) -->
+<!-- LINT.ThenChange(//content/browser/back_forward_cache/back_forward_cache_metrics.h:HistoryNavigationDirection) -->
 
 <enum name="HistoryNavType">
   <int value="0" label="kMainFrame"/>
   <int value="1" label="kMainFrameAndSubframe"/>
   <int value="2" label="kSubframe"/>
-</enum>
-
-<enum name="LinkPreviewZoomUsage">
-  <int value="0"
-      label="kOnlyDefaultUsed: A preview was started with default zoom level
-             and not changed."/>
-  <int value="1"
-      label="kNonDefaultUsed: A preview was shown with non default zoom level
-             in some timing in a preview lifecycle."/>
 </enum>
 
 <enum name="MojoInterfaceName">
@@ -370,13 +296,17 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Browser mapped urn::uuid is rendered in iframe"/>
 </enum>
 
-<enum name="NavigationCacheEnum">
-  <int value="0" label="Validate cache"/>
-  <int value="1" label="Bypass cache"/>
-  <int value="2" label="Skip cache validation"/>
-  <int value="3" label="Only from cache"/>
-  <int value="4" label="Disable cache"/>
+<!-- LINT.IfChange(NavigationInitiatorType) -->
+
+<enum name="NavigationInitiatorType">
+  <int value="0" label="Other"/>
+  <int value="1" label="Bookmark Bar"/>
+  <int value="2" label="New Tab Page"/>
+  <int value="3" label="Omnibox Direct URL Input"/>
+  <int value="4" label="Omnibox Default Search Engine"/>
 </enum>
+
+<!-- LINT.ThenChange(//components/page_load_metrics/browser/navigation_handle_user_data.h:NavigationInitiatorType) -->
 
 <enum name="NavigationIsGuest">
   <int value="0" label="Not a guest navigation"/>
@@ -525,11 +455,6 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//content/browser/renderer_host/navigation_transitions/navigation_transition_data.h:CacheHitOrMissReason)-->
-
-<enum name="NavigationWasServedFromCache">
-  <int value="0" label="Navigation wasn't served from cache"/>
-  <int value="1" label="Navigation was served from cache"/>
-</enum>
 
 <!-- LINT.IfChange(OnAcceptCHFrameReceivedReturnLocation) -->
 
@@ -1920,6 +1845,7 @@ chromium-metrics-reviews@google.com.
   <int value="10" label="Running in Isolated Web App"/>
   <int value="11" label="Running in Kiosk Session"/>
   <int value="12" label="Low memory device"/>
+  <int value="13" label="Disabled by blackout"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/preloading/prerender/prerender_manager.h:PrewarmDecision) -->

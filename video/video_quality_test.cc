@@ -18,6 +18,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
 #ifdef WEBRTC_WIN
 #include <conio.h>
 #endif
@@ -33,6 +34,7 @@
 #include "api/make_ref_counted.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log_output_file.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
@@ -68,7 +70,6 @@
 #include "media/engine/webrtc_video_engine.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -99,14 +100,12 @@
 namespace webrtc {
 
 namespace {
-enum : int {  // The first valid value is 1.
-  kAbsSendTimeExtensionId = 1,
-  kGenericFrameDescriptorExtensionId00,
-  kGenericFrameDescriptorExtensionId01,
-  kTransportSequenceNumberExtensionId,
-  kVideoContentTypeExtensionId,
-  kVideoTimingExtensionId,
-};
+constexpr RtpHeaderExtensionId kAbsSendTimeExtensionId(1);
+constexpr RtpHeaderExtensionId kGenericFrameDescriptorExtensionId00(2);
+constexpr RtpHeaderExtensionId kDependencyDescriptorExtensionId(3);
+constexpr RtpHeaderExtensionId kTransportSequenceNumberExtensionId(4);
+constexpr RtpHeaderExtensionId kVideoContentTypeExtensionId(5);
+constexpr RtpHeaderExtensionId kVideoTimingExtensionId(6);
 
 constexpr char kSyncGroup[] = "av_sync";
 constexpr int kOpusMinBitrateBps = 6000;
@@ -295,9 +294,6 @@ class QualityTestVideoEncoder : public VideoEncoder,
     return callback_->OnEncodedImage(encoded_image, codec_specific_info);
   }
 
-  void OnDroppedFrame(DropReason reason) override {
-    callback_->OnDroppedFrame(reason);
-  }
   void OnFrameDropped(uint32_t rtp_timestamp,
                       int spatial_id,
                       bool is_end_of_temporal_unit) override {
@@ -371,8 +367,7 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
 
   std::vector<std::string> encoded_frame_dump_files;
   if (!params_.logging.encoded_frame_base_path.empty()) {
-    char ss_buf[100];
-    SimpleStringBuilder sb(ss_buf);
+    StringBuilder sb;
     sb << send_logs_++;
     std::string prefix =
         params_.logging.encoded_frame_base_path + "." + sb.str() + ".send.";
@@ -455,7 +450,7 @@ VideoQualityTest::VideoQualityTest(InjectionComponents injection_components)
   RegisterRtpExtension(RtpExtension(RtpExtension::kGenericFrameDescriptorUri00,
                                     kGenericFrameDescriptorExtensionId00));
   RegisterRtpExtension(RtpExtension(RtpExtension::kDependencyDescriptorUri,
-                                    kRtpExtensionDependencyDescriptor));
+                                    kDependencyDescriptorExtensionId));
   RegisterRtpExtension(RtpExtension(RtpExtension::kVideoContentTypeUri,
                                     kVideoContentTypeExtensionId));
   RegisterRtpExtension(
@@ -794,7 +789,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     if (params_.call.dependency_descriptor) {
       video_send_configs_[video_idx].rtp.extensions.emplace_back(
           RtpExtension::kDependencyDescriptorUri,
-          kRtpExtensionDependencyDescriptor);
+          kDependencyDescriptorExtensionId);
     }
 
     video_send_configs_[video_idx].rtp.extensions.emplace_back(
@@ -1218,7 +1213,7 @@ VideoQualityTest::CreateSendTransport() {
     network_behavior = std::move(injection_components_.sender_network);
   }
   return std::make_unique<test::LayerFilteringTransport>(
-      env_, task_queue(),
+      env_, network_thread(),
       std::make_unique<FakeNetworkPipe>(&env_.clock(),
                                         std::move(network_behavior)),
       sender_call_.get(), test::VideoTestConstants::kPayloadTypeVP8,
@@ -1239,7 +1234,7 @@ VideoQualityTest::CreateReceiveTransport() {
     network_behavior = std::move(injection_components_.receiver_network);
   }
   return std::make_unique<test::DirectTransport>(
-      env_, task_queue(),
+      env_, network_thread(),
       std::make_unique<FakeNetworkPipe>(&env_.clock(),
                                         std::move(network_behavior)),
       receiver_call_.get(), payload_type_map_, GetRegisteredExtensions(),

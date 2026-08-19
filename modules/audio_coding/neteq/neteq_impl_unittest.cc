@@ -24,7 +24,6 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/make_ref_counted.h"
 #include "api/neteq/default_neteq_controller_factory.h"
 #include "api/neteq/default_neteq_factory.h"
@@ -53,6 +52,7 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/clock.h"
 #include "test/audio_decoder_proxy_factory.h"
+#include "test/create_test_environment.h"
 #include "test/function_audio_decoder_factory.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -85,7 +85,7 @@ int DeletePacketsAndReturnOk(PacketList* packet_list) {
 
 class NetEqImplTest : public ::testing::Test {
  protected:
-  NetEqImplTest() : clock_(0), env_(CreateEnvironment(&clock_)) {
+  NetEqImplTest() : clock_(0), env_(CreateTestEnvironment({.time = &clock_})) {
     config_.sample_rate_hz = 8000;
   }
 
@@ -272,7 +272,7 @@ class NetEqImplTest : public ::testing::Test {
 TEST(NetEq, CreateAndDestroy) {
   NetEq::Config config;
   std::unique_ptr<NetEq> neteq = DefaultNetEqFactory().Create(
-      CreateEnvironment(), config, CreateBuiltinAudioDecoderFactory());
+      CreateTestEnvironment(), config, CreateBuiltinAudioDecoderFactory());
 }
 
 TEST_F(NetEqImplTest, RegisterPayloadType) {
@@ -329,7 +329,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
   fake_packet.sequence_number = kFirstSequenceNumber;
   fake_packet.timestamp = kFirstTimestamp;
 
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   auto mock_decoder_factory = make_ref_counted<MockAudioDecoderFactory>();
   EXPECT_CALL(*mock_decoder_factory, Create)
       .WillOnce(WithArg<1>([&](const SdpAudioFormat& format) {
@@ -353,7 +353,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
   EXPECT_CALL(*mock_packet_buffer_, Empty())
       .WillOnce(Return(false));  // Called once after first packet is inserted.
   EXPECT_CALL(*mock_packet_buffer_, Flush()).Times(1);
-  EXPECT_CALL(*mock_packet_buffer_, InsertPacket(_))
+  EXPECT_CALL(*mock_packet_buffer_, InsertPacket(_, _, _, _))
       .Times(2)
       .WillRepeatedly(Return(PacketBuffer::kOK));
   EXPECT_CALL(*mock_packet_buffer_, PeekNextPacket())
@@ -1566,7 +1566,7 @@ TEST_F(NetEqImplTest, NoCrashWithMaxChannels) {
 
   AudioDecoder* decoder = nullptr;
 
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   auto mock_decoder_factory = make_ref_counted<MockAudioDecoderFactory>();
   EXPECT_CALL(*mock_decoder_factory, Create)
       .WillOnce(WithArg<1>([&](const SdpAudioFormat& format) {

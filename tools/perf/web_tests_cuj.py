@@ -26,6 +26,11 @@ def main():
   command_line = [
       CUJ_RUNNER, '--platform=adb', '--tests=speedometer_3.1', '--variants=$'
   ]
+
+  # Pipe any input arguments passed to this script to the command_line list.
+  if len(sys.argv) > 1:
+    command_line.extend(sys.argv[1:])
+
   proc = subprocess.run(command_line, check=False, env=env)
   status = proc.returncode
 

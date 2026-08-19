@@ -227,6 +227,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   std::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
       const;
+  std::optional<RtpRtcpInterface::NonSenderRttStats> GetNonSenderRttStats()
+      const;
 
  private:
   // Implements RtpVideoFrameReceiver.
@@ -315,7 +317,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   // This function assumes that it's being called from only one thread.
   void ParseAndHandleEncapsulatingHeader(const RtpPacketReceived& packet)
       RTC_RUN_ON(packet_sequence_checker_);
-  void NotifyReceiverOfEmptyPacket(uint16_t seq_num,
+  void NotifyReceiverOfEmptyPacket(int64_t seq_number,
                                    std::optional<VideoCodecType> codec)
       RTC_RUN_ON(packet_sequence_checker_);
   bool IsRedEnabled() const;
@@ -372,7 +374,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   const std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
 
   NackPeriodicProcessor* const nack_periodic_processor_;
-  OnCompleteFrameCallback* complete_frame_callback_;
+  OnCompleteFrameCallback* const complete_frame_callback_;
   const KeyFrameReqMethod keyframe_request_method_;
 
   RtcpFeedbackBuffer rtcp_feedback_buffer_;
@@ -415,6 +417,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       RTC_GUARDED_BY(packet_sequence_checker_);
 
   std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  std::map<int64_t, uint32_t> last_timestamp_for_pic_id_
       RTC_GUARDED_BY(packet_sequence_checker_);
   video_coding::H264SpsPpsTracker tracker_
       RTC_GUARDED_BY(packet_sequence_checker_);

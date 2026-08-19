@@ -23,7 +23,6 @@
 #include "api/crypto/crypto_options.h"
 #include "api/dtls_transport_interface.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/field_trials.h"
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
@@ -45,6 +44,7 @@
 #include "p2p/dtls/dtls_transport_internal.h"
 #include "p2p/dtls/fake_dtls_transport.h"
 #include "p2p/test/fake_ice_transport.h"
+#include "p2p/test/fake_port_allocator.h"
 #include "pc/dtls_transport.h"
 #include "pc/rtp_transport.h"
 #include "pc/rtp_transport_internal.h"
@@ -64,6 +64,7 @@
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -99,7 +100,8 @@ class FakeIceTransportFactory : public IceTransportFactory {
       int component,
       IceTransportInit init) override {
     return make_ref_counted<FakeIceTransport>(
-        std::make_unique<FakeIceTransportInternal>(transport_name, component));
+        std::make_unique<FakeIceTransportInternal>(init.env(), transport_name,
+                                                   component));
   }
 };
 
@@ -117,15 +119,27 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
                                     public ::testing::Test {
  public:
   JsepTransportControllerTest()
-      : env_(CreateEnvironment(&field_trials_)),
+      : env_(CreateTestEnvironment({.field_trials = &field_trials_})),
         signaling_thread_(Thread::Current()) {
     fake_ice_transport_factory_ = std::make_unique<FakeIceTransportFactory>();
     fake_dtls_transport_factory_ = std::make_unique<FakeDtlsTransportFactory>();
+  }
+  ~JsepTransportControllerTest() override {
+    if (network_thread_ != nullptr && port_allocator_) {
+      network_thread_->BlockingCall([&] { port_allocator_ = std::nullopt; });
+    }
   }
 
   void CreateJsepTransportController(JsepTransportController::Config config,
                                      Thread* network_thread = Thread::Current(),
                                      PortAllocator* port_allocator = nullptr) {
+    if (port_allocator == nullptr) {
+      if (!port_allocator_) {
+        port_allocator_.emplace(env_, network_thread->socketserver(),
+                                network_thread);
+      }
+      port_allocator = &*port_allocator_;
+    }
     config.transport_observer = this;
     config.rtcp_handler = [](const CopyOnWriteBuffer& packet,
                              int64_t packet_time_us) {
@@ -381,6 +395,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
   std::unique_ptr<Thread> network_thread_;
   std::unique_ptr<FakeIceTransportFactory> fake_ice_transport_factory_;
   std::unique_ptr<FakeDtlsTransportFactory> fake_dtls_transport_factory_;
+  std::optional<FakePortAllocator> port_allocator_;
   Thread* const signaling_thread_ = nullptr;
   Thread* ice_signaled_on_thread_ = nullptr;
   // Used to verify the SignalRtpTransportChanged/SignalDtlsTransportChanged are
@@ -506,9 +521,11 @@ TEST_F(JsepTransportControllerTest, NeedIceRestart) {
   // Initially NeedsIceRestart should return false.
   EXPECT_FALSE(transport_controller_->NeedsIceRestart(kAudioMid1));
   EXPECT_FALSE(transport_controller_->NeedsIceRestart(kVideoMid1));
-  // Set the needs-ice-restart flag and verify NeedsIceRestart starts returning
-  // true.
+  // Set the needs-ice-restart flag, synchronize the transport states and verify
+  // NeedsIceRestart starts returning true.
   transport_controller_->SetNeedsIceRestartFlag();
+  transport_controller_->SetTransportStates(
+      transport_controller_->GetTransportStates_n());
   EXPECT_TRUE(transport_controller_->NeedsIceRestart(kAudioMid1));
   EXPECT_TRUE(transport_controller_->NeedsIceRestart(kVideoMid1));
   // For a nonexistent transport, false should be returned.
@@ -2331,6 +2348,32 @@ TEST_F(JsepTransportControllerTest, RejectFirstContentInBundleGroup) {
   EXPECT_EQ(nullptr, transport_controller_->GetRtpTransport(kAudioMid1));
   EXPECT_EQ(nullptr, transport_controller_->GetRtpTransport(kVideoMid1));
   EXPECT_EQ(nullptr, transport_controller_->GetDtlsTransport(kDataMid1));
+}
+
+TEST_F(JsepTransportControllerTest,
+       RejectMissingContentInStaleRemoteOfferBundleGroup) {
+  CreateJsepTransportController(JsepTransportController::Config());
+
+  auto local_offer = CreateSessionDescriptionWithBundleGroup();
+  std::unique_ptr<SessionDescription> remote_answer(local_offer->Clone());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
+                  .ok());
+
+  auto remote_reoffer = std::make_unique<SessionDescription>();
+  AddAudioSection(remote_reoffer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  remote_reoffer->contents()[0].rejected = true;
+
+  RTCError error = transport_controller_->SetRemoteDescription(
+      SdpType::kOffer, local_offer.get(), remote_reoffer.get());
+  EXPECT_FALSE(error.ok());
+  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, error.type());
 }
 
 // Tests that applying non-RTCP-mux offer would fail when kRtcpMuxPolicyRequire

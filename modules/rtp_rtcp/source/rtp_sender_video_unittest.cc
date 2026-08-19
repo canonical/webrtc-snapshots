@@ -22,11 +22,11 @@
 #include "absl/memory/memory.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/field_trials_view.h"
 #include "api/frame_transformer_factory.h"
 #include "api/frame_transformer_interface.h"
 #include "api/make_ref_counted.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
@@ -68,11 +68,12 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/rate_limiter.h"
-#include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/ntp_time.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 #include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
@@ -86,24 +87,23 @@ using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
 using ::testing::NiceMock;
 using ::testing::Not;
+using ::testing::Optional;
 using ::testing::ReturnArg;
 using ::testing::SaveArg;
 using ::testing::SizeIs;
 using ::testing::WithArgs;
 
-enum : int {  // The first valid value is 1.
-  kAbsoluteSendTimeExtensionId = 1,
-  kGenericDescriptorId,
-  kDependencyDescriptorId,
-  kTransmissionTimeOffsetExtensionId,
-  kTransportSequenceNumberExtensionId,
-  kVideoRotationExtensionId,
-  kVideoTimingExtensionId,
-  kAbsoluteCaptureTimeExtensionId,
-  kPlayoutDelayExtensionId,
-  kVideoLayersAllocationExtensionId,
-  kCorruptionDetectionExtensionId,
-};
+constexpr RtpHeaderExtensionId kAbsoluteSendTimeExtensionId(1);
+constexpr RtpHeaderExtensionId kGenericDescriptorId(2);
+constexpr RtpHeaderExtensionId kDependencyDescriptorId(3);
+constexpr RtpHeaderExtensionId kTransmissionTimeOffsetExtensionId(4);
+constexpr RtpHeaderExtensionId kTransportSequenceNumberExtensionId(5);
+constexpr RtpHeaderExtensionId kVideoRotationExtensionId(6);
+constexpr RtpHeaderExtensionId kVideoTimingExtensionId(7);
+constexpr RtpHeaderExtensionId kAbsoluteCaptureTimeExtensionId(8);
+constexpr RtpHeaderExtensionId kPlayoutDelayExtensionId(9);
+constexpr RtpHeaderExtensionId kVideoLayersAllocationExtensionId(10);
+constexpr RtpHeaderExtensionId kCorruptionDetectionExtensionId(11);
 
 constexpr int kPayloadType = 100;
 constexpr VideoCodecType kType = VideoCodecType::kVideoCodecGeneric;
@@ -191,7 +191,7 @@ class RtpSenderVideoTest : public ::testing::Test {
  public:
   explicit RtpSenderVideoTest(bool raw_packetization = false)
       : fake_clock_(kStartTime),
-        env_(CreateEnvironment(&fake_clock_)),
+        env_(CreateTestEnvironment({.time = &fake_clock_})),
         retransmission_rate_limiter_(&fake_clock_, 1000),
         rtp_module_(ModuleRtpRtcpImpl2::CreateSendModule(
             env_,
@@ -213,7 +213,7 @@ class RtpSenderVideoTest : public ::testing::Test {
       int version);
 
  protected:
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
   SimulatedClock fake_clock_;
   const Environment env_;
   LoopbackTransportTest transport_;
@@ -591,10 +591,14 @@ TEST_F(RtpSenderVideoTest,
   constexpr size_t kMaxPacketSize = 1'000;
 
   rtp_module_->SetMaxRtpPacketSize(kMaxPacketSize);
-  rtp_module_->RegisterRtpHeaderExtension(RtpMid::Uri(), 1);
-  rtp_module_->RegisterRtpHeaderExtension(RtpStreamId::Uri(), 2);
-  rtp_module_->RegisterRtpHeaderExtension(RepairedRtpStreamId::Uri(), 3);
-  rtp_module_->RegisterRtpHeaderExtension(AbsoluteSendTime::Uri(), 4);
+  rtp_module_->RegisterRtpHeaderExtension(RtpMid::Uri(),
+                                          RtpHeaderExtensionId(1));
+  rtp_module_->RegisterRtpHeaderExtension(RtpStreamId::Uri(),
+                                          RtpHeaderExtensionId(2));
+  rtp_module_->RegisterRtpHeaderExtension(RepairedRtpStreamId::Uri(),
+                                          RtpHeaderExtensionId(3));
+  rtp_module_->RegisterRtpHeaderExtension(AbsoluteSendTime::Uri(),
+                                          RtpHeaderExtensionId(4));
   rtp_module_->SetMid("long_mid");
   rtp_module_->SetRtxSendPayloadType(kRtxPayloadId, kMediaPayloadId);
   rtp_module_->SetStorePacketsStatus(/*enable=*/true, 10);
@@ -1569,8 +1573,7 @@ class RtpSenderVideoWithFrameTransformerTest : public ::testing::Test {
  public:
   RtpSenderVideoWithFrameTransformerTest()
       : time_controller_(kStartTime),
-        env_(CreateEnvironment(time_controller_.GetClock(),
-                               time_controller_.GetTaskQueueFactory())),
+        env_(CreateTestEnvironment({.time = &time_controller_})),
         retransmission_rate_limiter_(time_controller_.GetClock(), 1000),
         rtp_module_(ModuleRtpRtcpImpl2::CreateSendModule(
             env_,
@@ -1826,7 +1829,7 @@ TEST_F(RtpSenderVideoWithFrameTransformerTest,
             EXPECT_EQ(metadata.GetFrameId(), 10);
             EXPECT_EQ(metadata.GetTemporalIndex(), 3);
             EXPECT_EQ(metadata.GetSpatialIndex(), 2);
-            EXPECT_THAT(metadata.GetFrameDependencies(), ElementsAre(5));
+            EXPECT_THAT(metadata.GetDependencies(), Optional(ElementsAre(5)));
             EXPECT_THAT(metadata.GetDecodeTargetIndications(),
                         ElementsAre(DecodeTargetIndication::kSwitch));
           });

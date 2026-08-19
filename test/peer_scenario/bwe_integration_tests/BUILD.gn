@@ -9,7 +9,7 @@
 import("../../../webrtc.gni")
 
 if (rtc_include_tests) {
-  rtc_library("bwe_integration_tests") {
+  rtc_cc_test("bwe_integration_tests") {
     testonly = true
     sources = []
 
@@ -38,11 +38,13 @@ if (rtc_include_tests) {
         "../../../api:jsep",
         "../../../api:make_ref_counted",
         "../../../api:network_emulation_manager_api",
+        "../../../api:peer_connection_interface",
         "../../../api:rtc_error",
         "../../../api:rtc_stats_api",
         "../../../api:rtp_parameters",
         "../../../api:rtp_sender_interface",
         "../../../api:rtp_transceiver_direction",
+        "../../../api:rtp_transceiver_interface",
         "../../../api:scoped_refptr",
         "../../../api/test/network_emulation",
         "../../../api/test/network_emulation:network_config_schedule_proto",

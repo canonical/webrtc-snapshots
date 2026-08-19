@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
@@ -41,8 +42,8 @@ namespace webrtc {
 class SsrcEndToEndTest : public test::CallTest {
  public:
   SsrcEndToEndTest() {
-    RegisterRtpExtension(
-        RtpExtension(RtpExtension::kTransportSequenceNumberUri, 1));
+    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                                      RtpHeaderExtensionId(1)));
   }
 
  protected:
@@ -114,14 +115,14 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketTriggersUndemuxablePacketHandler) {
     CreateCalls();
 
     send_transport = std::make_unique<test::DirectTransport>(
-        env(), task_queue(),
+        env(), network_thread(),
         std::make_unique<FakeNetworkPipe>(
             &env().clock(),
             std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_, GetRegisteredExtensions(),
         GetRegisteredExtensions());
     receive_transport = std::make_unique<test::DirectTransport>(
-        env(), task_queue(),
+        env(), network_thread(),
         std::make_unique<FakeNetworkPipe>(
             &env().clock(),
             std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),

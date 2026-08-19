@@ -61,19 +61,17 @@ ABSL_FLAG(std::string,
           force_fieldtrials,
           "",
           "Field trials control experimental feature code which can be forced. "
-          "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
-          " will assign the group Enable to field trial WebRTC-FooFeature.");
+          "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enabled/"
+          " will assign the group Enabled to field trial WebRTC-FooFeature.");
 
 struct SetupMessage {
   size_t packet_size;
   size_t transfer_size;
 
   std::string ToString() {
-    char buffer[64];
-    webrtc::SimpleStringBuilder sb(buffer);
+    webrtc::StringBuilder sb;
     sb << packet_size << "," << transfer_size;
-
-    return sb.str();
+    return sb.Release();
   }
 
   static SetupMessage FromString(absl::string_view sv) {

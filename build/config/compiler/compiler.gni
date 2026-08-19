@@ -6,7 +6,6 @@ import("//build/config/c++/c++.gni")
 import("//build/config/cast.gni")
 import("//build/config/chrome_build.gni")
 import("//build/config/chromeos/args.gni")
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/compiler/pgo/pgo.gni")
 import("//build/config/coverage/coverage.gni")
 import("//build/config/cronet/config.gni")
@@ -29,7 +28,7 @@ if (is_apple) {
 
 declare_args() {
   if (!is_win && !is_mac && !is_ios) {
-    # Link using a non-lld linker. See https://crbug.com/40208899
+    # Link using a non-lld linker (e.g., mold or wild). See https://crbug.com/40208899
     experimental_linker_path = ""
   }
 }
@@ -40,16 +39,60 @@ if (!defined(experimental_linker_path) || !is_a_target_toolchain) {
   experimental_linker_path = ""
 }
 
+if (!is_win && !is_mac && !is_ios) {
+  declare_args() {
+    # Link using mold instead of lld for faster builds.
+    use_mold =
+        # Requires a DEPS entry.
+        build_with_chromium &&
+        # --ld-path is a clang-only flag.
+        is_clang &&
+        # https://github.com/rui314/mold/issues/1592
+        !using_sanitizer &&
+        # Don't want to risk bugs for official builds.
+        !is_official_build &&
+        # Exclude Cronet because it crashes on dlopen(), see crbug.com/525305888
+        !is_cronet_build &&
+        (current_os == "android" || current_os == "linux") &&
+        (current_cpu == "x64" || current_cpu == "arm64" ||
+         current_cpu == "x86" || current_cpu == "arm")
+  }
+}
+
+linker_path = experimental_linker_path
+use_mold = defined(use_mold) && use_mold
+if (use_mold && linker_path == "") {
+  linker_path = "//buildtools/third_party/mold/cipd/mold"
+}
+
+declare_args() {
+  # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
+  # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
+  # Use it by default on official-optimized android and Chrome OS builds, but
+  # not ARC or linux-chromeos since it's been seen to not play nicely with
+  # Chrome's clang. crbug.com/1033839
+  use_thin_lto =
+      is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
+                 (is_linux || is_win || is_apple ||
+                  (is_android && target_os != "chromeos") ||
+                  (is_chromeos && is_chromeos_device)))
+}
+
 declare_args() {
   # Set to true to use lld, the LLVM linker.
-  # In late bring-up on macOS (see docs/mac_lld.md).
-  # Tentatively used on iOS.
-  # The default linker everywhere else.
-  use_lld = is_clang && current_os != "zos" && experimental_linker_path == ""
+  # This is the default when `is_clang` is true, except:
+  # - On zos.
+  # - When `experimental_linker_path` is set.
+  # - On iOS for arm64e (not yet supported by lld).
+  #
+  # On ARM Macs, set to false to use the Apple linker instead of LLD.
+  # This is currently opt-in while we decide the rollout plan and scope.
+  # TODO(crbug.com/502338406): See https://crbug.com/502338406 for benchmarking results.
+  use_lld = is_clang && current_os != "zos" && linker_path == "" &&
+            !(is_ios && current_cpu == "arm64e") && !use_mold
+}
 
-  # If false, build using C++20; otherwise, build using C++23.
-  use_cxx23 = true
-
+declare_args() {
   # If true, optimize for size.
   # Default to favoring speed over size for platforms not listed below.
   optimize_for_size =
@@ -60,13 +103,60 @@ if (is_mac && use_lld) {
   declare_args() {
     # Enables the `--read-workers` flag for LLD.
     # Currently only implemented for Mach-O (macOS) in LLD.
-    enable_lld_read_workers = false
+    enable_lld_read_workers = true
   }
 
   if (enable_lld_read_workers) {
     lld_read_workers =
         exec_script("//build/toolchain/get_lld_read_workers.py", [], "value")
   }
+}
+
+default_symbol_level = 0
+
+if (is_chromeos_device) {
+  # Use lower symbol level in Simple Chrome build for faster link time.
+  # For Simple Chrome, this should take precedence over is_official_build,
+  # turned on by --internal.
+  if ((target_cpu == "x64" || target_cpu == "x86") && !is_debug) {
+    # For release x86/x64 build, specify symbol_level=0 for faster link time.
+    # x86/x64 shows backtraces with symbol_level=0 (arm requires
+    # symbol_level=1).
+    default_symbol_level = 0
+  } else {
+    default_symbol_level = 1
+  }
+} else if (is_official_build) {
+  # We want the best debug info we can get for in-the-wild crashes.
+  default_symbol_level = 2
+} else if (is_android) {
+  # Prefer faster & smaller build times by default. gdb/lldb do not work well
+  # on Android, and many devs touch only Java, so this is a good default.
+  # symbol_level = 0 is even faster, but crashes then have incomplete stacks
+  # (missing frames and source lines).
+  default_symbol_level = 1
+} else if (using_sanitizer) {
+  # Sanitizers need line table info for stack traces. They don't need type
+  # info or variable info, so we can leave that out to speed up the build.
+  # Sanitizers also require symbols for filename suppressions to work.
+  default_symbol_level = 1
+} else if ((!is_linux && !is_chromeos && !is_fuchsia && current_os != "aix") ||
+           is_debug) {
+  # Linux builds slower by having symbols as part of the target binary,
+  # whereas Mac and Windows have them separate, so in Release Linux, default
+  # them off.
+  default_symbol_level = 2
+}
+
+declare_args() {
+  # How many symbols to include in the build. This affects the performance of
+  # the build since the symbols are large and dealing with them is slow.
+  #   2 means regular build with symbols.
+  #   1 means minimal symbols, usually enough for backtraces only. Symbols with
+  # internal linkage (static functions or those in anonymous namespaces) may not
+  # appear when using this level.
+  #   0 means no symbols.
+  symbol_level = default_symbol_level
 }
 
 declare_args() {
@@ -82,16 +172,6 @@ declare_args() {
   # on Windows, the warning format is not affected.
   diagnostics_print_source_range_info = false
 
-  # How many symbols to include in the build. This affects the performance of
-  # the build since the symbols are large and dealing with them is slow.
-  #   2 means regular build with symbols.
-  #   1 means minimal symbols, usually enough for backtraces only. Symbols with
-  # internal linkage (static functions or those in anonymous namespaces) may not
-  # appear when using this level.
-  #   0 means no symbols.
-  #   -1 means auto-set according to debug/release and platform.
-  symbol_level = -1
-
   # Android-only: Strip the debug info of libraries within lib.unstripped to
   # reduce size. As long as symbol_level > 0, this will still allow stacks to be
   # symbolized.
@@ -104,18 +184,10 @@ declare_args() {
   # use_debug_fission: whether to use split DWARF debug info files. This can
   # reduce link time significantly.
   use_debug_fission =
-      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld
-
-  # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
-  # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
-  # Use it by default on official-optimized android and Chrome OS builds, but
-  # not ARC or linux-chromeos since it's been seen to not play nicely with
-  # Chrome's clang. crbug.com/1033839
-  use_thin_lto =
-      is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
-                 (is_linux || is_win || is_mac || (is_ios && use_lld) ||
-                  (is_android && target_os != "chromeos") ||
-                  (is_chromeos && is_chromeos_device)))
+      # dwp did not work properly for Android official builds, so disable in
+      # order to be able to archive symbols properly. https://crbug.com/40203231
+      symbol_level >= 1 && !(is_android && is_official_build) && !is_fuchsia &&
+      !is_apple && !is_win && (use_lld || linker_path != "")
 
   # Whether we're using a sample profile collected on an architecture different
   # than the one we're compiling for.
@@ -132,15 +204,18 @@ declare_args() {
   # Exclude unwind tables by default for official builds as unwinding can be
   # done from stack dumps produced by Crashpad at a later time "offline" in the
   # crash server. Since this increases binary size, we don't recommend including
-  # them in shipping builds.
-  # For unofficial (e.g. development) builds and non-Chrome branded (e.g. Cronet
-  # which doesn't use Crashpad, crbug.com/479283) builds it's useful to be able
-  # to unwind at runtime.
+  # them in shipping builds. For unofficial (e.g. development) builds and
+  # non-Chrome branded (e.g. Cronet which doesn't use Crashpad,
+  # crbug.com/479283) builds it's useful to be able to unwind at runtime.
   # Include the unwind tables on Android even for official builds, as otherwise
   # the crash dumps generated by Android's debuggerd are largely useless, and
-  # having this additional mechanism to understand issues is particularly helpful
-  # to WebView.
-  exclude_unwind_tables = is_official_build && !is_android
+  # having this additional mechanism to understand issues is particularly
+  # helpful to WebView. Unwind tables are excluded for Cronet builds in AOSP to
+  # strip the bulky .eh_frame section. To maintain debuggability, Soong appends
+  # compressed unwind sections at a later stage, ensuring stack traces can still
+  # be unwound offline.
+  exclude_unwind_tables =
+      (is_official_build && !is_android) || is_cronet_for_aosp_build
 
   # Where to redirect clang crash diagnoses
   clang_diagnostic_dir = rebase_path("//out/clang-crashreports", root_build_dir)
@@ -175,6 +250,10 @@ declare_args() {
   # because of binary size increase.
   # TODO(crbug.com/345541122): investigate the fuchsia binary size increase.
   use_sized_deallocation = is_clang && (is_asan || !optimize_for_size)
+}
+
+if (use_debug_fission) {
+  assert(symbol_level >= 1, "Debug fission requires symbol_level >= 1")
 }
 
 assert(!is_cfi || use_thin_lto, "CFI requires ThinLTO")
@@ -323,45 +402,8 @@ if (target_os == "ios") {
 }
 compiler_logs += [ "clang_need_input_root_absolute_path_for_objc=$clang_need_input_root_absolute_path_for_objc" ]
 
-# If it wasn't manually set, set to an appropriate default.
-assert(symbol_level >= -1 && symbol_level <= 2, "Invalid symbol_level")
-if (symbol_level == -1) {
-  if (is_chromeos_device) {
-    # Use lower symbol level in Simple Chrome build for faster link time.
-    # For Simple Chrome, this should take precedence over is_official_build,
-    # turned on by --internal.
-    if ((target_cpu == "x64" || target_cpu == "x86") && !is_debug) {
-      # For release x86/x64 build, specify symbol_level=0 for faster link time.
-      # x86/x64 shows backtraces with symbol_level=0 (arm requires
-      # symbol_level=1).
-      symbol_level = 0
-    } else {
-      symbol_level = 1
-    }
-  } else if (is_official_build) {
-    # We want the best debug info we can get for in-the-wild crashes.
-    symbol_level = 2
-  } else if (is_android) {
-    # Prefer faster & smaller build times by default. gdb/lldb do not work well
-    # on Android, and many devs touch only Java, so this is a good default.
-    # symbol_level = 0 is even faster, but crashes then have incomplete stacks
-    # (missing frames and source lines).
-    symbol_level = 1
-  } else if (using_sanitizer) {
-    # Sanitizers need line table info for stack traces. They don't need type
-    # info or variable info, so we can leave that out to speed up the build.
-    # Sanitizers also require symbols for filename suppressions to work.
-    symbol_level = 1
-  } else if ((!is_linux && !is_chromeos && !is_fuchsia &&
-              current_os != "aix") || is_debug) {
-    # Linux builds slower by having symbols as part of the target binary,
-    # whereas Mac and Windows have them separate, so in Release Linux, default
-    # them off.
-    symbol_level = 2
-  } else {
-    symbol_level = 0
-  }
-}
+# Validate that the symbol_level is within the supported range.
+assert(symbol_level >= 0 && symbol_level <= 2, "Invalid symbol_level")
 
 # Non-component debug builds with symbol_level = 2 are an undesirable (very slow
 # build times, almost two-minute link times) combination. This is only checked

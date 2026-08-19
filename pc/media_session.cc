@@ -21,10 +21,12 @@
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
+#include "api/crypto/crypto_options.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/sctp_transport_interface.h"
@@ -58,7 +60,8 @@ namespace {
 
 RtpExtension RtpExtensionFromCapability(
     const RtpHeaderExtensionCapability& capability) {
-  return RtpExtension(capability.uri, capability.preferred_id.value_or(1),
+  return RtpExtension(capability.uri,
+                      capability.preferred_id.value_or(RtpHeaderExtensionId(1)),
                       capability.preferred_encrypt);
 }
 
@@ -360,9 +363,12 @@ RTCError CreateContentOffer(
     const RtpHeaderExtensions& rtp_extensions,
     UniqueRandomIdGenerator* ssrc_generator,
     StreamParamsVec* current_streams,
-    MediaContentDescription* offer) {
+    MediaContentDescription* offer,
+    const FieldTrialsView& field_trials) {
   offer->set_rtcp_mux(session_options.rtcp_mux_enabled);
   offer->set_rtcp_reduced_size(true);
+  offer->set_receive_non_sender_rtt(
+      !field_trials.IsDisabled("WebRTC-RtcpXrReceiverReferenceTime"));
 
   // Build the vector of header extensions with directions for this
   // media_description's options.
@@ -400,13 +406,13 @@ RTCError CreateMediaContentOffer(
   if (!AddStreamParams(media_description_options.sender_options,
                        session_options.rtcp_cname, ssrc_generator,
                        current_streams, offer, field_trials)) {
-    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                     << "Failed to add stream parameters");
+    return RTC_LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                         << "Failed to add stream parameters");
   }
 
   return CreateContentOffer(media_description_options, session_options,
                             rtp_extensions, ssrc_generator, current_streams,
-                            offer);
+                            offer, field_trials);
 }
 
 // Adds all extensions from `reference_extensions` to `offered_extensions` that
@@ -575,6 +581,13 @@ bool SetCodecsInAnswer(const MediaContentDescription* offer,
   return true;
 }
 
+// Negotiates Sframe support between the offer and the local answerer options.
+bool NegotiateSframeUsage(
+    const MediaContentDescription* offer,
+    const MediaDescriptionOptions& media_description_options) {
+  return offer->sframe_enabled() && media_description_options.sframe_enabled;
+}
+
 // Create a media content to be answered for the given `sender_options`
 // according to the given session_options.rtcp_mux, session_options.streams,
 // codecs, crypto, and current_streams.  If we don't currently have crypto (in
@@ -593,8 +606,9 @@ bool CreateMediaContentAnswer(
     bool bundle_enabled,
     MediaContentDescription* answer,
     PayloadTypeSuggester& suggester,
-    RtpTransceiverIdDomain id_domain) {
-  answer->set_extmap_allow_mixed_enum(offer->extmap_allow_mixed_enum());
+    RtpTransceiverIdDomain id_domain,
+    const FieldTrialsView& field_trials) {
+  answer->set_extmap_allow_mixed_level(offer->extmap_allow_mixed_level());
   const RtpExtension::Filter extensions_filter =
       enable_encrypted_rtp_header_extensions
           ? RtpExtension::Filter::kPreferEncryptedExtension
@@ -623,15 +637,30 @@ bool CreateMediaContentAnswer(
       extensions_filter, &negotiated_rtp_extensions, suggester,
       media_description_options.mid, id_domain);
   answer->set_rtp_header_extensions(negotiated_rtp_extensions);
+  // Cryptex is declarative, i.e. does not depend on the offer.
+  // If present in the offer we match the level (session/media)
+  // and put it at session level otherwise.
+  if (session_options.crypto_options.srtp.cryptex_policy !=
+      CryptoOptions::Srtp::CryptexPolicy::kDisabled) {
+    answer->set_cryptex_level(
+        offer->cryptex_level() != MediaContentDescription::AttributeLevel::kNone
+            ? offer->cryptex_level()
+            : MediaContentDescription::AttributeLevel::kSession);
+  }
 
   answer->set_rtcp_mux(session_options.rtcp_mux_enabled && offer->rtcp_mux());
   answer->set_rtcp_reduced_size(offer->rtcp_reduced_size());
+  answer->set_receive_non_sender_rtt(
+      offer->receive_non_sender_rtt() &&
+      !field_trials.IsDisabled("WebRTC-RtcpXrReceiverReferenceTime"));
   answer->set_remote_estimate(offer->remote_estimate());
 
   AddSimulcastToMediaDescription(media_description_options, answer);
 
   answer->set_direction(NegotiateRtpTransceiverDirection(
       offer->direction(), media_description_options.direction));
+  answer->set_sframe_enabled(
+      NegotiateSframeUsage(offer, media_description_options));
 
   return true;
 }
@@ -745,6 +774,7 @@ RTCErrorOr<std::unique_ptr<SessionDescription>>
 MediaSessionDescriptionFactory::CreateOfferOrError(
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   // Must have options for each existing section.
   if (current_description) {
     RTC_DCHECK_LE(current_description->contents().size(),
@@ -831,7 +861,7 @@ MediaSessionDescriptionFactory::CreateOfferOrError(
     if (!offer_bundle.content_names().empty()) {
       offer->AddGroup(offer_bundle);
       if (!UpdateTransportInfoForBundle(offer_bundle, offer.get())) {
-        return LOG_ERROR(
+        return RTC_LOG_ERROR(
             RTCError(RTCErrorType::INTERNAL_ERROR)
             << "CreateOffer failed to UpdateTransportInfoForBundle");
       }
@@ -854,6 +884,8 @@ MediaSessionDescriptionFactory::CreateOfferOrError(
   }
 
   offer->set_extmap_allow_mixed(session_options.offer_extmap_allow_mixed);
+  offer->set_cryptex(session_options.crypto_options.srtp.cryptex_policy !=
+                     CryptoOptions::Srtp::CryptexPolicy::kDisabled);
 
   return offer;
 }
@@ -864,8 +896,8 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {
   if (!offer) {
-    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                     << "Called without offer.");
+    return RTC_LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                         << "Called without offer.");
   }
 
   // Must have options for exactly as many sections as in the offer.
@@ -928,6 +960,17 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
   }
 
   answer->set_extmap_allow_mixed(offer->extmap_allow_mixed());
+  // Cryptex is declarative: advertise support when policy allows. If the
+  // offer used cryptex at media level, answer at media level.
+  bool use_session_level_cryptex =
+      offer->cryptex() ||
+      absl::c_find_if(offer->contents(), [](const ContentInfo& content) {
+        return content.media_description()->cryptex_level() ==
+               MediaContentDescription::AttributeLevel::kMedia;
+      }) == offer->contents().end();
+  answer->set_cryptex(session_options.crypto_options.srtp.cryptex_policy !=
+                          CryptoOptions::Srtp::CryptexPolicy::kDisabled &&
+                      use_session_level_cryptex);
 
   // Iterate through the media description options, matching with existing
   // media descriptions in `current_description`.
@@ -1024,7 +1067,7 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
         // Share the same ICE credentials and crypto params across all contents,
         // as BUNDLE requires.
         if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {
-          return LOG_ERROR(
+          return RTC_LOG_ERROR(
               RTCError(RTCErrorType::INTERNAL_ERROR)
               << "CreateAnswer failed to UpdateTransportInfoForBundle.");
         }
@@ -1232,6 +1275,7 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForOffer(
   }
   // RFC 8888 support.
   content_description->set_rtcp_fb_ack_ccfb(offer_rfc_8888_);
+
   auto error = CreateMediaContentOffer(
       media_description_options, session_options, codecs_to_include,
       header_extensions, ssrc_generator(), current_streams,
@@ -1245,6 +1289,8 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForOffer(
   SetMediaProtocol(secure_transport, content_description.get());
 
   content_description->set_direction(media_description_options.direction);
+  content_description->set_sframe_enabled(
+      media_description_options.sframe_enabled);
   bool has_codecs = !content_description->codecs().empty();
 
   session_description->AddContent(
@@ -1271,7 +1317,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForOffer(
 
   std::vector<std::string> crypto_suites;
   // Unlike SetMediaProtocol below, we need to set the protocol
-  // before we call CreateMediaContentOffer.  Otherwise,
+  // before we call CreateMediaContentOffer. Otherwise,
   // CreateMediaContentOffer won't know this is SCTP and will
   // generate SSRCs rather than SIDs.
   data->set_protocol(secure_transport ? kMediaProtocolUdpDtlsSctp
@@ -1284,17 +1330,14 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForOffer(
           current_content->media_description()->as_sctp();
       RTC_DCHECK(current_data_description);
       data->set_sctp_init(current_data_description->sctp_init());
-    }
-    if (!data->sctp_init().has_value()) {
-      // Create a sctp-init on subsequent offers even if the remote side
-      // has not negotiated one previously.
+    } else {
       data->set_sctp_init(sctp_factory_->GenerateConnectionToken(env_));
     }
   }
 
-  auto error = CreateContentOffer(media_description_options, session_options,
-                                  RtpHeaderExtensions(), ssrc_generator(),
-                                  current_streams, data.get());
+  auto error = CreateContentOffer(
+      media_description_options, session_options, RtpHeaderExtensions(),
+      ssrc_generator(), current_streams, data.get(), env_.field_trials());
   if (!error.ok()) {
     return error;
   }
@@ -1372,7 +1415,7 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
       media_description_options.transport_options, current_description,
       !offer_content->rejected && bundle_transport == nullptr, ice_credentials);
   if (!transport) {
-    return LOG_ERROR(
+    return RTC_LOG_ERROR(
         RTCError(RTCErrorType::INTERNAL_ERROR)
         << "Failed to create transport answer, transport is missing");
   }
@@ -1427,8 +1470,8 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
                          ssrc_generator(), current_streams,
                          answer_content.get(),
                          transport_desc_factory_->trials())) {
-    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                     << "Failed to set codecs in answer");
+    return RTC_LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                         << "Failed to set codecs in answer");
   }
   RTC_DCHECK(codec_lookup_helper_->PayloadTypeSuggester());
   if (!CreateMediaContentAnswer(
@@ -1439,9 +1482,10 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
           *codec_lookup_helper_->PayloadTypeSuggester(),
           offer_description->extmap_allow_mixed()
               ? RtpTransceiverIdDomain::kTwoByteAllowed
-              : RtpTransceiverIdDomain::kOneByteOnly)) {
-    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                     << "Failed to create answer");
+              : RtpTransceiverIdDomain::kOneByteOnly,
+          env_.field_trials())) {
+    return RTC_LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                         << "Failed to create answer");
   }
 
   bool secure = bundle_transport ? bundle_transport->description.secure()
@@ -1482,7 +1526,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
       media_description_options.transport_options, current_description,
       !offer_content->rejected && bundle_transport == nullptr, ice_credentials);
   if (!data_transport) {
-    return LOG_ERROR(
+    return RTC_LOG_ERROR(
         RTCError(RTCErrorType::INTERNAL_ERROR)
         << "Failed to create transport answer, data transport is missing");
   }
@@ -1518,9 +1562,10 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
             *codec_lookup_helper_->PayloadTypeSuggester(),
             offer_description->extmap_allow_mixed()
                 ? RtpTransceiverIdDomain::kTwoByteAllowed
-                : RtpTransceiverIdDomain::kOneByteOnly)) {
-      return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                       << "Failed to create answer");
+                : RtpTransceiverIdDomain::kOneByteOnly,
+            env_.field_trials())) {
+      return RTC_LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                           << "Failed to create answer");
     }
     // Respond with sctpmap if the offer uses sctpmap.
     bool offer_uses_sctpmap = offer_data_description->use_sctpmap();
@@ -1535,8 +1580,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
           RTC_DCHECK(current_data_description);
           data_answer->as_sctp()->set_sctp_init(
               current_data_description->sctp_init());
-        }
-        if (!data_answer->as_sctp()->sctp_init().has_value()) {
+        } else {
           data_answer->as_sctp()->set_sctp_init(
               sctp_factory_->GenerateConnectionToken(env_));
         }
@@ -1580,9 +1624,9 @@ RTCError MediaSessionDescriptionFactory::AddUnsupportedContentForAnswer(
           !offer_content->rejected && bundle_transport == nullptr,
           ice_credentials);
   if (!unsupported_transport) {
-    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                     << "Failed to create transport answer, unsupported "
-                        "transport is missing");
+    return RTC_LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                         << "Failed to create transport answer, unsupported "
+                            "transport is missing");
   }
   RTC_CHECK(IsMediaContentOfType(offer_content, MediaType::UNSUPPORTED));
 

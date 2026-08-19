@@ -27,6 +27,7 @@ include_rules = [
   "-resources",
   "-rtc_base",
   "-rtc_tools",
+  "-rust",
   "-sdk",
   "-stats",
   "-style-guide",
@@ -83,6 +84,7 @@ specific_include_rules = {
   "candidate\\.h": [
     "+rtc_base/network_constants.h",
     "+rtc_base/socket_address.h",
+    "+rtc_base/ssl_fingerprint.h",
   ],
 
   "create_peerconnection_factory\\.h": [
@@ -244,9 +246,15 @@ specific_include_rules = {
     "+modules/video_coding/include/video_codec_interface.h"
   ],
 
+  "rtp_header_extension_id\\.h": [
+    "+absl/strings/str_format.h",
+    "+rtc_base/strong_alias.h"
+  ],
+
   "rtp_parameters\\.h": [
     "+absl/strings/str_format.h",
-    "+rtc_base/strings/str_join.h"
+    "+rtc_base/strings/str_join.h",
+    "+rtc_base/strong_alias.h"
   ],
 
   "sequence_checker\\.h": [
@@ -256,6 +264,10 @@ specific_include_rules = {
 
   "video_encoder_factory_template.*\\.h": [
     "+modules/video_coding",
+  ],
+
+  "video_encoder_builders\\.h": [
+    "+rtc_base/numerics",
   ],
 
   "video_encoder_factory_interface\\.h": [

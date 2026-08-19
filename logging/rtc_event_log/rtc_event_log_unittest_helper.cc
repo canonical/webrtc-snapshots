@@ -15,7 +15,6 @@
 #include <cstring>
 #include <limits>
 #include <memory>
-#include <numeric>
 #include <optional>
 #include <span>
 #include <utility>
@@ -26,6 +25,7 @@
 #include "api/candidate.h"
 #include "api/dtls_transport_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/bandwidth_usage.h"
@@ -135,8 +135,9 @@ void ShuffleInPlace(Random* prng, std::span<T> array) {
   }
 }
 
-std::optional<int> GetExtensionId(const std::vector<RtpExtension>& extensions,
-                                  absl::string_view uri) {
+std::optional<RtpHeaderExtensionId> GetExtensionId(
+    const std::vector<RtpExtension>& extensions,
+    absl::string_view uri) {
   for (const auto& extension : extensions) {
     if (extension.uri == uri)
       return extension.id;
@@ -654,10 +655,14 @@ RtpHeaderExtensionMap EventGenerator::NewRtpHeaderExtensionMap(
     bool configure_all,
     const std::vector<RTPExtensionType>& excluded_extensions) {
   RtpHeaderExtensionMap extension_map;
-  std::vector<int> id(RtpExtension::kOneByteHeaderExtensionMaxId -
-                      RtpExtension::kMinId + 1);
-  std::iota(id.begin(), id.end(), RtpExtension::kMinId);
-  ShuffleInPlace(&prng_, std::span<int>(id));
+  std::vector<RtpHeaderExtensionId> id;
+  id.reserve(RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId.value() -
+             RtpHeaderExtensionId::kMinId.value() + 1);
+  for (int i = RtpHeaderExtensionId::kMinId.value();
+       i <= RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId.value(); ++i) {
+    id.push_back(RtpHeaderExtensionId(i));
+  }
+  ShuffleInPlace(&prng_, std::span<RtpHeaderExtensionId>(id));
 
   auto not_excluded = [&](RTPExtensionType type) -> bool {
     return !absl::c_linear_search(excluded_extensions, type);
@@ -701,7 +706,7 @@ EventGenerator::NewAudioReceiveStreamConfig(
   config->local_ssrc = prng_.Rand<uint32_t>();
   // Add header extensions.
   for (size_t i = 0; i < kMaxNumExtensions; i++) {
-    uint8_t id = extensions.GetId(kExtensions[i].type);
+    RtpHeaderExtensionId id = extensions.GetId(kExtensions[i].type);
     if (id != RtpHeaderExtensionMap::kInvalidId) {
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
@@ -719,7 +724,7 @@ EventGenerator::NewAudioSendStreamConfig(
   config->local_ssrc = ssrc;
   // Add header extensions.
   for (size_t i = 0; i < kMaxNumExtensions; i++) {
-    uint8_t id = extensions.GetId(kExtensions[i].type);
+    RtpHeaderExtensionId id = extensions.GetId(kExtensions[i].type);
     if (id != RtpHeaderExtensionMap::kInvalidId) {
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
@@ -745,7 +750,7 @@ EventGenerator::NewVideoReceiveStreamConfig(
                               prng_.Rand(127), prng_.Rand(127));
   // Add header extensions.
   for (size_t i = 0; i < kMaxNumExtensions; i++) {
-    uint8_t id = extensions.GetId(kExtensions[i].type);
+    RtpHeaderExtensionId id = extensions.GetId(kExtensions[i].type);
     if (id != RtpHeaderExtensionMap::kInvalidId) {
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
@@ -765,7 +770,7 @@ EventGenerator::NewVideoSendStreamConfig(
   config->rtx_ssrc = prng_.Rand<uint32_t>();
   // Add header extensions.
   for (size_t i = 0; i < kMaxNumExtensions; i++) {
-    uint8_t id = extensions.GetId(kExtensions[i].type);
+    RtpHeaderExtensionId id = extensions.GetId(kExtensions[i].type);
     if (id != RtpHeaderExtensionMap::kInvalidId) {
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
@@ -1365,7 +1370,8 @@ void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
         GetExtensionId(logged_config.rtp_extensions, kExtensions[i].name);
     EXPECT_EQ(original_id, logged_id)
         << "IDs for " << kExtensions[i].name << " don't match. Original ID "
-        << original_id.value_or(-1) << ". Parsed ID " << logged_id.value_or(-1)
+        << original_id.value_or(RtpHeaderExtensionId::NotSet())
+        << ". Parsed ID " << logged_id.value_or(RtpHeaderExtensionId::NotSet())
         << ".";
     if (original_id) {
       recognized_extensions++;

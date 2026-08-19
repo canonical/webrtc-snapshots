@@ -43,12 +43,15 @@ namespace webrtc {
 // A Call represents a two-way connection carrying zero or more outgoing
 // and incoming media streams, transported over one or more RTP transports.
 
+// Creation of Call is thread-agnostic (can be done on any thread), but it must
+// be destroyed on the worker thread.
+
 // A Call instance can contain several send and/or receive streams. All streams
 // are assumed to have the same remote endpoint and will share bitrate estimates
 // etc.
 
-// When using the PeerConnection API, there is an one to one relationship
-// between the PeerConnection and the Call.
+// When using the PeerConnection API, there is a one-to-one relationship
+// between the PeerConnection and a Call object.
 
 class Call {
  public:
@@ -131,9 +134,6 @@ class Call {
   virtual void SignalChannelNetworkState(MediaType media,
                                          NetworkState state) = 0;
 
-  virtual void OnAudioTransportOverheadChanged(
-      int transport_overhead_per_packet) = 0;
-
   virtual void OnUpdateSyncGroup(AudioReceiveStreamInterface& stream,
                                  absl::string_view sync_group) = 0;
 
@@ -147,6 +147,8 @@ class Call {
       RtcpFeedbackType preferred_rtcp_cc_ack_type) = 0;
   virtual std::optional<int> FeedbackAccordingToRfc8888Count() = 0;
   virtual std::optional<int> FeedbackAccordingToTransportCcCount() = 0;
+
+  virtual void DisconnectFromNetworkThread() = 0;
 
   virtual TaskQueueBase* network_thread() const = 0;
   virtual TaskQueueBase* worker_thread() const = 0;

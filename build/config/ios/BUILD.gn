@@ -158,8 +158,11 @@ config("ios_executable_flags") {
   if (xcode_version_int >= 2600) {
     framework_dirs = [ "$ios_sdk_path/System/Library/SubFrameworks" ]
   }
-  if (xcode_version_int >= 2640) {
-    ldflags += [ "-Wl,--ignore-auto-link-option,UIUtilities" ]
+  if (xcode_version_int >= 2640 && use_lld) {
+    ldflags += [
+      "-Wl,--ignore-auto-link-option,UIUtilities",
+      "-Wl,--ignore-auto-link-option,CoreAudioTypes",
+    ]
   }
 }
 
@@ -183,8 +186,11 @@ config("ios_extension_executable_flags") {
   if (xcode_version_int >= 2600) {
     framework_dirs = [ "$ios_sdk_path/System/Library/SubFrameworks" ]
   }
-  if (xcode_version_int >= 2640) {
-    ldflags += [ "-Wl,--ignore-auto-link-option,UIUtilities" ]
+  if (xcode_version_int >= 2640 && use_lld) {
+    ldflags += [
+      "-Wl,--ignore-auto-link-option,UIUtilities",
+      "-Wl,--ignore-auto-link-option,CoreAudioTypes",
+    ]
   }
 }
 
@@ -243,8 +249,11 @@ config("ios_shared_library_flags") {
   if (xcode_version_int >= 2600) {
     framework_dirs = [ "$ios_sdk_path/System/Library/SubFrameworks" ]
   }
-  if (xcode_version_int >= 2640) {
-    ldflags += [ "-Wl,--ignore-auto-link-option,UIUtilities" ]
+  if (xcode_version_int >= 2640 && use_lld) {
+    ldflags += [
+      "-Wl,--ignore-auto-link-option,UIUtilities",
+      "-Wl,--ignore-auto-link-option,CoreAudioTypes",
+    ]
   }
 }
 
@@ -275,10 +284,13 @@ config("xctest_config") {
     framework_dirs = [ "$ios_sdk_path/System/Library/SubFrameworks" ]
   }
   if (xcode_version_int >= 2640) {
-    ldflags += [
-      "-Wl,--ignore-auto-link-option,UIUtilities",
-      "-Wl,-needed-lXCTestSwiftSupport,-lXCTestSwiftSupport",
-    ]
+    if (use_lld) {
+      ldflags += [
+        "-Wl,--ignore-auto-link-option,UIUtilities",
+        "-Wl,--ignore-auto-link-option,CoreAudioTypes",
+      ]
+    }
+    ldflags += [ "-Wl,-needed-lXCTestSwiftSupport,-lXCTestSwiftSupport" ]
   }
 }
 
@@ -296,8 +308,8 @@ if (enable_swift_cxx_interop) {
     ]
 
     # TODO(crbug.com/451945291): Move the following compiler flags to
-    # build/config/compiler/BUILD.gn when Swift/C++ interop is enabled by default.
-    # The '-std=c++' flag is not allowed with 'Objective-C'.
+    # build/config/compiler/BUILD.gn when Swift/C++ interop is enabled by
+    # default. The '-std=c++' flag is not allowed with 'Objective-C'.
     if (use_cxx23) {
       swiftflags += [ "-Xcc=-std=c++23" ]
     } else {

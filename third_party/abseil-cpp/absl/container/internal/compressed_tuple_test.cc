@@ -302,14 +302,14 @@ TEST(CompressedTupleTest, Nested) {
   EXPECT_EQ(4 * sizeof(char),
             sizeof(CompressedTuple<CompressedTuple<char, char>,
                                    CompressedTuple<char, char>>));
-  EXPECT_TRUE((std::is_empty<CompressedTuple<Empty<0>, Empty<1>>>::value));
+  EXPECT_TRUE((std::is_empty_v<CompressedTuple<Empty<0>, Empty<1>>>));
 
   // Make sure everything still works when things are nested.
   struct CT_Empty : CompressedTuple<Empty<0>> {};
   CompressedTuple<Empty<0>, CT_Empty> nested_empty;
   auto contained = nested_empty.get<0>();
   auto nested = nested_empty.get<1>().get<0>();
-  EXPECT_TRUE((std::is_same<decltype(contained), decltype(nested)>::value));
+  EXPECT_TRUE((std::is_same_v<decltype(contained), decltype(nested)>));
 }
 
 TEST(CompressedTupleTest, Reference) {
@@ -332,16 +332,16 @@ TEST(CompressedTupleTest, Reference) {
 TEST(CompressedTupleTest, NoElements) {
   CompressedTuple<> x;
   static_cast<void>(x);  // Silence -Wunused-variable.
-  EXPECT_TRUE(std::is_empty<CompressedTuple<>>::value);
+  EXPECT_TRUE(std::is_empty_v<CompressedTuple<>>);
 }
 
 TEST(CompressedTupleTest, MoveOnlyElements) {
   CompressedTuple<std::unique_ptr<std::string>> str_tup(
-      absl::make_unique<std::string>("str"));
+      std::make_unique<std::string>("str"));
 
   CompressedTuple<CompressedTuple<std::unique_ptr<std::string>>,
                   std::unique_ptr<int>>
-  x(std::move(str_tup), absl::make_unique<int>(5));
+      x(std::move(str_tup), std::make_unique<int>(5));
 
   EXPECT_EQ(*x.get<0>().get<0>(), "str");
   EXPECT_EQ(*x.get<1>(), 5);
@@ -355,7 +355,7 @@ TEST(CompressedTupleTest, MoveOnlyElements) {
 
 TEST(CompressedTupleTest, MoveConstructionMoveOnlyElements) {
   CompressedTuple<std::unique_ptr<std::string>> base(
-      absl::make_unique<std::string>("str"));
+      std::make_unique<std::string>("str"));
   EXPECT_EQ(*base.get<0>(), "str");
 
   CompressedTuple<std::unique_ptr<std::string>> copy(std::move(base));

@@ -264,12 +264,12 @@ def AddCommonOptions(parser):
       action='store_true',
       help='Use a non-persistent shell connection for the adb connection.')
 
-  # This is currently only implemented for gtests and instrumentation tests.
-  parser.add_argument(
-      '--gtest_also_run_disabled_tests', '--gtest-also-run-disabled-tests',
-      '--isolated-script-test-also-run-disabled-tests',
-      dest='run_disabled', action='store_true',
-      help='Also run disabled tests if applicable.')
+  parser.add_argument('--run-disabled',
+                      '--gtest_also_run_disabled_tests',
+                      '--gtest-also-run-disabled-tests',
+                      '--isolated-script-test-also-run-disabled-tests',
+                      action='store_true',
+                      help='Also run disabled tests if applicable.')
 
   # These are currently only implemented for gtests.
   parser.add_argument('--isolated-script-test-output',
@@ -579,6 +579,11 @@ def AddInstrumentationTestOptions(parser):
       dest='additional_locales',
       help='Specify locales in addition to the device locale to install splits '
       'for when --apk-under-test is an Android App Bundle.')
+  parser.add_argument('--device-data-filter',
+                      action='append',
+                      dest='device_data_filters',
+                      default=[],
+                      help='Device data filter (e.g. +//chrome/test/data/*)')
   parser.add_argument(
       '--coverage-dir',
       type=os.path.realpath,
@@ -1109,7 +1114,11 @@ def _CreateStructuredTestDict(test_instance, test_result):
     # The proto requires a list.
     struct_test_dict['caseNameComponents'] = [re_match.group(3)]
   elif test_instance.TestType() == 'gtest':
-    found_match = False
+    suite = None
+    name = None
+    instantiation = None
+    case_id = None
+
     # Attempt to parse gtests based on:
     #     infra/go/src/infra/tools/result_adapter/gtest.go
     # Type-parameterised test (e.g. MyInstantiation/FooTest/MyType.DoesBar)
@@ -1119,24 +1128,41 @@ def _CreateStructuredTestDict(test_instance, test_result):
       name = re_match.group(5)
       instantiation = re_match.group(2)
       case_id = re_match.group(4)
-      found_match = True
 
     # Value-parameterised test (e.g. MyInstantiation/FooTest.DoesBar/TestValue)
-    re_match = re.search(r'^((\w+)/)?(\w+)\.(\w+)/(\w+)$', test_id)
-    if not found_match and re_match:
-      suite = re_match.group(3)
-      name = re_match.group(4)
-      instantiation = re_match.group(2)
-      case_id = re_match.group(5)
-      found_match = True
+    if not suite:
+      re_match = re.search(r'^((\w+)/)?(\w+)\.(\w+)/(\w+)$', test_id)
+      if re_match:
+        suite = re_match.group(3)
+        name = re_match.group(4)
+        instantiation = re_match.group(2)
+        case_id = re_match.group(5)
 
     # Neither type nor value-parameterised (e.g. FooTest.DoesBar)
-    re_match = re.search(r'^(\w+)\.(\w+)$', test_id)
-    if not found_match and re_match:
-      suite = re_match.group(1)
-      name = re_match.group(2)
-      instantiation = ""
-      case_id = ""
+    if not suite:
+      re_match = re.search(r'^(\w+)\.(\w+)$', test_id)
+      if re_match:
+        suite = re_match.group(1)
+        name = re_match.group(2)
+        instantiation = ''
+        case_id = ''
+
+    # Synthetic tests
+    # (e.g. GoogleTestVerification.UninstantiatedParameterizedTestSuite<Foo>)
+    if not suite:
+      re_match = re.search(
+          r'^GoogleTestVerification\.'
+          r'Uninstantiated(?:Type)?ParameterizedTestSuite<(\w+)>$', test_id)
+      if re_match:
+        suite = 'GoogleTestVerification'
+        name = test_id[len('GoogleTestVerification.'):]
+        instantiation = ''
+        case_id = ''
+
+    # Fail loudly so unparsable tests can be caught
+    if not suite:
+      raise ValueError(f'Test id {test_id} did not match known format, '
+                       'so could not be parsed.')
 
     # Some android gtests are incompatible with the upload scheme on other
     # test runners.
@@ -1388,8 +1414,16 @@ def RunTestsInPlatformMode(args, result_sink_client=None):
       data_deps = test_run.GetDataDepsForListing()
 
     print('There are {} data files:'.format(len(data_deps)))
-    for d in data_deps:
-      print(d)
+    total_bytes = 0
+    for h, d in data_deps:
+      size = 0
+      try:
+        size = os.path.getsize(h)
+        total_bytes += size
+      except OSError as e:
+        sys.stderr.write(f'Warning: could not get size for {h}: {e}\n')
+      print(f'{size} {d} <- {os.path.relpath(h)}')
+    print('Total: {} files, {} bytes'.format(len(data_deps), total_bytes))
     return 0
 
   ### Run.

@@ -22,6 +22,18 @@ chromium-metrics-reviews@google.com.
 
 <histograms>
 
+<!-- LINT.IfChange(BrowserProfileType) -->
+
+<variants name="BrowserProfileType">
+  <variant name="Guest"/>
+  <variant name="Incognito"/>
+  <variant name="OtherOffTheRecordProfile"/>
+  <variant name="Regular"/>
+  <variant name="System"/>
+</variants>
+
+<!-- LINT.ThenChange(//components/profile_metrics/browser_profile_type.h:BrowserProfileType) -->
+
 <!-- LINT.IfChange(ProfileActivityThreshold) -->
 
 <variants name="ProfileActivityThreshold">
@@ -74,13 +86,13 @@ chromium-metrics-reviews@google.com.
 <!-- LINT.ThenChange(//components/profile_metrics/state.h:StateSuffix) -->
 
 <histogram name="Profile.AddNewUser" enum="ProfileAddNewUser"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>rogerta@chromium.org</owner>
   <summary>The frequency of ways that new user profiles are added.</summary>
 </histogram>
 
 <histogram name="Profile.AddSignInFlowOutcome"
-    enum="ProfileSignedInFlowOutcome" expires_after="2026-08-16">
+    enum="ProfileSignedInFlowOutcome" expires_after="2026-12-20">
   <owner>rsult@google.com</owner>
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -97,20 +109,20 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.Avatar" enum="ProfileAvatar"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>The frequency of selection of each avatar.</summary>
 </histogram>
 
-<histogram name="Profile.BookmarksSize" units="MB" expires_after="2026-09-06">
+<histogram name="Profile.BookmarksSize" units="MB" expires_after="2026-11-15">
   <owner>etienneb@chromium.org</owner>
   <owner>gab@chromium.org</owner>
   <summary>Size of the bookmarks database.</summary>
 </histogram>
 
 <histogram name="Profile.BrowserActive.PerProfile" enum="Profile"
-    expires_after="2026-09-20">
+    expires_after="2026-11-22">
   <owner>msarda@chromium.org</owner>
   <owner>tangltom@chromium.org</owner>
   <summary>
@@ -147,7 +159,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.DeleteProfileContext" enum="ProfileDeleteContext"
-    expires_after="2026-08-09">
+    expires_after="2026-12-27">
   <owner>alexilin@chromium.org</owner>
   <owner>droger@chromium.org</owner>
   <owner>msalama@chromium.org</owner>
@@ -159,7 +171,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.Destroyer.OffTheRecord" enum="ProfileDestructionType"
-    expires_after="2026-09-13">
+    expires_after="2026-11-15">
   <owner>arabm@google.com</owner>
   <owner>dullweber@chromium.org</owner>
   <owner>chrome-incognito@google.com</owner>
@@ -167,16 +179,6 @@ chromium-metrics-reviews@google.com.
     Track if the off-the-record profile was immidiately destroyed when asked to
     be destroyed, or was scheduled for a delayed destruction, and possibly was
     not destroyed properly after the delay and was crashed.
-  </summary>
-</histogram>
-
-<histogram name="Profile.DiceUI.GaiaAccountsStale" enum="BooleanStale"
-    expires_after="M80">
-  <owner>msarda@chromium.org</owner>
-  <owner>tangltom@chromium.org</owner>
-  <summary>
-    This histogram tracks whether the accounts cached in the GAIA cookie service
-    manager are stale when presenting the user menu when DICE is enabled.
   </summary>
 </histogram>
 
@@ -193,37 +195,8 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Profile.GaiaNameShareStatus" enum="ProfileGaiaNameShareStatus"
-    expires_after="2026-04-26">
-  <owner>droger@google.com</owner>
-  <owner>chrome-signin-team@google.com</owner>
-  <summary>
-    For all Gaia first names used as primary account in all profiles, records
-    whether this name is unique or if there are multiple profiles sharing the
-    same first name. Empty names are not considered. Profiles that are not
-    signed in are ignored.
-
-    For example, if two profiles use the name &quot;A&quot; and one profile uses
-    the name &quot;B&quot;, the histogram is recorded twice (once for
-    &quot;A&quot; and once for &quot;B&quot;).
-
-    On non-iOS platforms, this histogram is emitted on startup if it has been
-    more than 24 hours since the last time the histogram was emitted. It is also
-    emitted while Chrome is running when Chrome realizes that it has been 24
-    hours since the last time the histogram was emitted. (This normally happens
-    24 hours after the last emit, but may be longer if the device was asleep /
-    suspended at the time. If so, it will be emitted when the device wakes up.)
-    One consequence of this 24 hour timer is that a user may use Chrome in a day
-    and not emit this histogram. For example, if a user used Chrome the previous
-    day at 5pm and a histogram was emitted then, then used Chrome on this day at
-    10am, then closed Chrome, this histogram will not be emitted on this day.
-
-    On iOS, this histogram is not emitted.
-  </summary>
-</histogram>
-
 <histogram name="Profile.Guest.ForcedByPolicy" enum="BooleanForced"
-    expires_after="2026-08-30">
+    expires_after="2027-01-03">
   <owner>duellweber@chromium.org</owner>
   <owner>arabm@google.com</owner>
   <owner>chrome-incognito@google.com</owner>
@@ -234,7 +207,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.Guest.OTR.Lifetime" units="minutes"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>arabm@google.com</owner>
   <owner>chrome-incognito@google.com</owner>
   <summary>
@@ -244,7 +217,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.Incognito.Lifetime" units="minutes"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>rhalavati@chromium.org</owner>
   <owner>chrome-incognito@google.com</owner>
   <summary>
@@ -256,7 +229,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.Incognito.MainFrameNavigationsPerSession"
-    units="navigations" expires_after="2026-09-06">
+    units="navigations" expires_after="2026-11-08">
   <owner>rhalavati@chromium.org</owner>
   <owner>chrome-incognito@google.com</owner>
   <summary>
@@ -268,7 +241,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.Incognito.MovedToBackgroundAfterDuration"
-    units="minutes" expires_after="2026-09-06">
+    units="minutes" expires_after="2026-11-15">
   <owner>arabm@google.com</owner>
   <owner>chrome-incognito@google.com</owner>
   <summary>
@@ -312,7 +285,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.LiveProfileCount" units="profiles"
-    expires_after="2026-07-01">
+    expires_after="2026-12-27">
   <owner>nicolaso@chromium.org</owner>
   <owner>cbe-eng@google.com</owner>
   <summary>
@@ -347,7 +320,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NetUserCount" enum="ProfileNetUserCount"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>rogerta@chromium.org</owner>
   <summary>
     Counts of users added and deleted. Percentages are not meaningful. Please
@@ -373,7 +346,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfAccountsPerProfile" units="units"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>msarda@chromium.org</owner>
   <owner>droger@chromium.org</owner>
   <summary>
@@ -384,7 +357,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfActiveProfiles{ProfileActivityThreshold}"
-    units="profiles" expires_after="2026-07-26">
+    units="profiles" expires_after="2026-11-29">
   <owner>droger@chromium.org</owner>
   <owner>feuunk@chromium.org</owner>
   <summary>
@@ -427,7 +400,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfManagedProfiles{ProfileActivityThreshold}"
-    units="profiles" expires_after="2026-07-26">
+    units="profiles" expires_after="2026-11-29">
   <owner>agawronska@chromium.org</owner>
   <owner>cros-families-eng@google.com</owner>
   <summary>
@@ -463,7 +436,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfProfiles" units="profiles"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -498,7 +471,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfProfilesAtProfileInit" units="profiles"
-    expires_after="2026-09-13">
+    expires_after="2026-11-15">
   <owner>alexilin@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -512,7 +485,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfProfilesAtProfileSwitch" units="profiles"
-    expires_after="2026-09-13">
+    expires_after="2026-11-15">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -524,7 +497,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfSignedInProfiles{ProfileActivityThreshold}"
-    units="profiles" expires_after="2026-09-06">
+    units="profiles" expires_after="2026-11-29">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -554,7 +527,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.NumberOfUnusedProfiles{ProfileActivityThreshold}"
-    units="profiles" expires_after="2026-08-16">
+    units="profiles" expires_after="2027-01-03">
   <owner>msarda@chromium.org</owner>
   <owner>droger@chromium.org</owner>
   <summary>
@@ -621,7 +594,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.ProfileError2" enum="ProfileErrorType"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>etienneb@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -642,7 +615,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.SessionDuration.PerProfile" enum="Profile"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>msarda@chromium.org</owner>
   <owner>alexilin@chromium.org</owner>
   <summary>
@@ -664,7 +637,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.State.LastUsed{ProfileStateGroup}" units="days"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -675,7 +648,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Profile.State.SyncEnabled{ProfileStateGroup}"
-    enum="BooleanEnabled" expires_after="2026-09-06">
+    enum="BooleanEnabled" expires_after="2026-11-29">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -686,7 +659,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Profile.State.UnconsentedPrimaryAccountType{ProfileStateGroup}"
-    enum="ProfileUnconsentedPrimaryAccountType" expires_after="2026-07-26">
+    enum="ProfileUnconsentedPrimaryAccountType" expires_after="2026-11-29">
   <owner>droger@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -696,14 +669,14 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Profile.TotalSize" units="MB" expires_after="2026-09-06">
+<histogram name="Profile.TotalSize" units="MB" expires_after="2026-11-15">
   <owner>etienneb@chromium.org</owner>
   <owner>gab@chromium.org</owner>
   <summary>Total size of the profile data (excluding sub-folders).</summary>
 </histogram>
 
 <histogram name="Profile.TotalSizeRecursive" units="MB"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>anthonyvd@chromium.org</owner>
   <owner>chrome-catan@google.com</owner>
   <summary>
@@ -743,8 +716,55 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Profile.Windows.ProfileLockStatus.{BrowserProfileType}"
+    enum="ProfileLockStatus" expires_after="2027-03-13">
+  <owner>spvm@chromium.org</owner>
+  <owner>catan-team@chromium.org</owner>
+  <summary>
+    Records the status of the creation/acquiry of the Profile.lock file on
+    Windows in a {BrowserProfileType} profile. Specifically whether it was
+    locked by another process or if the previous session crashed. Recorded once
+    per profile load.
+  </summary>
+</histogram>
+
+<histogram
+    name="Profile.Windows.ProfilePreviousExitStatus.{BrowserProfileType}"
+    enum="ProfilePreviousExitStatus" expires_after="2027-03-13">
+  <owner>spvm@chromium.org</owner>
+  <owner>catan-team@chromium.org</owner>
+  <summary>
+    Records the status of the previous exit of the profile load for a
+    {BrowserProfileType} profile on Windows. Specifically, whether there was a
+    crash, and whether there was an unacked crash bubble present. Recorded once
+    per profile load only if Profile.lock was successfully acquired and both
+    Profile.waiting_for_crash_ack and Profile.crashed were successfully created.
+  </summary>
+</histogram>
+
+<histogram name="Profile.Windows.{Operation}{File}Result.{BrowserProfileType}"
+    enum="WinGetLastError" expires_after="2027-03-13">
+  <owner>spvm@chromium.org</owner>
+  <owner>catan-team@chromium.org</owner>
+  <summary>
+    Records the Windows error code following the {Operation} call on the
+    `Profile.{File}` file in a {BrowserProfileType} profile, which may otherwise
+    corrupt subsequent data reporting of Profile.Windows.LoadStatus given that
+    the marker files were left around.
+  </summary>
+  <token key="Operation">
+    <variant name="Create" summary="base::File::File()"/>
+    <variant name="Delete" summary="base::DeleteFile()"/>
+  </token>
+  <token key="File">
+    <variant name="CrashAck" summary="waiting_for_crash_ack"/>
+    <variant name="Dirty" summary="dirty"/>
+    <variant name="Lock" summary="lock"/>
+  </token>
+</histogram>
+
 <histogram name="Profile.ZombieProfileCount" units="profiles"
-    expires_after="2026-08-30">
+    expires_after="2026-11-01">
   <owner>nicolaso@chromium.org</owner>
   <owner>cbe-eng@google.com</owner>
   <summary>
@@ -768,7 +788,7 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Profile.{Database}Size" units="MB" expires_after="2026-08-23">
+<histogram name="Profile.{Database}Size" units="MB" expires_after="2027-01-03">
   <owner>etienneb@chromium.org</owner>
   <owner>gab@chromium.org</owner>
   <summary>
@@ -790,9 +810,9 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfileChooser.HasProfilesShown" enum="BooleanShown"
-    expires_after="2026-08-09">
-  <owner>vasilii@chromium.org</owner>
-  <owner>ewald@chromium.org</owner>
+    expires_after="2026-10-11">
+  <owner>droger@chromium.org</owner>
+  <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
     Whether any profile was shown in the list when the profile chooser was
     opened.
@@ -822,7 +842,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.FirstProfileTime.FirstWebContentsFinishReason"
-    enum="StartupProfilingFinishReason" expires_after="2026-09-07">
+    enum="StartupProfilingFinishReason" expires_after="2026-11-15">
   <owner>dgn@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -836,7 +856,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.FirstProfileTime.FirstWebContentsNonEmptyPaint"
-    units="ms" expires_after="2026-09-20">
+    units="ms" expires_after="2026-11-22">
   <owner>dgn@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -852,8 +872,19 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram
+    name="ProfilePicker.FirstProfileTime.FirstWebContentsNonEmptyPaint.AutoLaunchByOs"
+    units="ms" expires_after="2026-12-27">
+  <owner>atharvmaan@google.com</owner>
+  <owner>chrome-desktop-ui-waterloo@google.com</owner>
+  <summary>
+    Same as ProfilePicker.FirstProfileTime.FirstWebContentsNonEmptyPaint, but
+    recorded only for browser launches initiated automatically by the OS.
+  </summary>
+</histogram>
+
 <histogram name="ProfilePicker.FirstRun.DefaultBrowser"
-    enum="FirstRunDefaultBrowserChoice" expires_after="2026-09-20">
+    enum="FirstRunDefaultBrowserChoice" expires_after="2026-11-22">
   <owner>dgn@chromium.org</owner>
   <owner>for-you-fre@google.com</owner>
   <summary>
@@ -863,7 +894,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.FirstRun.ExitStatus" enum="FirstRunExitStatus"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>dgn@chromium.org</owner>
   <owner>for-you-fre@google.com</owner>
   <summary>
@@ -874,7 +905,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.FirstRun.FinishReason"
-    enum="FirstRunFinishReason" expires_after="2026-09-20">
+    enum="FirstRunFinishReason" expires_after="2026-11-22">
   <owner>dgn@chromium.org</owner>
   <owner>for-you-fre@google.com</owner>
   <summary>
@@ -912,7 +943,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.FirstRun.ServiceCreated" enum="BooleanCreated"
-    expires_after="2026-07-19">
+    expires_after="2026-11-15">
   <owner>dgn@chromium.org</owner>
   <owner>for-you-fre@google.com</owner>
   <summary>
@@ -924,13 +955,91 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="ProfilePicker.OpenAllProfilesButtonAction"
-    enum="ProfilePickerOpenAllProfilesButtonAction" expires_after="2026-09-20">
+<histogram name="ProfilePicker.FREFlow.FeatureShowcase.StartBrowsing"
+    enum="FeatureShowcaseStep" expires_after="2026-12-31">
+  <owner>ernn@google.com</owner>
   <owner>kbajkiewicz@google.com</owner>
-  <owner>chrome-signin-team@google.com</owner>
+  <owner>chrome-signin-desktop-team@google.com</owner>
   <summary>
-    Recorded for actions with Open All Profiles button for Profile Experiments.
+    Records the Feature Showcase step the user was looking at when they clicked
+    the 'Start Browsing' button.
   </summary>
+</histogram>
+
+<histogram name="ProfilePicker.FREFlow.FeatureShowcase.StepEligible"
+    enum="FeatureShowcaseStep" expires_after="2026-12-31">
+  <owner>ernn@google.com</owner>
+  <owner>kbajkiewicz@google.com</owner>
+  <owner>chrome-signin-desktop-team@google.com</owner>
+  <summary>
+    Records the Feature Showcase step when it is eligible to be shown to the
+    user during the first run experience. Recorded when the user first enter the
+    Feature Showcase step. Records each step the user is eligible for.
+  </summary>
+</histogram>
+
+<histogram name="ProfilePicker.FREFlow.FeatureShowcase.StepShown"
+    enum="FeatureShowcaseStep" expires_after="2026-12-31">
+  <owner>ernn@google.com</owner>
+  <owner>kbajkiewicz@google.com</owner>
+  <owner>chrome-signin-desktop-team@google.com</owner>
+  <summary>
+    Records the Feature Showcase step when it is shown to the user during the
+    first run experience. Recorded every time a step is shown.
+  </summary>
+</histogram>
+
+<histogram
+    name="ProfilePicker.FREFlow.FeatureShowcase.StepUserAction.{FeatureShowcaseStep}"
+    enum="FeatureShowcaseStepUserAction" expires_after="2026-12-31">
+  <owner>ernn@google.com</owner>
+  <owner>kbajkiewicz@google.com</owner>
+  <owner>chrome-signin-desktop-team@google.com</owner>
+  <summary>
+    Records the action taken by the user on the {FeatureShowcaseStep} step in
+    the First Run Experience Feature Showcase. Recorded when the step is
+    completed.
+  </summary>
+<!-- LINT.IfChange(FeatureShowcaseStepSuffix) -->
+
+  <token key="FeatureShowcaseStep">
+    <variant name="DefaultBrowser" summary="Default Browser"/>
+    <variant name="GoogleLens" summary="Google Lens"/>
+    <variant name="PasswordManager" summary="Password Manager"/>
+    <variant name="ThemesAndCustomization" summary="Themes and Customization"/>
+  </token>
+<!-- LINT.ThenChange(//chrome/browser/ui/views/profiles/feature_showcase/feature_showcase_metrics.cc:FeatureShowcaseStepSuffix) -->
+
+</histogram>
+
+<histogram
+    name="ProfilePicker.FREFlow.FeatureShowcase.ThemesAndCustomization.ThemeChanged"
+    enum="Boolean" expires_after="2026-12-31">
+  <owner>ernn@google.com</owner>
+  <owner>kbajkiewicz@google.com</owner>
+  <owner>chrome-signin-desktop-team@google.com</owner>
+  <summary>
+    Records when the user changes the theme or color scheme mode on the Themes
+    and Customization step of the First Run Experience Feature Showcase.
+    Recorded the first (and only) time a user interacts with the color picker on
+    the Themes and Customization step.
+  </summary>
+</histogram>
+
+<histogram name="ProfilePicker.FREFlow.MediaEffects.{Action}"
+    enum="ProfileManagementFlowStep" expires_after="2026-12-31">
+  <owner>ernn@google.com</owner>
+  <owner>kbajkiewicz@google.com</owner>
+  <owner>chrome-signin-desktop-team@google.com</owner>
+  <summary>
+    Records the step every time the user clicks on the media effects action
+    button in the First Run Experience flow to {Action} media effects, i.e.
+    sound and animations (if applicable).
+  </summary>
+  <token key="Action">
+    <variant name="Disable" summary="disable"/>
+    <variant name="Enable" summary="enable"/>
+  </token>
 </histogram>
 
 <histogram name="ProfilePicker.ReauthResult" enum="ProfilePickerReauthResult"
@@ -944,7 +1053,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.Shown" enum="ProfilePickerEntryPoint"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>msalama@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -966,7 +1075,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.StartupTime.BeforeCreation" units="ms"
-    expires_after="2026-09-13">
+    expires_after="2026-11-15">
   <owner>rsult@google.com</owner>
   <owner>dgn@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -981,7 +1090,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.StartupTime.FirstPaint" units="ms"
-    expires_after="2026-07-26">
+    expires_after="2026-11-29">
   <owner>rsult@google.com</owner>
   <owner>dgn@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -993,7 +1102,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ProfilePicker.StartupTime.FirstPaint.FromApplicationStart{StartupTemperatureSuffix}"
-    units="ms" expires_after="2026-07-26">
+    units="ms" expires_after="2026-11-29">
   <owner>alexilin@chromium.org</owner>
   <owner>dgn@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -1030,7 +1139,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.UserAction" enum="ProfilePickerAction"
-    expires_after="2026-09-06">
+    expires_after="2026-11-15">
   <owner>msalama@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -1039,7 +1148,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.{ProfilePickerFlowType}.FlowEndedAtStep"
-    enum="ProfileManagementFlowStep" expires_after="2026-08-30">
+    enum="ProfileManagementFlowStep" expires_after="2026-11-29">
   <owner>rsult@google.com</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -1051,7 +1160,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.{ProfilePickerFlowType}.FlowTotalDuration"
-    units="ms" expires_after="2026-08-30">
+    units="ms" expires_after="2026-11-29">
   <owner>rsult@google.com</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -1063,7 +1172,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.{ProfilePickerFlowType}.SignInError"
-    enum="SigninUIErrorType" expires_after="2026-08-01">
+    enum="SigninUIErrorType" expires_after="2026-12-06">
   <owner>anthie@google.com</owner>
   <owner>rsult@google.com</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -1075,7 +1184,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ProfilePicker.{ProfilePickerFlowType}.{StepFlowDuration}{StepName}"
-    units="ms" expires_after="2026-08-30">
+    units="ms" expires_after="2026-11-29">
   <owner>rsult@google.com</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -1089,7 +1198,9 @@ chromium-metrics-reviews@google.com.
 
     <variant name="" summary="a single step"/>
     <variant name=".DefaultBrowser" summary="the default browser promo step"/>
+    <variant name=".FeatureShowcase" summary="the feature showcase step"/>
     <variant name=".FinishFlow" summary="the Finish flow step"/>
+    <variant name=".FinishOrContinue" summary="the finish or continue step"/>
     <variant name=".FinishSamlFlow" summary="the Finish SAML flow step"/>
     <variant name=".FREIntro" summary="the FRE main page step"/>
     <variant name=".PickerMainApp" summary="the profile picker main page step"/>
@@ -1114,7 +1225,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ProfilePicker.{ProfilePickerFlowType}.{StepStatus}"
-    enum="ProfileManagementFlowStep" expires_after="2026-08-30">
+    enum="ProfileManagementFlowStep" expires_after="2026-11-29">
   <owner>rsult@google.com</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>

@@ -915,7 +915,6 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession* /* session */,
   // if one is pending.
 
   port->SetIceRole(ice_role_);
-  port->SetIceTiebreaker(allocator_->ice_tiebreaker());
   ports_.push_back(port);
   port->SubscribeUnknownAddress(
       this, [this](PortInterface* port, const SocketAddress& address,
@@ -1645,7 +1644,8 @@ int P2PTransportChannel::SendPacket(const char* data,
   last_sent_packet_id_ = options.packet_id;
   AsyncSocketPacketOptions modified_options(options);
   modified_options.info_signaled_after_sent.packet_type = PacketType::kData;
-  int sent = selected_connection_->Send(data, len, modified_options);
+  int sent = selected_connection_->Send(
+      std::span(reinterpret_cast<const uint8_t*>(data), len), modified_options);
   if (sent <= 0) {
     RTC_DCHECK(sent < 0);
     error_ = selected_connection_->GetError();

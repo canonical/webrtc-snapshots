@@ -91,7 +91,7 @@ std::unique_ptr<Call> CreateCall(
     CallClientConfig config,
     LoggingNetworkControllerFactory* network_controller_factory,
     scoped_refptr<AudioState> audio_state) {
-  CallConfig call_config(env);
+  CallConfig call_config = CallConfig::CreateSingleThreaded(env);
   call_config.bitrate_config.max_bitrate_bps =
       config.transport.rates.max_rate.bps_or(-1);
   call_config.bitrate_config.min_bitrate_bps =
@@ -271,7 +271,7 @@ CallClient::~CallClient() {
 ColumnPrinter CallClient::StatsPrinter() {
   return ColumnPrinter::Lambda(
       "pacer_delay call_send_bw",
-      [this](SimpleStringBuilder& sb) {
+      [this](StringBuilder& sb) {
         Call::Stats call_stats = call_->GetStats();
         sb.AppendFormat("%.3lf %.0lf", call_stats.pacer_delay_ms / 1000.0,
                         call_stats.send_bandwidth_bps / 8.0);

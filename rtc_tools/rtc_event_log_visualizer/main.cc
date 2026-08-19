@@ -124,6 +124,14 @@ ABSL_FLAG(int,
           10,
           "How often (in ms) a data point is generated in bitrate plots.");
 
+ABSL_FLAG(
+    bool,
+    include_overhead,
+    true,
+    "Include estimated network-level protocol (IP/UDP/SRTP/STUN) overhead "
+    "in the total incoming and outgoing bitrate graphs. This flag only "
+    "affects incoming_bitrate and outgoing_bitrate graphs.");
+
 namespace {
 std::vector<std::string> StrSplit(const std::string& s,
                                   const std::string& delimiter) {
@@ -217,7 +225,8 @@ int main(int argc, char* argv[]) {
   webrtc::EventLogAnalyzer analyzer(parsed_log, config);
   analyzer.InitializeMapOfNamedGraphs(absl::GetFlag(FLAGS_show_detector_state),
                                       absl::GetFlag(FLAGS_show_alr_state),
-                                      absl::GetFlag(FLAGS_show_link_capacity));
+                                      absl::GetFlag(FLAGS_show_link_capacity),
+                                      absl::GetFlag(FLAGS_include_overhead));
   analyzer.SetNetEqReplacementFile(wav_path, 48000);
 
   // Flag replacements
@@ -253,7 +262,8 @@ int main(int argc, char* argv[]) {
       {"scream",
        {"scream_ref_window", "simulated_scream_delay",
         "simulated_scream_bitrates", "simulated_scream_ref_window",
-        "simulated_scream_ratios", "network_delay_feedback", "pacer_delay"}}};
+        "simulated_scream_ratios", "simulated_scream_feedback_events_per_rtt",
+        "network_delay_feedback", "pacer_delay"}}};
 
   if (absl::GetFlag(FLAGS_list_plots)) {
     std::cerr << "List of registered plots (for use with the --plot flag):"

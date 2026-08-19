@@ -22,7 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_base.h"
@@ -56,6 +56,7 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/rate_limiter.h"
 #include "system_wrappers/include/ntp_time.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/near_matcher.h"
@@ -86,13 +87,9 @@ constexpr int kWidth = 320;
 constexpr int kHeight = 100;
 constexpr int kCaptureTimeMsToRtpTimestamp = 90;  // 90 kHz clock.
 constexpr TimeDelta kDefaultReportInterval = TimeDelta::Millis(1000);
-
-// RTP header extension ids.
-enum : int {
-  kAbsoluteSendTimeExtensionId = 1,
-  kTransportSequenceNumberExtensionId,
-  kTransmissionOffsetExtensionId,
-};
+constexpr RtpHeaderExtensionId kAbsoluteSendTimeExtensionId(1);
+constexpr RtpHeaderExtensionId kTransportSequenceNumberExtensionId(2);
+constexpr RtpHeaderExtensionId kTransmissionOffsetExtensionId(3);
 
 class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
@@ -237,7 +234,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver,
     CreateModuleImpl();
   }
   const RtpPacketReceived& last_packet() { return transport_.last_packet_; }
-  void RegisterHeaderExtension(absl::string_view uri, int id) {
+  void RegisterHeaderExtension(absl::string_view uri, RtpHeaderExtensionId id) {
     impl_->RegisterRtpHeaderExtension(uri, id);
     transport_.header_extensions_.RegisterByUri(id, uri);
     transport_.last_packet_.IdentifyExtensions(transport_.header_extensions_);
@@ -281,8 +278,7 @@ class RtpRtcpImpl2Test : public ::testing::Test {
  protected:
   RtpRtcpImpl2Test()
       : time_controller_(Timestamp::Micros(133590000000000)),
-        env_(CreateEnvironment(time_controller_.GetClock(),
-                               time_controller_.CreateTaskQueueFactory())),
+        env_(CreateTestEnvironment({.time = &time_controller_})),
         sender_(env_, /*is_sender=*/true),
         receiver_(env_, /*is_sender=*/false) {}
 

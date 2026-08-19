@@ -44,9 +44,15 @@ def _detect_emulator_processes():
   }
   if not emulator_ports:
     return []
-  found = {(p.pid, p.laddr.port)
-           for p in psutil.net_connections()
-           if p.status == psutil.CONN_LISTEN and p.laddr.port in emulator_ports}
+  found = set()
+  for p in psutil.net_connections():
+    if p.status == psutil.CONN_LISTEN and p.laddr.port in emulator_ports:
+      if p.pid is None:
+        logging.warning(
+            'Skipping emulator on port %s because PID cannot be '
+            'determined (insufficient privileges?).', p.laddr.port)
+      else:
+        found.add((p.pid, p.laddr.port))
   return [
       _Process(x[0], x[1],
                psutil.Process(x[0]).cmdline()[0]) for x in found
@@ -243,6 +249,11 @@ def main(raw_args):
       action='store_true',
       help='Deprecated and will be removed soon. Please use '
       '"proto/*_local.textpb" avd config files for local development.')
+  subparser.add_argument(
+      '--no-mouse-reposition',
+      action='store_true',
+      help= 'Do not reposition the mouse pointer when clicking in the' \
+      'emulator window.')
 
   def start_cmd(args):
     avd_config = avd.AvdConfig(args.avd_config)
@@ -263,7 +274,8 @@ def main(raw_args):
                wipe_data=args.wipe_data,
                debug_tags=debug_tags,
                disk_size=args.disk_size,
-               enable_network=args.enable_network)
+               enable_network=args.enable_network,
+               no_mouse_reposition=args.no_mouse_reposition)
     print('%s started (pid: %d)' % (str(inst), inst._emulator_proc.pid))
     return 0
 
@@ -359,6 +371,11 @@ def main(raw_args):
   args = parser.parse_args(raw_args)
 
   logging_common.InitializeLogging(args)
+
+  if sys.platform.startswith('linux') and not os.access('/dev/kvm',
+                                                        os.R_OK | os.W_OK):
+    logging.warning('WARNING: You do not have read/write access to /dev/kvm.')
+
   devil_chromium.Initialize(adb_path=args.adb_path)
   return args.func(args)
 

@@ -16,6 +16,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import time
 import traceback
 import xml.etree.ElementTree as ElementTree
 
@@ -30,7 +31,7 @@ from typing import NewType, TYPE_CHECKING, Any, Optional, List, Dict, Set, \
 
 from error import AuditorError, ErrorType
 import util
-from util import UniqueId, HashCode
+from util import UniqueId, HashCode, extract_annotation_id
 
 from datetime import datetime
 
@@ -109,6 +110,7 @@ after discussions on the right group.
 -->
 """
 
+
 class Annotation:
   """An annotation in code, typically extracted from C++.
 
@@ -146,7 +148,7 @@ class Annotation:
     self.type = Annotation.Type.COMPLETING
     self.proto = traffic_annotation_pb2.NetworkTrafficAnnotation()
 
-    self.second_id: UniqueId = ""
+    self.second_id = UniqueId("")
 
     # TODO(nicolaso): Remove file and line from the proto in
     # traffic_annotation.proto.
@@ -154,7 +156,7 @@ class Annotation:
     self.line: int = 0
 
     self.is_loaded_from_archive = False
-    self.archived_content_hash_code: HashCode = -1
+    self.archived_content_hash_code = HashCode(-1)
     self.archived_added_in_milestone = 0
 
     self.is_merged = False
@@ -162,7 +164,7 @@ class Annotation:
   @property
   def unique_id(self) -> UniqueId:
     # Transparently expose the unique_id stored in the proto for convenience.
-    return self.proto.unique_id
+    return UniqueId(self.proto.unique_id)
 
   @unique_id.setter
   def unique_id(self, unique_id: UniqueId):
@@ -229,8 +231,9 @@ class Annotation:
 
     return annotation
 
-  def create_complete_annotation(self, completing_annotation: "Annotation"
-                                 ) -> Tuple["Annotation", List[AuditorError]]:
+  def create_complete_annotation(
+      self, completing_annotation: "Annotation"
+  ) -> Tuple["Annotation", List[AuditorError]]:
     """Combines |self| partial annotation with a completing/branched_completing
     annotation and returns the combined complete annotation."""
     if not self.is_completable_with(completing_annotation):
@@ -282,8 +285,8 @@ class Annotation:
       combination.proto.semantics.destination = (
           other.proto.semantics.destination)
     elif (other.proto.semantics.destination != Destination.UNSPECIFIED
-          and other.proto.semantics.destination !=
-          combination.proto.semantics.destination):
+          and other.proto.semantics.destination
+          != combination.proto.semantics.destination):
       return combination, [
           AuditorError(
               ErrorType.MERGE_FAILED,
@@ -334,9 +337,8 @@ class Annotation:
     """Tells if the annotation requires two ids. All annotations have a unique
     id, but partial annotations also require a completing id, and branched
     completing annotations require a group id."""
-    return (self.type in [
-        Annotation.Type.PARTIAL, Annotation.Type.BRANCHED_COMPLETING
-    ])
+    return (self.type
+            in [Annotation.Type.PARTIAL, Annotation.Type.BRANCHED_COMPLETING])
 
   def is_completable_with(self, other) -> bool:
     """Checks to see if this annotation can be completed with the |other|
@@ -401,8 +403,8 @@ class Annotation:
                                                     as_utf8=False)
     return util.compute_hash_value(source_free_proto)
 
-  def deserialize(self, serialized_annotation: extractor.Annotation
-                  ) -> List[AuditorError]:
+  def deserialize(
+      self, serialized_annotation: extractor.Annotation) -> List[AuditorError]:
     """Deserializes an instance from extractor.Annotation."""
     file_path = Path(serialized_annotation.file_path)
     if file_path.is_absolute():
@@ -410,6 +412,14 @@ class Annotation:
     line_number = serialized_annotation.line_number
     self.file = file_path
     self.line = line_number
+
+    # .h files are not in the compdb,
+    # so we can't tell which platforms they target.
+    # Do not allow annotations in .h files.
+    if file_path.suffix == ".h":
+      return [
+          AuditorError(ErrorType.HEADER_ANNOTATION, "", file_path, line_number)
+      ]
 
     if serialized_annotation.type_name == extractor.AnnotationType.MUTABLE:
       return [AuditorError(ErrorType.MUTABLE_TAG, "", file_path, line_number)]
@@ -637,32 +647,34 @@ class FileFilter:
   """Provides the list of files to scan via extractor.py.
 
   Attributes:
-    git_files: The list of files extracted via `git ls-files` (filtered).
+    git_files: The list of files extracted via `git ls-files`.
     git_file_for_testing: If present, use this .txt file to mock the output of
        `git ls-files`."""
 
-  def __init__(self, accepted_suffixes: List[str]):
+  def __init__(self):
     self.git_files: List[Path] = []
     self.git_file_for_testing: Optional[Path] = None
-    self.accepted_suffixes = accepted_suffixes
 
-  def get_source_files(self, safe_list: SafeList, prefix: str) -> List[Path]:
+  def get_filtered_files(self, accepted_suffixes: List[str],
+                         safe_list: SafeList, prefix: str) -> List[Path]:
     """Returns a filtered list of files in the prefix directory.
 
     Relevant files:
       - Are tracked by git.
-      - Are in a supported programming language (see
-        _is_supported_source_file()).
+      - Have an accepted suffix (see _is_accepted_file()).
       - Do not match any of the regexen in the ALL category of safe_list.
-      - Are inside the directory_name directory."""
+      - Are inside the prefix directory."""
     file_paths = []
 
     if not self.git_files:
-      self.get_files_from_git()
+      raise RuntimeError(
+          'get_filtered_files() called before get_files_from_git()')
 
     for file_path in self.git_files:
       posix_path = file_path.as_posix()
       if not posix_path.startswith(prefix):
+        continue
+      if not self._is_accepted_file(file_path, accepted_suffixes):
         continue
       if (ExceptionType.ALL in safe_list
           and any(r.match(posix_path) for r in safe_list[ExceptionType.ALL])):
@@ -671,10 +683,11 @@ class FileFilter:
 
     return file_paths
 
-  def _is_supported_source_file(self, file_path: Path) -> bool:
-    """Returns true if file_path looks like a non-test C++/Obj-C++ file."""
+  def _is_accepted_file(self, file_path: Path,
+                        accepted_suffixes: List[str]) -> bool:
+    """Returns true if file_path has an accepted suffix and is not a test."""
     # Check file extension.
-    if file_path.suffix not in self.accepted_suffixes:
+    if file_path.suffix not in accepted_suffixes:
       return False
 
     # Ignore test files to speed up the tests. They would be only tested when
@@ -685,9 +698,8 @@ class FileFilter:
     return True
 
   def get_files_from_git(self) -> None:
-    """Populates self.git_files with the output of `git ls-files`.
-
-    Only keeps supported source file (per _is_supported_source_file())."""
+    """Populates self.git_files with the output of `git ls-files`."""
+    start_time = time.perf_counter()
     # Change directory to source path to access git and check files.
     original_cwd = os.getcwd()
     os.chdir(SRC_DIR)
@@ -704,12 +716,12 @@ class FileFilter:
       process = subprocess.run(command_line, capture_output=True)
       lines = process.stdout.decode("utf-8").split("\n")
 
-    self.git_files = [
-        Path(f) for f in lines if f and self._is_supported_source_file(Path(f))
-    ]
+    self.git_files = [Path(f) for f in lines if f]
 
     # Now that we're done, undo the chdir().
     os.chdir(original_cwd)
+    logger.debug("get_files_from_git() took %.3f seconds",
+                 time.perf_counter() - start_time)
 
 
 class IdChecker:
@@ -913,16 +925,19 @@ class ArchivedAnnotation:
         "{}={}".format(f, repr(getattr(self, f)))
         for f in ArchivedAnnotation.FIELDS))
 
+
 @dataclass
 class Sender:
   name: str
   annotations: List[UniqueId]
+
 
 @dataclass
 class Group:
   name: str
   hidden: bool
   senders: List[Sender]
+
 
 class Exporter:
   """Handles loading and saving ArchivedAnnotations in annotations.xml."""
@@ -992,15 +1007,13 @@ class Exporter:
       annotation = ArchivedAnnotation(**kwargs)
       self.archive[annotation.id] = annotation
 
-  def load_grouping_xml(self, grouping_path: str) -> None:
+  def load_grouping_xml(self, grouping_path: Path) -> None:
     """Loads grouping from grouping.xml into self.grouping_archive."""
-    logger.info("Parsing {}.".format(
-        grouping_path.relative_to(SRC_DIR)))
+    logger.info("Parsing {}.".format(grouping_path.relative_to(SRC_DIR)))
 
     self.grouping_archive = []
     GROUPING_FIELDS = ["id", "sender_name", "group_name"]
     GROUPING_REQUIRED_FIELDS = ["id"]
-
 
     tree = ElementTree.parse(grouping_path)
     root = tree.getroot()
@@ -1008,7 +1021,8 @@ class Exporter:
     for group_item in root.iter("group"):
       assert group_item.tag == "group"
       group_name = str(group_item.attrib["name"])
-      group = Group(group_name, True, [])
+      hidden = group_item.attrib.get("hidden", "false").lower() == "true"
+      group = Group(group_name, hidden, [])
       self.grouping_archive.append(group)
       for sender_item in group_item.iter("sender"):
         assert sender_item.tag == "sender"
@@ -1023,34 +1037,31 @@ class Exporter:
           kwargs: Dict[str, Any] = dict(traffic_annotation_item.attrib)
           self.required_field_check(GROUPING_REQUIRED_FIELDS, kwargs,
                                     traffic_annotation_item)
-          unique_id = str(kwargs["id"])
+          unique_id = UniqueId(str(kwargs["id"]))
 
           kwargs["sender_name"] = sender_name
           kwargs["group_name"] = group_name
           self.compare_field_check(GROUPING_FIELDS, kwargs,
-                                    traffic_annotation_item)
+                                   traffic_annotation_item)
 
           sender.annotations.append(unique_id)
           self.grouping_id_sender[unique_id] = sender
 
   def required_field_check(self, REQUIRED_FIELDS: List[str],
-                           kwargs: Dict[str, any],
-                           item: Any):
+                           kwargs: Dict[str, Any], item: Any):
     # Check that all required attribs are present.
     for field in REQUIRED_FIELDS:
       if field not in kwargs:
-        raise ValueError(
-            "Missing attribute '{}' in xml: {}".format(
-                field, ElementTree.tostring(item, "unicode")))
+        raise ValueError("Missing attribute '{}' in xml: {}".format(
+            field, ElementTree.tostring(item, "unicode")))
 
-  def compare_field_check(self, FIELDS: List[str],
-                           kwargs: Dict[str, any],
-                           item: Any):
+  def compare_field_check(self, FIELDS: List[str], kwargs: Dict[str, Any],
+                          item: Any):
     # Check for unknown attribs. and raise the error message to more readable.
     unknown_fields = kwargs.keys() - set(FIELDS)
     for field in unknown_fields:
-      raise ValueError("Invalid attribute '{}' in xml: {}"
-        .format(field, ElementTree.tostring(item, "unicode")))
+      raise ValueError("Invalid attribute '{}' in xml: {}".format(
+          field, ElementTree.tostring(item, "unicode")))
 
   def update_annotations(self, annotations: List[Annotation],
                          reserved_ids: List[UniqueId]) -> List[AuditorError]:
@@ -1131,8 +1142,7 @@ class Exporter:
 
     return self.check_archived_annotations()
 
-  def update_grouping(self,
-                      annotations: List[Annotation],
+  def update_grouping(self, annotations: List[Annotation],
                       reserved_ids: List[UniqueId]) -> List[AuditorError]:
     """Updates self.grouping_archive with the extracted annotations."""
     assert self.grouping_archive
@@ -1320,7 +1330,8 @@ class Exporter:
 
   def get_other_platforms_annotation_ids(self) -> List[UniqueId]:
     """Returns a list of annotations that are not defined on this platform."""
-    assert self.archive
+    if not self.archive:
+      self.load_annotations_xml()
     return [
         a.id for a in self.archive.values()
         if self._current_platform not in a.os_list
@@ -1387,11 +1398,11 @@ class Auditor:
 
     self.exporter = Exporter(current_platform)
 
-    accepted_suffixes = [".cc", ".mm"]
+    self.accepted_suffixes = [".cc", ".mm", ".h"]
     if current_platform == "android":
-      accepted_suffixes.append(".java")
+      self.accepted_suffixes.append(".java")
 
-    self.file_filter = FileFilter(accepted_suffixes)
+    self.file_filter = FileFilter()
 
   def _get_safe_list(self) -> SafeList:
     """Lazily loads safe_list.txt and returns it."""
@@ -1443,13 +1454,14 @@ class Auditor:
       return True
     return any(r.match(posix_path) for r in safe_list[exception_type])
 
-  def process_file(self, relative_path: Path, compdb_files: Set[str],
-                   path_filters: List[str]) -> List[Annotation]:
+  def process_file(
+      self, relative_path: Path, compdb_files: Set[str],
+      path_filters: List[str]) -> Optional[List[extractor.Annotation]]:
     absolute_path = SRC_DIR / relative_path
 
-    # Skip files based on compdb and path_filters. Java files aren't in
-    # compile_commands.json, so don't check those.
-    if (absolute_path.suffix != ".java" and compdb_files is not None
+    # Skip files based on compdb and path_filters. Java and header files aren't
+    # in compile_commands.json, so don't check those.
+    if (absolute_path.suffix not in [".java", ".h"] and compdb_files is not None
         and str(absolute_path) not in compdb_files):
       return None
     if (path_filters
@@ -1464,6 +1476,17 @@ class Auditor:
       return None
 
     return extractor.extract_annotations(absolute_path, file_contents)
+
+  def _get_gn_file_mtime_max(self) -> float:
+    """Returns the maximum mtime of all BUILD.gn and *.gni files."""
+    start_time = time.perf_counter()
+    gn_files = self.file_filter.get_filtered_files(['.gn', '.gni'], {}, '')
+    # For some reason, os.path.getmtime() is faster than
+    # pathlib.Path.stat().st_mtime
+    max_mtime = max(os.path.getmtime(SRC_DIR / f) for f in gn_files)
+    logger.debug("_get_gn_file_mtime_max() took %.3f seconds",
+                 time.perf_counter() - start_time)
+    return max_mtime
 
   def run_extractor(self, build_path: Path, path_filters: List[str],
                     skip_compdb: bool) -> List[extractor.Annotation]:
@@ -1484,27 +1507,41 @@ class Auditor:
     """
     safe_list = self._get_safe_list()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-      # TODO(nicolaso): Move FileFilter and `git ls-files` logic to
-      # extractor.py, or maybe a separate file?
-      logger.info("Getting list of files from git.")
-      files_future = executor.submit(self.file_filter.get_source_files,
-                                     safe_list, "")
+    # TODO(nicolaso): Move FileFilter and `git ls-files` logic to
+    # extractor.py, or maybe a separate file?
+    logger.info("Getting list of files from git.")
+    self.file_filter.get_files_from_git()
+    files = self.file_filter.get_filtered_files(self.accepted_suffixes,
+                                                safe_list, "")
 
-      # Skip compdb generation while testing to speed up tests.
-      if self.file_filter.git_file_for_testing is not None:
-        compdb_files_future = None
+    if self.file_filter.git_file_for_testing is not None:
+      compdb_files = None
+    else:
+      tools = NetworkTrafficAnnotationTools(str(build_path))
+
+      should_generate = False
+      compdb_path = build_path / "compile_commands.json"
+      if skip_compdb:
+        pass
+      elif not compdb_path.exists():
+        # compile_commands.json doesn't exist, generate one.
+        should_generate = True
       else:
-        logger.info("Generating compile_commands.json")
-        tools = NetworkTrafficAnnotationTools(str(build_path))
-        compdb_files_future = executor.submit(tools.GetCompDBFiles,
-                                              not skip_compdb)
+        # Only generate compile_commands.json if it's stale.
+        gn_mtime_max = self._get_gn_file_mtime_max()
+        should_generate = compdb_path.stat().st_mtime < gn_mtime_max
+        if not should_generate:
+          logger.info("compile_commands.json is up-to-date, "
+                      "skipping generation.")
 
-      files = files_future.result()
-      compdb_files = compdb_files_future.result(
-      ) if compdb_files_future else None
+      verb = "Generating" if should_generate else "Parsing"
+      logger.info("%s compile_commands.json", verb)
+      start_time = time.perf_counter()
+      compdb_files = tools.GetCompDBFiles(should_generate)
+      logger.debug("%s compile_commands.json took %.3f seconds", verb,
+                   time.perf_counter() - start_time)
 
-    suffixes = '/'.join(self.file_filter.accepted_suffixes)
+    suffixes = '/'.join(self.accepted_suffixes)
     if path_filters:
       logger.info("Parsing valid {} files in the Chromium repository, "
                   "that match any of these prefixes: {}".format(
@@ -1516,6 +1553,7 @@ class Auditor:
     all_annotations = []
     num_workers = 5
     chunksize = len(files) // num_workers if len(files) > num_workers else 1
+    start_time = time.perf_counter()
     with concurrent.futures.ProcessPoolExecutor(
         max_workers=num_workers) as executor:
       process_files_with_args = partial(self.process_file,
@@ -1527,6 +1565,9 @@ class Auditor:
                                       chunksize=chunksize):
         if annotations:
           all_annotations.extend(annotations)
+
+    logger.debug("Parsing %d %s files took %.3f seconds", len(files), suffixes,
+                 time.perf_counter() - start_time)
 
     return all_annotations
 
@@ -1542,8 +1583,8 @@ class Auditor:
         filtered_errors.append(error)
     return filtered_errors
 
-  def parse_extractor_output(self, all_annotations: List[extractor.Annotation]
-                             ) -> List[AuditorError]:
+  def parse_extractor_output(
+      self, all_annotations: List[extractor.Annotation]) -> List[AuditorError]:
     """Parses the output of extractor.extract_annotations()."""
     all_errors = []
 
@@ -1649,7 +1690,8 @@ class Auditor:
 
     return all_errors
 
-  def _get_grouping_xml_ids(self, grouping_xml_path=Exporter.GROUPING_XML_PATH
+  def _get_grouping_xml_ids(self,
+                            grouping_xml_path=Exporter.GROUPING_XML_PATH
                             ) -> Set[UniqueId]:
     logger.info("Parsing {}.".format(grouping_xml_path.relative_to(SRC_DIR)))
 
@@ -1712,9 +1754,8 @@ class Auditor:
         self.extracted_annotations.append(
             Annotation.load_from_archive(archived))
 
-  def run_all_checks(self, path_filters: List[str],
-                     report_xml_updates: bool,
-                     grouping_path: str) -> List[AuditorError]:
+  def run_all_checks(self, path_filters: List[str], report_xml_updates: bool,
+                     grouping_path: Path) -> List[AuditorError]:
     """Performs all checks on extracted annotations, and writes annotations.xml.
 
     If test_only is True, returns the changes that would be made to
@@ -1727,7 +1768,7 @@ class Auditor:
     if path_filters:
       self._add_missing_annotations(path_filters)
 
-    suffixes = '/'.join(self.file_filter.accepted_suffixes)
+    suffixes = '/'.join(self.accepted_suffixes)
     logger.info("Checking the validity of annotations extracted from {} "
                 "files.".format(suffixes))
 
@@ -1762,8 +1803,8 @@ class Auditor:
 
       grouping_updates = self.exporter.get_required_updates_grouping()
       if grouping_updates:
-        errors.append(AuditorError(ErrorType.GROUPING_XML_UPDATE,
-                                   grouping_updates))
+        errors.append(
+            AuditorError(ErrorType.GROUPING_XML_UPDATE, grouping_updates))
 
     return errors
 
@@ -1878,9 +1919,11 @@ class AuditorUI:
             'pyproto/chrome/browser/privacy/traffic_annotation_pb2.py'))
     return src_proto_mtime > build_proto_mtime
 
+
 def is_cog() -> bool:
   """Returns true if the script is running inside a Cog workspace."""
   return SRC_DIR.as_posix().startswith('/google/cog/cloud')
+
 
 if __name__ == "__main__":
   args_parser = argparse.ArgumentParser(
@@ -1934,6 +1977,10 @@ if __name__ == "__main__":
       " --build-path supplied are older than the traffic_annotation.proto."
       "This is useful if you're actively working on the protobuf.",
       action="store_true")
+  args_parser.add_argument("--verbose",
+                           "-v",
+                           help="More verbose logs for debugging.",
+                           action="store_true")
   args_parser.add_argument(
       "path_filters",
       nargs="*",
@@ -1945,6 +1992,8 @@ if __name__ == "__main__":
 
   args = args_parser.parse_args()
   build_path = Path(args.build_path)
+  if args.verbose:
+    logger.setLevel(level=logging.DEBUG)
 
   # Check if in cog - if so, fail early.
   if is_cog():

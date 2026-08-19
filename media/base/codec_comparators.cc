@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -32,7 +31,6 @@
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 
 namespace webrtc {
@@ -42,17 +40,17 @@ namespace {
 // TODO(bugs.webrtc.org/15847): remove code duplication of IsSameCodecSpecific
 // in api/video_codecs/sdp_video_format.cc
 std::string GetFmtpParameterOrDefault(const CodecParameterMap& params,
-                                      const std::string& name,
+                                      absl::string_view name,
                                       const std::string& default_value) {
-  const auto it = params.find(name);
+  const auto it = params.find(std::string(name));
   if (it != params.end()) {
     return it->second;
   }
   return default_value;
 }
 
-bool HasParameter(const CodecParameterMap& params, const std::string& name) {
-  return params.find(name) != params.end();
+bool HasParameter(const CodecParameterMap& params, absl::string_view name) {
+  return params.find(std::string(name)) != params.end();
 }
 
 std::string H264GetPacketizationModeOrDefault(const CodecParameterMap& params) {
@@ -129,6 +127,66 @@ bool ReferencedCodecsMatch(const std::vector<Codec>& codecs1,
   return codec1 != nullptr && codec2 != nullptr && codec1->Matches(*codec2);
 }
 
+CodecParameterMap InsertDefaultParams(absl::string_view name,
+                                      const CodecParameterMap& params) {
+  CodecParameterMap updated_params = params;
+  if (absl::EqualsIgnoreCase(name, kVp9CodecName)) {
+    if (!HasParameter(params, kVP9FmtpProfileId)) {
+      if (std::optional<VP9Profile> default_profile =
+              ParseSdpForVP9Profile({})) {
+        updated_params.emplace(kVP9FmtpProfileId,
+                               VP9ProfileToString(*default_profile));
+      }
+    }
+  }
+  if (absl::EqualsIgnoreCase(name, kAv1CodecName)) {
+    if (!HasParameter(params, kAv1FmtpProfile)) {
+      if (std::optional<AV1Profile> default_profile =
+              ParseSdpForAV1Profile({})) {
+        updated_params.emplace(kAv1FmtpProfile,
+                               AV1ProfileToString(*default_profile).data());
+      }
+    }
+    if (!HasParameter(params, kAv1FmtpTier)) {
+      updated_params.emplace(kAv1FmtpTier, AV1GetTierOrDefault({}));
+    }
+    if (!HasParameter(params, kAv1FmtpLevelIdx)) {
+      updated_params.emplace(kAv1FmtpLevelIdx, AV1GetLevelIdxOrDefault({}));
+    }
+  }
+  if (absl::EqualsIgnoreCase(name, kH264CodecName)) {
+    if (!HasParameter(params, kH264FmtpPacketizationMode)) {
+      updated_params.emplace(kH264FmtpPacketizationMode,
+                             H264GetPacketizationModeOrDefault({}));
+    }
+  }
+#ifdef RTC_ENABLE_H265
+  if (absl::EqualsIgnoreCase(name, kH265CodecName)) {
+    if (std::optional<H265ProfileTierLevel> default_params =
+            ParseSdpForH265ProfileTierLevel({})) {
+      if (!HasParameter(params, kH265FmtpProfileId)) {
+        updated_params.emplace(kH265FmtpProfileId,
+                               H265ProfileToString(default_params->profile));
+      }
+      if (!HasParameter(params, kH265FmtpLevelId)) {
+        updated_params.emplace(kH265FmtpLevelId,
+                               H265LevelToString(default_params->level));
+      }
+      if (!HasParameter(params, kH265FmtpTierFlag)) {
+        updated_params.emplace(kH265FmtpTierFlag,
+                               H265TierToString(default_params->tier));
+      }
+    }
+    if (!HasParameter(params, kH265FmtpTxMode)) {
+      updated_params.emplace(kH265FmtpTxMode, GetH265TxModeOrDefault({}));
+    }
+  }
+#endif
+  return updated_params;
+}
+
+}  // namespace
+
 bool MatchesWithReferenceAttributesAndComparator(
     const Codec& codec_to_match,
     const Codec& potential_match,
@@ -140,27 +198,24 @@ bool MatchesWithReferenceAttributesAndComparator(
   if (resiliency_type == Codec::ResiliencyType::kRtx) {
     int apt_value_1_int = 0;
     int apt_value_2_int = 0;
-    if (!codec_to_match.GetParam(kCodecParamAssociatedPayloadType,
-                                 &apt_value_1_int) ||
-        !potential_match.GetParam(kCodecParamAssociatedPayloadType,
-                                  &apt_value_2_int)) {
-      RTC_LOG(LS_WARNING) << "RTX missing associated payload type.";
-      return false;
-    }
-    PayloadType apt_value_1 =
-        PayloadType(static_cast<uint8_t>(apt_value_1_int));
-    PayloadType apt_value_2 =
-        PayloadType(static_cast<uint8_t>(apt_value_2_int));
-    if (reference_comparator(apt_value_1, apt_value_2)) {
+    bool has_apt_1 = codec_to_match.GetParam(kCodecParamAssociatedPayloadType,
+                                             &apt_value_1_int);
+    bool has_apt_2 = potential_match.GetParam(kCodecParamAssociatedPayloadType,
+                                              &apt_value_2_int);
+    if (!has_apt_1 && !has_apt_2) {
       return true;
     }
-    return false;
+    if (!has_apt_1 || !has_apt_2) {
+      return false;
+    }
+    return reference_comparator(PayloadType(apt_value_1_int),
+                                PayloadType(apt_value_2_int));
   }
   if (resiliency_type == Codec::ResiliencyType::kRed) {
-    auto red_parameters_1 =
-        codec_to_match.params.find(kCodecParamNotInNameValueFormat);
-    auto red_parameters_2 =
-        potential_match.params.find(kCodecParamNotInNameValueFormat);
+    auto red_parameters_1 = codec_to_match.params.find(
+        std::string(kCodecParamNotInNameValueFormat));
+    auto red_parameters_2 = potential_match.params.find(
+        std::string(kCodecParamNotInNameValueFormat));
     bool has_parameters_1 = red_parameters_1 != codec_to_match.params.end();
     bool has_parameters_2 = red_parameters_2 != potential_match.params.end();
 
@@ -212,90 +267,26 @@ bool MatchesWithReferenceAttributesAndComparator(
   return true;  // Not a codec with a PT-valued reference.
 }
 
-CodecParameterMap InsertDefaultParams(const std::string& name,
-                                      const CodecParameterMap& params) {
-  CodecParameterMap updated_params = params;
-  if (absl::EqualsIgnoreCase(name, kVp9CodecName)) {
-    if (!HasParameter(params, kVP9FmtpProfileId)) {
-      if (std::optional<VP9Profile> default_profile =
-              ParseSdpForVP9Profile({})) {
-        updated_params.insert(
-            {kVP9FmtpProfileId, VP9ProfileToString(*default_profile)});
-      }
-    }
-  }
-  if (absl::EqualsIgnoreCase(name, kAv1CodecName)) {
-    if (!HasParameter(params, kAv1FmtpProfile)) {
-      if (std::optional<AV1Profile> default_profile =
-              ParseSdpForAV1Profile({})) {
-        updated_params.insert(
-            {kAv1FmtpProfile, AV1ProfileToString(*default_profile).data()});
-      }
-    }
-    if (!HasParameter(params, kAv1FmtpTier)) {
-      updated_params.insert({kAv1FmtpTier, AV1GetTierOrDefault({})});
-    }
-    if (!HasParameter(params, kAv1FmtpLevelIdx)) {
-      updated_params.insert({kAv1FmtpLevelIdx, AV1GetLevelIdxOrDefault({})});
-    }
-  }
-  if (absl::EqualsIgnoreCase(name, kH264CodecName)) {
-    if (!HasParameter(params, kH264FmtpPacketizationMode)) {
-      updated_params.insert(
-          {kH264FmtpPacketizationMode, H264GetPacketizationModeOrDefault({})});
-    }
-  }
-#ifdef RTC_ENABLE_H265
-  if (absl::EqualsIgnoreCase(name, kH265CodecName)) {
-    if (std::optional<H265ProfileTierLevel> default_params =
-            ParseSdpForH265ProfileTierLevel({})) {
-      if (!HasParameter(params, kH265FmtpProfileId)) {
-        updated_params.insert(
-            {kH265FmtpProfileId, H265ProfileToString(default_params->profile)});
-      }
-      if (!HasParameter(params, kH265FmtpLevelId)) {
-        updated_params.insert(
-            {kH265FmtpLevelId, H265LevelToString(default_params->level)});
-      }
-      if (!HasParameter(params, kH265FmtpTierFlag)) {
-        updated_params.insert(
-            {kH265FmtpTierFlag, H265TierToString(default_params->tier)});
-      }
-    }
-    if (!HasParameter(params, kH265FmtpTxMode)) {
-      updated_params.insert({kH265FmtpTxMode, GetH265TxModeOrDefault({})});
-    }
-  }
-#endif
-  return updated_params;
-}
-
-}  // namespace
-
 bool MatchesWithCodecRules(const Codec& left_codec, const Codec& right_codec) {
   // Match the codec id/name based on the typical static/dynamic name rules.
   // Matching is case-insensitive.
 
-  // We support the ranges [96, 127] and more recently [35, 65].
+  // We support the ranges [96, 127] and more recently [35, 63].
   // https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-1
   // Within those ranges we match by codec name, outside by codec id.
   // We also match by name if either ID is unassigned.
   // Since no codecs are assigned an id in the range [66, 95] by us, these will
   // never match.
-  const int kLowerDynamicRangeMin = 35;
-  const int kLowerDynamicRangeMax = 65;
-  const int kUpperDynamicRangeMin = 96;
-  const int kUpperDynamicRangeMax = 127;
   const bool is_id_in_dynamic_range =
-      (left_codec.id >= kLowerDynamicRangeMin &&
-       left_codec.id <= kLowerDynamicRangeMax) ||
-      (left_codec.id >= kUpperDynamicRangeMin &&
-       left_codec.id <= kUpperDynamicRangeMax);
+      (left_codec.id >= PayloadType::kLowerDynamicRangeMin &&
+       left_codec.id <= PayloadType::kLowerDynamicRangeMax) ||
+      (left_codec.id >= PayloadType::kUpperDynamicRangeMin &&
+       left_codec.id <= PayloadType::kUpperDynamicRangeMax);
   const bool is_codec_id_in_dynamic_range =
-      (right_codec.id >= kLowerDynamicRangeMin &&
-       right_codec.id <= kLowerDynamicRangeMax) ||
-      (right_codec.id >= kUpperDynamicRangeMin &&
-       right_codec.id <= kUpperDynamicRangeMax);
+      (right_codec.id >= PayloadType::kLowerDynamicRangeMin &&
+       right_codec.id <= PayloadType::kLowerDynamicRangeMax) ||
+      (right_codec.id >= PayloadType::kUpperDynamicRangeMin &&
+       right_codec.id <= PayloadType::kUpperDynamicRangeMax);
 
   if (left_codec.type != right_codec.type) {
     return false;

@@ -34,6 +34,9 @@ chromium-metrics-reviews@google.com.
 <variants name="FileType">
   <variant name="DbFile" summary="database file"/>
   <variant name="JournalFile" summary="journal file"/>
+  <variant name="WalIndexFile" summary="wal-index file"/>
+  <variant name="WalIndexFileReadOnly"
+      summary="wal-index file (read-only handle)"/>
   <variant name="WalJournalFile" summary="write-ahead log file"/>
 </variants>
 
@@ -47,13 +50,13 @@ chromium-metrics-reviews@google.com.
 <variants name="VfsClient">
   <variant name="CodeCache"/>
   <variant name="ShaderCache"/>
-  <variant name="Test"/>
+  <variant name="SharedCacheIsolated"/>
 </variants>
 
 <!-- LINT.ThenChange(//components/sqlite_vfs/client.h:VfsClient) -->
 
 <histogram name="PersistentCache.BackendInitialize.{Mode}.{Client}"
-    units="microseconds" expires_after="2026-08-09">
+    units="microseconds" expires_after="2026-12-16">
   <owner>grt@chromium.org</owner>
   <owner>catan-team@chromium.org</owner>
   <summary>
@@ -67,7 +70,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PersistentCache.Find.{Mode}.{Client}" units="microseconds"
-    expires_after="2026-09-06">
+    expires_after="2026-11-29">
   <owner>grt@chromium.org</owner>
   <owner>catan-team@chromium.org</owner>
   <summary>
@@ -81,7 +84,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PersistentCache.Insert.{Client}" units="microseconds"
-    expires_after="2026-09-06">
+    expires_after="2026-11-29">
   <owner>grt@chromium.org</owner>
   <owner>catan-team@chromium.org</owner>
   <summary>
@@ -104,6 +107,17 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="SandboxedVfs.GetFileSystemIdError.{VfsClient}"
+    enum="PlatformFileError" expires_after="2027-05-01">
+  <owner>grt@chromium.org</owner>
+  <owner>catan-team@chromium.org</owner>
+  <summary>
+    Reports the error encountered when attempting to retrieve the physical file
+    system ID for a sandboxed SQLite file set's main database file for the
+    {VfsClient}.
+  </summary>
+</histogram>
+
 <histogram name="SandboxedVfs.LockResult.{VfsClient}" enum="PlatformFileError"
     expires_after="2026-11-06">
   <owner>grt@chromium.org</owner>
@@ -115,7 +129,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="SandboxedVfs.LockStateOnAbandon.{VfsClient}" enum="LockState"
-    expires_after="2026-11-04">
+    expires_after="2027-01-03">
   <owner>grt@chromium.org</owner>
   <owner>catan-team@chromium.org</owner>
   <summary>

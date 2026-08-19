@@ -6,7 +6,6 @@ import eslintPluginLit from '../../third_party/node/node_modules/eslint-plugin-l
 import stylistic from '../../third_party/node/node_modules/@stylistic/eslint-plugin/dist/index.js';
 import typescriptEslint from '../../third_party/node/node_modules/@typescript-eslint/eslint-plugin/dist/index.js';
 import tsParser from '../../third_party/node/node_modules/@typescript-eslint/parser/dist/index.js';
-import webUiEslint from '../../ui/webui/resources/tools/webui_eslint_plugin.js';
 
 const noRestrictedSyntaxCases = [
   {
@@ -88,6 +87,21 @@ const noRestrictedImportsPaths = [
     name: '//webui-test/chai.js',
     message: 'Use chrome://webui-test/chai_assert.js instead.',
   },
+  {
+    name: 'chrome://resources/cr_components/composebox/composebox.js',
+    message:
+        'Prevent new composebox usage until it is cleaned up. See crbug.com/497887993.',
+  },
+  {
+    name: '//resources/cr_components/composebox/composebox.js',
+    message:
+        'Prevent new composebox usage until it is cleaned up. See crbug.com/497887993.',
+  },
+  {
+    name: 'chrome-untrusted://resources/cr_components/composebox/composebox.js',
+    message:
+        'Prevent new composebox usage until it is cleaned up. See crbug.com/497887993.',
+  },
 ];
 
 export default [
@@ -106,23 +120,27 @@ export default [
       // Ignore generated checked-in JS file.
       'ios/tools/documents_statistics_viewer/tsc/viewer.js',
 
-      // ESLint is disabled for camera_app_ui and recorder_app_ui as they used
-      // a custom eslint plugin that does not work with the latest eslint, and
-      // they had complex eslint rc files that have not been updated to the
-      // latest eslint. See https://crbug.com/368085620.
-      'ash/webui/camera_app_ui/resources/**/*',
-      'ash/webui/recorder_app_ui/resources/**/*',
+      // No point checking minify_js expected output tests.
+      'ui/webui/resources/tools/tests/minify_js/*_expected.js',
 
       // ESLint is disabled for directories that use custom linting rules,
       // which is no longer supported. TODO(https://crbug.com/369766161):
       // Bring directories into conformance to re-enable linting.
-      'ash/webui/**/*',
+      'ash/webui/*',
       'chrome/browser/resources/chromeos/**/*',
       'chrome/test/data/webui/chromeos/**/*.js',
 
-      // TODO(https://crbug.com/41446521): Bring extension test files into
-      // conformance.
-      'chrome/test/data/extensions/**/*',
+      // camera_app_ui and recorder_app_ui conforms to global ESLint.
+      '!ash/webui/camera_app_ui',
+      '!ash/webui/recorder_app_ui',
+
+      // Omitted: These are "raw" dumps from user data dirs. We shouldn't bother
+      // formatting / linting them.
+      'chrome/test/data/extensions/profiles/*',
+      'chrome/test/data/extensions/good/*',
+
+      // Omitted: Platform apps are deprecated on all platforms.
+      'chrome/test/data/extensions/platform_apps/*',
     ],
   },
   {
@@ -130,7 +148,9 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
-
+    plugins: {
+      '@stylistic': stylistic,
+    },
     rules: {
       // Enabled checks.
       'brace-style': ['error', '1tbs'],
@@ -218,6 +238,8 @@ export default [
         }
       ],
 
+      '@stylistic/eol-last': ['error'],
+
       // TODO(dpapad): Add more checks according to our styleguide.
     },
   },
@@ -227,13 +249,6 @@ export default [
     plugins: {
       '@typescript-eslint': typescriptEslint,
       '@stylistic': stylistic,
-
-      // Need to register the WebUI plugin even though it is not used in the
-      // configuration below, to prevent errors like
-      // "Definition for rule XYZ was not found  @webui-eslint/XYZ"
-      // when encountering 'eslint-disable-next-line' comments referencing rules
-      // defined in the `webUiEslint` plugin.
-      '@webui-eslint': webUiEslint,
     },
 
     languageOptions: {
@@ -257,8 +272,6 @@ export default [
       // parameter.
       'no-array-constructor': 'off',
       '@typescript-eslint/no-array-constructor': 'error',
-
-      '@stylistic/eol-last': ['error'],
 
       // https://google.github.io/styleguide/tsguide.html#automatic-semicolon-insertion
       semi: 'off',
@@ -551,6 +564,35 @@ export default [
         'error', {
           'ts-ignore': true,
           'ts-nocheck': true,
+        }
+      ],
+    },
+  },
+  {
+    // TODO(crbug.com/497887993): Allow existing usages of composebox.ts until
+    // the shared composebox files are cleaned up.
+    files: [
+      'chrome/browser/resources/contextual_tasks/composebox.ts',
+      'chrome/browser/resources/contextual_tasks/onboarding_tooltip.ts',
+      'chrome/browser/resources/lens/overlay/side_panel/side_panel_app.ts',
+      'chrome/browser/resources/new_tab_page/app.ts',
+      'chrome/browser/resources/new_tab_page/lazy_load.ts',
+      'chrome/browser/resources/omnibox_popup/aim_app.ts',
+      'chrome/test/data/webui/contextual_tasks/composebox_misc_inputs_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_drag_drop_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_input_placeholder_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_voice_search_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_voice_search_recognition_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_voice_search_flags_test.ts',
+      'chrome/test/data/webui/cr_components/composebox/composebox_test_utils.ts',
+      'chrome/test/data/webui/lens/side_panel/composebox_test.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error', {
+          paths: noRestrictedImportsPaths.filter(
+              path => !path.name.includes('composebox')),
         }
       ],
     },

@@ -8,6 +8,7 @@
                    --build-out-dir ~/chromium/src/out/Fuzzilli
                    --fuzzilli-dir ~/fuzzilli
                    --report-out-dir ~/chromium/src/out/report
+                   --profile mojoLockManager
                    --minutes 20
 
     Optionally, use --ignore-filename-regex to provide a regular
@@ -19,13 +20,13 @@
     of args required for coverage and args that improve fuzzing either by
     speed up or increased coverage:
         use_sanitizer_coverage = true
-        is_component_build = true
+        is_component_build = false
         is_debug = false
         symbol_level = 2
         blink_symbol_level = 0
         use_remoteexec = true
         dcheck_always_on = false
-        is_asan = true
+        is_asan = false
         use_chromium_fuzzilli = true
         v8_fuzzilli = true
         v8_static_library = true
@@ -46,8 +47,7 @@ import sys
 import tempfile
 
 DEFAULT_FUZZILLI_FLAGS = [
-    '--profile=chromiumMojo', '--storagePath=/tmp/fuzzilli_storage',
-    '--overwrite', '--engine=hybrid'
+    '--storagePath=/tmp/fuzzilli_storage', '--overwrite', '--engine=hybrid'
 ]
 SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = SCRIPT_DIR.parents[1]
@@ -144,11 +144,20 @@ def _ParseCommandArguments():
       'regular expression. For example, use -i=\'.*/out/.*|.*/third_party/.*\' '
       'to exclude files in third_party/ and out/ folders from the report.')
 
+  arg_parser.add_argument(
+      '-p',
+      '--profile',
+      type=str,
+      required=True,
+      help='Provide a profile for Fuzzilli to use while running, identifying'
+      'by the key defined in Fuzzilli\'s `profiles` Dictionary.')
+
   args = arg_parser.parse_args()
   return args
 
 
-def _RunFuzzilli(pg_handler, fuzzilli_dir, build_out_dir, minutes, profraw_dir):
+def _RunFuzzilli(pg_handler, fuzzilli_dir, build_out_dir, minutes, profile,
+                 profraw_dir):
   """Builds and runs Fuzzilli.
 
      Bypasses the 'swift run' wrapper to ensure signals are handled correctly.
@@ -166,24 +175,48 @@ def _RunFuzzilli(pg_handler, fuzzilli_dir, build_out_dir, minutes, profraw_dir):
     logging.fatal(e)
     return False
 
-  fuzzilli_executable = os.path.join(fuzzilli_dir, '.build/release/FuzzilliCli')
-  run_command = [
-      fuzzilli_executable, *DEFAULT_FUZZILLI_FLAGS,
-      os.path.join(build_out_dir, 'js_in_process_fuzzer')
-  ]
-
-  # Use a process group, as this command will create many child processes that
-  # continue to live if only the parent is killed
-  p = subprocess.Popen(run_command, cwd=fuzzilli_dir, start_new_session=True)
-  pg_handler.SetProcessGroup(p)
+  # Fuzzilli strips executed programs of any environment variables, setting
+  # only the environment variables specified in the optionally provided
+  # profile. To ensure that js_in_process_fuzzer can see the environment
+  # variable, create a temporary script for Fuzzilli to execute, in which the
+  # environment variable is set.
+  temp_wrapper = tempfile.NamedTemporaryFile(mode='w+',
+                                             delete=False,
+                                             suffix='.sh')
   try:
-    timeout = minutes * 60
-    p.wait(timeout=timeout)
-    if p.returncode != 0:
-      return False
-  except subprocess.TimeoutExpired:
-    # Kill the entire process group to ensure no orphan child processes
-    pg_handler.KillProcessGroup()
+    temp_wrapper.write(
+        '#!/bin/bash\n'
+        f'export LLVM_PROFILE_FILE="{os.environ["LLVM_PROFILE_FILE"]}"\n'
+        f'exec {os.path.join(build_out_dir, "js_in_process_fuzzer")} "$@"')
+    temp_wrapper.flush()
+    temp_wrapper.close()
+
+    # mark wrapper as executable
+    os.chmod(temp_wrapper.name, 0o755)
+    print(f"The temporary file is located at: {temp_wrapper.name}")
+
+    fuzzilli_executable = os.path.join(fuzzilli_dir,
+                                       '.build/release/FuzzilliCli')
+    run_command = [
+        fuzzilli_executable, *DEFAULT_FUZZILLI_FLAGS, f'--profile={profile}',
+        temp_wrapper.name
+    ]
+
+    # Use a process group, as this command will create many child processes that
+    # continue to live if only the parent is killed
+    p = subprocess.Popen(run_command, cwd=fuzzilli_dir, start_new_session=True)
+    pg_handler.SetProcessGroup(p)
+    try:
+      timeout = minutes * 60
+      p.wait(timeout=timeout)
+      if p.returncode != 0:
+        return False
+    except subprocess.TimeoutExpired:
+      # Kill the entire process group to ensure no orphan child processes
+      pg_handler.KillProcessGroup()
+  finally:
+    if os.path.exists(temp_wrapper.name):
+      os.remove(temp_wrapper.name)
 
   return True
 
@@ -238,7 +271,7 @@ def Main():
     print(f'Using {profraw_path} for profraw files.')
 
     if not _RunFuzzilli(pg_handler, args.fuzzilli_dir, args.build_out_dir,
-                        args.minutes, profraw_path):
+                        args.minutes, args.profile, profraw_path):
       sys.exit('Error: Fuzzilli failed to build or run.')
 
     if not _GenerateCoverageReport(args.build_out_dir, args.report_out_dir,

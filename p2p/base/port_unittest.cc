@@ -10,12 +10,14 @@
 
 #include "p2p/base/port.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <list>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -102,11 +104,9 @@ const uint32_t kDefaultPrflxPriority = ICE_TYPE_PREFERENCE_PRFLX << 24 |
                                        30 << 8 |
                                        (256 - ICE_CANDIDATE_COMPONENT_DEFAULT);
 
-constexpr int kTiebreaker1 = 11111;
-constexpr int kTiebreaker2 = 22222;
-constexpr int kTiebreakerDefault = 44444;
+constexpr uint64_t kTiebreakerDefault = 44444;
 
-constexpr char kTestData[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+constexpr uint8_t kTestData[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
 Candidate GetCandidate(Port* port) {
   RTC_DCHECK_GE(port->Candidates().size(), 1);
@@ -136,10 +136,8 @@ bool GetStunMessageFromBufferWriter(TestPort* port,
                                     const SocketAddress& addr,
                                     std::unique_ptr<IceMessage>* out_msg,
                                     std::string* out_username) {
-  return port->GetStunMessage(reinterpret_cast<const char*>(buf->Data()),
-                              buf->Length(), addr, out_msg, out_username);
+  return port->GetStunMessage(buf->DataView(), addr, out_msg, out_username);
 }
-
 void SendPingAndReceiveResponse(Connection* lconn,
                                 TestPort* lport,
                                 Connection* rconn,
@@ -147,19 +145,17 @@ void SendPingAndReceiveResponse(Connection* lconn,
                                 GlobalSimulatedTimeController& time_controller,
                                 int64_t ms) {
   lconn->Ping();
-  ASSERT_THAT(
-      WaitUntil([&] { return lport->last_stun_msg(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller}),
-      IsRtcOk());
+  ASSERT_TRUE(
+      WaitUntil([&] { return lport->last_stun_msg(); },
+                {.timeout = kDefaultTimeout, .clock = &time_controller}));
   ASSERT_GT(lport->last_stun_buf().size(), 0u);
   rconn->OnReadPacket(
       ReceivedIpPacket(lport->last_stun_buf(), SocketAddress(), std::nullopt));
 
   time_controller.AdvanceTime(TimeDelta::Millis(ms));
-  ASSERT_THAT(
-      WaitUntil([&] { return rport->last_stun_msg(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller}),
-      IsRtcOk());
+  ASSERT_TRUE(
+      WaitUntil([&] { return rport->last_stun_msg(); },
+                {.timeout = kDefaultTimeout, .clock = &time_controller}));
   ASSERT_GT(rport->last_stun_buf().size(), 0u);
   lconn->OnReadPacket(
       ReceivedIpPacket(rport->last_stun_buf(), SocketAddress(), std::nullopt));
@@ -243,9 +239,9 @@ class TestChannel {
   void OnPortComplete(Port* port) { complete_count_++; }
   void SetIceMode(IceMode ice_mode) { ice_mode_ = ice_mode; }
 
-  int SendData(const char* data, size_t len) {
+  int SendData(std::span<const uint8_t> data) {
     AsyncSocketPacketOptions options;
-    return conn_->Send(data, len, options);
+    return conn_->Send(data, options);
   }
 
   void OnUnknownAddress(PortInterface* port,
@@ -452,61 +448,57 @@ class PortTest : public ::testing::Test {
   }
   std::unique_ptr<UDPPort> CreateUdpPort(const SocketAddress& addr,
                                          PacketSocketFactory* socket_factory) {
-    auto port = UDPPort::Create({.env = env_,
-                                 .network_thread = main_,
-                                 .socket_factory = socket_factory,
-                                 .network = MakeNetwork(addr),
-                                 .ice_username_fragment = username_,
-                                 .ice_password = password_},
-                                0, 0, true, std::nullopt);
-    port->SetIceTiebreaker(kTiebreakerDefault);
-    return port;
+    return UDPPort::Create({.env = env_,
+                            .network_thread = main_,
+                            .socket_factory = socket_factory,
+                            .network = MakeNetwork(addr),
+                            .ice_username_fragment = username_,
+                            .ice_password = password_,
+                            .ice_tiebreaker = kTiebreakerDefault},
+                           0, 0, true, std::nullopt);
   }
 
   std::unique_ptr<UDPPort> CreateUdpPortMultipleAddrs(
       const SocketAddress& global_addr,
       const SocketAddress& link_local_addr,
       PacketSocketFactory* socket_factory) {
-    auto port = UDPPort::Create(
+    return UDPPort::Create(
         {.env = env_,
          .network_thread = main_,
          .socket_factory = socket_factory,
          .network = MakeNetworkMultipleAddrs(global_addr, link_local_addr),
          .ice_username_fragment = username_,
-         .ice_password = password_},
+         .ice_password = password_,
+         .ice_tiebreaker = kTiebreakerDefault},
         0, 0, true, std::nullopt);
-    port->SetIceTiebreaker(kTiebreakerDefault);
-    return port;
   }
   std::unique_ptr<TCPPort> CreateTcpPort(const SocketAddress& addr) {
     return CreateTcpPort(addr, &socket_factory_);
   }
   std::unique_ptr<TCPPort> CreateTcpPort(const SocketAddress& addr,
                                          PacketSocketFactory* socket_factory) {
-    auto port = TCPPort::Create({.env = env_,
-                                 .network_thread = main_,
-                                 .socket_factory = socket_factory,
-                                 .network = MakeNetwork(addr),
-                                 .ice_username_fragment = username_,
-                                 .ice_password = password_},
-                                0, 0, true);
-    port->SetIceTiebreaker(kTiebreakerDefault);
-    return port;
+    return TCPPort::Create({.env = env_,
+                            .network_thread = main_,
+                            .socket_factory = socket_factory,
+                            .network = MakeNetwork(addr),
+                            .ice_username_fragment = username_,
+                            .ice_password = password_,
+                            .ice_tiebreaker = kTiebreakerDefault},
+                           0, 0, true);
   }
   std::unique_ptr<StunPort> CreateStunPort(
       const SocketAddress& addr,
       PacketSocketFactory* socket_factory) {
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    auto port = StunPort::Create({.env = env_,
-                                  .network_thread = main_,
-                                  .socket_factory = socket_factory,
-                                  .network = MakeNetwork(addr),
-                                  .ice_username_fragment = username_,
-                                  .ice_password = password_},
-                                 0, 0, stun_servers, std::nullopt);
-    port->SetIceTiebreaker(kTiebreakerDefault);
-    return port;
+    return StunPort::Create({.env = env_,
+                             .network_thread = main_,
+                             .socket_factory = socket_factory,
+                             .network = MakeNetwork(addr),
+                             .ice_username_fragment = username_,
+                             .ice_password = password_,
+                             .ice_tiebreaker = kTiebreakerDefault},
+                            0, 0, stun_servers, std::nullopt);
   }
   std::unique_ptr<Port> CreateRelayPort(const SocketAddress& addr,
                                         ProtocolType int_proto,
@@ -538,10 +530,9 @@ class PortTest : public ::testing::Test {
     args.password = password_;
     args.server_address = &server_address;
     args.config = &config;
+    args.ice_tiebreaker = kTiebreakerDefault;
 
-    auto port = TurnPort::Create(args, 0, 0);
-    port->SetIceTiebreaker(kTiebreakerDefault);
-    return port;
+    return TurnPort::Create(args, 0, 0);
   }
 
   std::unique_ptr<NATServer> CreateNatServer(const SocketAddress& addr,
@@ -597,10 +588,9 @@ class PortTest : public ::testing::Test {
   // TCP reconnecting mechanism before entering this function.
   void ConnectStartedChannels(TestChannel* ch1, TestChannel* ch2) {
     ASSERT_TRUE(ch1->conn());
-    EXPECT_THAT(
-        WaitUntil([&] { return ch1->conn()->connected(); }, IsTrue(),
-                  {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-        IsRtcOk());  // for TCP connect
+    EXPECT_TRUE(WaitUntil([&] { return ch1->conn()->connected(); },
+                          {.timeout = kDefaultTimeout,
+                           .clock = &time_controller_}));  // for TCP connect
     ch1->Ping();
     EXPECT_TRUE(
         WaitUntil([&] { return !ch2->remote_address().IsNil(); },
@@ -642,14 +632,12 @@ class PortTest : public ::testing::Test {
                                  tcp_conn2->socket()->GetLocalAddress()));
 
     // Wait for both OnClose are delivered.
-    EXPECT_THAT(
-        WaitUntil([&] { return !ch1->conn()->connected(); }, IsTrue(),
-                  {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-        IsRtcOk());
-    EXPECT_THAT(
-        WaitUntil([&] { return !ch2->conn()->connected(); }, IsTrue(),
-                  {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-        IsRtcOk());
+    EXPECT_TRUE(
+        WaitUntil([&] { return !ch1->conn()->connected(); },
+                  {.timeout = kDefaultTimeout, .clock = &time_controller_}));
+    EXPECT_TRUE(
+        WaitUntil([&] { return !ch2->conn()->connected(); },
+                  {.timeout = kDefaultTimeout, .clock = &time_controller_}));
 
     // Ensure redundant SignalClose events on TcpConnection won't break tcp
     // reconnection. Chromium will fire SignalClose for all outstanding IPC
@@ -714,8 +702,7 @@ class PortTest : public ::testing::Test {
       if (send_after_disconnected) {
         // First SendData after disconnect should fail but will trigger
         // reconnect.
-        EXPECT_EQ(-1,
-                  ch1.SendData(kTestData, static_cast<int>(strlen(kTestData))));
+        EXPECT_EQ(-1, ch1.SendData(kTestData));
       }
 
       if (ping_after_disconnected) {
@@ -724,18 +711,15 @@ class PortTest : public ::testing::Test {
       }
 
       // Wait for channel's outgoing TCPConnection connected.
-      EXPECT_THAT(
-          WaitUntil([&] { return ch1.conn()->connected(); }, IsTrue(),
-                    {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-          IsRtcOk());
+      EXPECT_TRUE(
+          WaitUntil([&] { return ch1.conn()->connected(); },
+                    {.timeout = kDefaultTimeout, .clock = &time_controller_}));
 
       // Verify that we could still connect channels.
       ConnectStartedChannels(&ch1, &ch2);
-      EXPECT_THAT(
-          WaitUntil(
-              [&] { return ch1.connection_ready_to_send(); }, IsTrue(),
-              {.timeout = kTcpReconnectTimeout, .clock = &time_controller_}),
-          IsRtcOk());
+      EXPECT_TRUE(WaitUntil(
+          [&] { return ch1.connection_ready_to_send(); },
+          {.timeout = kTcpReconnectTimeout, .clock = &time_controller_}));
       // Channel2 is the passive one so a new connection is created during
       // reconnect. This new connection should never have issued ENOTCONN
       // hence the connection_ready_to_send() should be false.
@@ -744,10 +728,9 @@ class PortTest : public ::testing::Test {
       EXPECT_EQ(ch1.conn()->write_state(), Connection::STATE_WRITABLE);
       // Since the reconnection never happens, the connections should have been
       // destroyed after the timeout.
-      EXPECT_THAT(WaitUntil([&] { return !ch1.conn(); }, IsTrue(),
+      EXPECT_TRUE(WaitUntil([&] { return !ch1.conn(); },
                             {.timeout = kTcpReconnectTimeout + kDefaultTimeout,
-                             .clock = &time_controller_}),
-                  IsRtcOk());
+                             .clock = &time_controller_}));
       EXPECT_TRUE(!ch2.conn());
     }
 
@@ -788,7 +771,8 @@ class PortTest : public ::testing::Test {
         .socket_factory = &socket_factory_,
         .network = MakeNetwork(addr),
         .ice_username_fragment = username,
-        .ice_password = password};
+        .ice_password = password,
+        .ice_tiebreaker = kTiebreakerDefault};
     auto port = std::make_unique<TestPort>(args, 0, 0);
     port->SubscribeRoleConflict([this]() { OnRoleConflict(); });
     return port;
@@ -796,11 +780,9 @@ class PortTest : public ::testing::Test {
   std::unique_ptr<TestPort> CreateTestPort(const SocketAddress& addr,
                                            absl::string_view username,
                                            absl::string_view password,
-                                           IceRole role,
-                                           int tiebreaker) {
+                                           IceRole role) {
     auto port = CreateTestPort(addr, username, password);
     port->SetIceRole(role);
-    port->SetIceTiebreaker(tiebreaker);
     return port;
   }
   // Overload to create a test port given an Network directly.
@@ -812,7 +794,8 @@ class PortTest : public ::testing::Test {
                                     .socket_factory = &socket_factory_,
                                     .network = network,
                                     .ice_username_fragment = username,
-                                    .ice_password = password};
+                                    .ice_password = password,
+                                    .ice_tiebreaker = kTiebreakerDefault};
     auto port = std::make_unique<TestPort>(args, 0, 0);
     port->SubscribeRoleConflict([this]() { OnRoleConflict(); });
     return port;
@@ -902,16 +885,14 @@ void PortTest::TestConnectivity(absl::string_view name1,
   ch1.CreateConnection(GetCandidate(ch2.port()));
   ASSERT_TRUE(ch1.conn() != nullptr);
 
-  EXPECT_THAT(
-      WaitUntil([&] { return ch1.conn()->connected(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());  // for TCP connect
+  EXPECT_TRUE(WaitUntil([&] { return ch1.conn()->connected(); },
+                        {.timeout = kDefaultTimeout,
+                         .clock = &time_controller_}));  // for TCP connect
   ch1.Ping();
   if (accept) {
-    EXPECT_THAT(
-        WaitUntil([&] { return !ch2.remote_address().IsNil(); }, IsTrue(),
-                  {.timeout = kShortTimeout, .clock = &time_controller_}),
-        IsRtcOk());
+    EXPECT_TRUE(
+        WaitUntil([&] { return !ch2.remote_address().IsNil(); },
+                  {.timeout = kShortTimeout, .clock = &time_controller_}));
 
     // We are able to send a ping from src to dst. This is the case when
     // sending to UDP ports and cone NATs.
@@ -974,10 +955,9 @@ void PortTest::TestConnectivity(absl::string_view name1,
       // However, since we have now sent a ping to the source IP, we should be
       // able to get a ping from it. This gives us the real source address.
       ch1.Ping();
-      EXPECT_THAT(
-          WaitUntil([&] { return !ch2.remote_address().IsNil(); }, IsTrue(),
-                    {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-          IsRtcOk());
+      EXPECT_TRUE(
+          WaitUntil([&] { return !ch2.remote_address().IsNil(); },
+                    {.timeout = kDefaultTimeout, .clock = &time_controller_}));
       EXPECT_FALSE(ch2.conn()->receiving());
       EXPECT_TRUE(ch1.remote_address().IsNil());
 
@@ -1023,13 +1003,11 @@ void PortTest::TestConnectivity(absl::string_view name1,
   ASSERT_TRUE(ch1.conn() != nullptr);
   ASSERT_TRUE(ch2.conn() != nullptr);
   if (possible) {
-    EXPECT_THAT(WaitUntil([&] { return ch1.conn()->receiving(); }, IsTrue(),
-                          {.clock = &time_controller_}),
-                IsRtcOk());
+    EXPECT_TRUE(WaitUntil([&] { return ch1.conn()->receiving(); },
+                          {.clock = &time_controller_}));
     EXPECT_EQ(Connection::STATE_WRITABLE, ch1.conn()->write_state());
-    EXPECT_THAT(WaitUntil([&] { return ch2.conn()->receiving(); }, IsTrue(),
-                          {.clock = &time_controller_}),
-                IsRtcOk());
+    EXPECT_TRUE(WaitUntil([&] { return ch2.conn()->receiving(); },
+                          {.clock = &time_controller_}));
     EXPECT_EQ(Connection::STATE_WRITABLE, ch2.conn()->write_state());
   } else {
     EXPECT_FALSE(ch1.conn()->receiving());
@@ -1108,8 +1086,7 @@ class FakePacketSocketFactory : public PacketSocketFactory {
       std::unique_ptr<AsyncPacketSocket> next_client_tcp_socket) {
     next_client_tcp_socket_ = std::move(next_client_tcp_socket);
   }
-  std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAsyncDnsResolver()
-      override {
+  std::unique_ptr<AsyncDnsResolverInterface> CreateAsyncDnsResolver() override {
     return nullptr;
   }
 
@@ -1187,6 +1164,42 @@ class FakeAsyncListenSocket : public AsyncListenSocket {
 // Local -> XXXX
 TEST_F(PortTest, TestLocalToLocal) {
   TestLocalToLocal();
+}
+
+TEST_F(PortTest, TestNetworkSliceInitiallyDefault) {
+  std::unique_ptr<UDPPort> port = CreateUdpPort(kLocalAddr1);
+  port->PrepareAddress();
+
+  ASSERT_EQ(1U, port->Candidates().size());
+  EXPECT_EQ(NetworkSlice::NO_SLICE, port->Candidates()[0].network_slice());
+}
+
+TEST_F(PortTest, TestNetworkSliceInitiallySet) {
+  std::unique_ptr<UDPPort> port = CreateUdpPort(kLocalAddr1);
+  Network* network = const_cast<Network*>(port->Network());
+  network->set_network_slice(NetworkSlice::UNIFIED_COMMUNICATIONS);
+
+  port->PrepareAddress();
+  ASSERT_EQ(1U, port->Candidates().size());
+  EXPECT_EQ(NetworkSlice::UNIFIED_COMMUNICATIONS,
+            port->Candidates()[0].network_slice());
+}
+
+TEST_F(PortTest, TestNetworkSliceUpdate) {
+  std::unique_ptr<UDPPort> port = CreateUdpPort(kLocalAddr1);
+  Network* network = const_cast<Network*>(port->Network());
+  network->set_network_slice(NetworkSlice::NO_SLICE);
+
+  port->PrepareAddress();
+  ASSERT_EQ(1U, port->Candidates().size());
+  EXPECT_EQ(NetworkSlice::NO_SLICE, port->Candidates()[0].network_slice());
+
+  network->set_network_slice(NetworkSlice::UNIFIED_COMMUNICATIONS);
+  EXPECT_EQ(NetworkSlice::UNIFIED_COMMUNICATIONS,
+            port->Candidates()[0].network_slice());
+
+  network->set_network_slice(NetworkSlice::NO_SLICE);
+  EXPECT_EQ(NetworkSlice::NO_SLICE, port->Candidates()[0].network_slice());
 }
 
 TEST_F(PortTest, TestLocalToConeNat) {
@@ -1357,10 +1370,9 @@ TEST_F(PortTest, TestTcpNeverConnect) {
 
   ch1.CreateConnection(c);
   EXPECT_TRUE(ch1.conn());
-  EXPECT_THAT(
-      WaitUntil([&] { return !ch1.conn(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());  // for TCP connect
+  EXPECT_TRUE(WaitUntil([&] { return !ch1.conn(); },
+                        {.timeout = kDefaultTimeout,
+                         .clock = &time_controller_}));  // for TCP connect
 }
 
 /* TODO(?): Enable these once testrelayserver can accept external TCP.
@@ -1490,11 +1502,8 @@ TEST_F(PortTest, TestConnectionDeadWithDeadConnectionTimeout) {
 TEST_F(PortTest, TestConnectionDeadOutstandingPing) {
   auto port1 = CreateUdpPort(kLocalAddr1);
   port1->SetIceRole(ICEROLE_CONTROLLING);
-  port1->SetIceTiebreaker(kTiebreaker1);
   auto port2 = CreateUdpPort(kLocalAddr2);
   port2->SetIceRole(ICEROLE_CONTROLLED);
-  port2->SetIceTiebreaker(kTiebreaker2);
-
   TestChannel ch1(std::move(port1), time_controller_);
   TestChannel ch2(std::move(port2), time_controller_);
   // Acquire address.
@@ -1544,11 +1553,9 @@ TEST_F(PortTest, TestConnectionDeadOutstandingPing) {
 TEST_F(PortTest, TestLocalToLocalStandard) {
   auto port1 = CreateUdpPort(kLocalAddr1);
   port1->SetIceRole(ICEROLE_CONTROLLING);
-  port1->SetIceTiebreaker(kTiebreaker1);
   auto port2 = CreateUdpPort(kLocalAddr2);
-  port2->SetIceRole(ICEROLE_CONTROLLED);
-  port2->SetIceTiebreaker(kTiebreaker2);
-  // Same parameters as TestLocalToLocal above.
+  port2->SetIceRole(
+      ICEROLE_CONTROLLED);  // Same parameters as TestLocalToLocal above.
   TestConnectivity("udp", std::move(port1), "udp", std::move(port2), true, true,
                    true, true);
 }
@@ -1560,7 +1567,6 @@ TEST_F(PortTest, TestLocalToLocalStandard) {
 TEST_F(PortTest, TestLoopbackCall) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   lport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
   Connection* conn =
@@ -1606,16 +1612,14 @@ TEST_F(PortTest, TestLoopbackCall) {
   // To make sure we receive error response, adding tiebreaker less than
   // what's present in request.
   modified_req->AddAttribute(std::make_unique<StunUInt64Attribute>(
-      STUN_ATTR_ICE_CONTROLLING, kTiebreaker1 - 1));
+      STUN_ATTR_ICE_CONTROLLING, lport->IceTiebreaker() - 1));
   modified_req->AddMessageIntegrity("lpass");
   modified_req->AddFingerprint();
 
   lport->Reset();
   auto buf = std::make_unique<ByteBufferWriter>();
   WriteStunMessage(*modified_req, buf.get());
-  conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
-      reinterpret_cast<const char*>(buf->Data()), buf->Length(),
-      /*packet_time_us=*/-1));
+  conn1->OnReadPacket(ReceivedIpPacket(buf->DataView(), SocketAddress()));
   ASSERT_THAT(
       WaitUntil([&] { return lport->last_stun_msg(); }, NotNull(),
                 {.timeout = kDefaultTimeout, .clock = &time_controller_}),
@@ -1632,11 +1636,8 @@ TEST_F(PortTest, TestLoopbackCall) {
 TEST_F(PortTest, TestIceRoleConflict) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
   rport->SetIceRole(ICEROLE_CONTROLLING);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
@@ -1694,14 +1695,12 @@ TEST_F(PortTest, TestTcpNoDelay) {
   // Connect and send a ping from src to dst.
   ch1.CreateConnection(GetCandidate(ch2.port()));
   ASSERT_TRUE(ch1.conn() != nullptr);
-  EXPECT_THAT(
-      WaitUntil([&] { return ch1.conn()->connected(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());  // for TCP connect
+  EXPECT_TRUE(WaitUntil([&] { return ch1.conn()->connected(); },
+                        {.timeout = kDefaultTimeout,
+                         .clock = &time_controller_}));  // for TCP connect
   ch1.Ping();
-  EXPECT_THAT(WaitUntil([&] { return !ch2.remote_address().IsNil(); }, IsTrue(),
-                        {.clock = &time_controller_}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !ch2.remote_address().IsNil(); },
+                        {.clock = &time_controller_}));
 
   // Accept the connection.
   ch2.AcceptConnection(GetCandidate(ch1.port()));
@@ -1754,10 +1753,7 @@ TEST_F(PortTest, TestDisableInterfaceOfTcpPort) {
   rsocket->Bind(kLocalAddr2);
 
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(rport->Candidates().empty());
@@ -1900,7 +1896,6 @@ TEST_F(PortTest, TestUdpMultipleAddressesV6CrossTypePorts) {
         .WillOnce(Return(absl::WrapUnique(socket)));
     ports[i] =
         CreateUdpPortMultipleAddrs(addresses[i], kLinkLocalIPv6Addr, &factory);
-    ports[i]->SetIceTiebreaker(kTiebreakerDefault);
     socket->set_state(AsyncPacketSocket::STATE_BINDING);
     socket->NotifyAddressReady(socket, addresses[i]);
     ports[i]->PrepareAddress();
@@ -1958,10 +1953,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   // Send a fake ping from lport to rport.
   lport->PrepareAddress();
   rport->PrepareAddress();
@@ -1997,9 +1989,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_ICE_CONTROLLED) == nullptr);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != nullptr);
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != nullptr);
-  EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      reinterpret_cast<const char*>(lport->last_stun_buf().data()),
-      lport->last_stun_buf().size()));
+  EXPECT_TRUE(StunMessage::ValidateFingerprint(lport->last_stun_buf()));
 
   // Request should not include ping count.
   ASSERT_TRUE(msg->GetUInt32(STUN_ATTR_RETRANSMIT_COUNT) == nullptr);
@@ -2033,9 +2023,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(StunMessage::IntegrityStatus::kIntegrityOk,
             msg->ValidateMessageIntegrity("rpass"));
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != nullptr);
-  EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      reinterpret_cast<const char*>(lport->last_stun_buf().data()),
-      lport->last_stun_buf().size()));
+  EXPECT_TRUE(StunMessage::ValidateFingerprint(lport->last_stun_buf()));
   // No USERNAME or PRIORITY in ICE responses.
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USERNAME) == nullptr);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == nullptr);
@@ -2064,9 +2052,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(StunMessage::IntegrityStatus::kIntegrityOk,
             msg->ValidateMessageIntegrity("rpass"));
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != nullptr);
-  EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      reinterpret_cast<const char*>(lport->last_stun_buf().data()),
-      lport->last_stun_buf().size()));
+  EXPECT_TRUE(StunMessage::ValidateFingerprint(lport->last_stun_buf()));
   // No USERNAME with ICE.
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USERNAME) == nullptr);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == nullptr);
@@ -2127,10 +2113,7 @@ TEST_F(PortTest, TestNomination) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
@@ -2152,10 +2135,9 @@ TEST_F(PortTest, TestNomination) {
   // Send ping (including the nomination value) from `lconn` to `rconn`. This
   // should set the remote nomination of `rconn`.
   lconn->Ping();
-  ASSERT_THAT(
-      WaitUntil([&] { return lport->last_stun_msg(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());
+  ASSERT_TRUE(
+      WaitUntil([&] { return lport->last_stun_msg(); },
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}));
   ASSERT_GT(lport->last_stun_buf().size(), 0u);
   rconn->OnReadPacket(
       ReceivedIpPacket(lport->last_stun_buf(), SocketAddress(), std::nullopt));
@@ -2168,10 +2150,9 @@ TEST_F(PortTest, TestNomination) {
 
   // This should result in an acknowledgment sent back from `rconn` to `lconn`,
   // updating the acknowledged nomination of `lconn`.
-  ASSERT_THAT(
-      WaitUntil([&] { return rport->last_stun_msg(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());
+  ASSERT_TRUE(
+      WaitUntil([&] { return rport->last_stun_msg(); },
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}));
   ASSERT_GT(rport->last_stun_buf().size(), 0u);
   lconn->OnReadPacket(
       ReceivedIpPacket(rport->last_stun_buf(), SocketAddress(), std::nullopt));
@@ -2187,10 +2168,7 @@ TEST_F(PortTest, TestRoundTripTime) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
@@ -2226,10 +2204,7 @@ TEST_F(PortTest, TestUseCandidateAttribute) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   // Send a fake ping from lport to rport.
   lport->PrepareAddress();
   rport->PrepareAddress();
@@ -2258,9 +2233,7 @@ TEST_F(PortTest, TestNetworkCostChange) {
   auto lport = CreateTestPort(test_network, "lfrag", "lpass");
   auto rport = CreateTestPort(test_network, "rfrag", "rpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
   lport->PrepareAddress();
   rport->PrepareAddress();
 
@@ -2321,10 +2294,7 @@ TEST_F(PortTest, TestNetworkInfoAttribute) {
   auto lport = CreateTestPort(test_network, "lfrag", "lpass");
   auto rport = CreateTestPort(test_network, "rfrag", "rpass");
   lport->SetIceRole(ICEROLE_CONTROLLING);
-  lport->SetIceTiebreaker(kTiebreaker1);
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   uint16_t lnetwork_id = 9;
   test_network->set_id(lnetwork_id);
   // Send a fake ping from lport to rport.
@@ -2599,12 +2569,12 @@ TEST_F(PortTest,
 
   // Build ordinary message with valid ufrag/pass.
   in_msg = CreateStunMessageWithUsername(STUN_BINDING_REQUEST, "rfrag:lfrag");
-  in_msg->AddMessageIntegrity("rpass");
   // Add a couple attributes with ID in comprehension-required range.
   in_msg->AddAttribute(StunAttribute::CreateUInt32(0x7777));
   in_msg->AddAttribute(StunAttribute::CreateUInt32(0x4567));
   // ... And one outside the range.
   in_msg->AddAttribute(StunAttribute::CreateUInt32(0xdead));
+  in_msg->AddMessageIntegrity("rpass");
   in_msg->AddFingerprint();
   WriteStunMessage(*in_msg, buf.get());
   ASSERT_TRUE(GetStunMessageFromBufferWriter(port.get(), buf.get(), addr,
@@ -2629,10 +2599,10 @@ TEST_F(PortTest,
 TEST_F(PortTest,
        TestHandleStunResponseWithUnknownComprehensionRequiredAttribute) {
   // Generic setup.
-  auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                              ICEROLE_CONTROLLING, kTiebreakerDefault);
-  auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreakerDefault);
+  auto lport =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
+  auto rport =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
@@ -2658,13 +2628,13 @@ TEST_F(PortTest,
       IsRtcOk());
   auto modified_response = rport->last_stun_msg()->Clone();
   modified_response->AddAttribute(StunAttribute::CreateUInt32(0x7777));
+  modified_response->RemoveAttribute(STUN_ATTR_MESSAGE_INTEGRITY);
   modified_response->RemoveAttribute(STUN_ATTR_FINGERPRINT);
+  modified_response->AddMessageIntegrity("rpass");
   modified_response->AddFingerprint();
   ByteBufferWriter buf;
   WriteStunMessage(*modified_response, &buf);
-  lconn->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
-      reinterpret_cast<const char*>(buf.Data()), buf.Length(),
-      /*packet_time_us=*/-1));
+  lconn->OnReadPacket(ReceivedIpPacket(buf.DataView(), SocketAddress()));
   // Response should have been ignored, leaving us unwritable still.
   EXPECT_FALSE(lconn->writable());
 }
@@ -2674,10 +2644,10 @@ TEST_F(PortTest,
 TEST_F(PortTest,
        TestHandleStunIndicationWithUnknownComprehensionRequiredAttribute) {
   // Generic set up.
-  auto lport = CreateTestPort(kLocalAddr2, "lfrag", "lpass",
-                              ICEROLE_CONTROLLING, kTiebreakerDefault);
-  auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreakerDefault);
+  auto lport =
+      CreateTestPort(kLocalAddr2, "lfrag", "lpass", ICEROLE_CONTROLLING);
+  auto rport =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
@@ -2700,8 +2670,8 @@ TEST_F(PortTest,
 // Test handling of STUN binding indication messages . STUN binding
 // indications are allowed only to the connection which is in read mode.
 TEST_F(PortTest, TestHandleStunBindingIndication) {
-  auto lport = CreateTestPort(kLocalAddr2, "lfrag", "lpass",
-                              ICEROLE_CONTROLLING, kTiebreaker1);
+  auto lport =
+      CreateTestPort(kLocalAddr2, "lfrag", "lpass", ICEROLE_CONTROLLING);
 
   // Verifying encoding and decoding STUN indication message.
   std::unique_ptr<IceMessage> in_msg, out_msg;
@@ -2722,8 +2692,6 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
   // last_ping_received.
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
   rport->SetIceRole(ICEROLE_CONTROLLED);
-  rport->SetIceTiebreaker(kTiebreaker2);
-
   lport->PrepareAddress();
   rport->PrepareAddress();
   ASSERT_FALSE(lport->Candidates().empty());
@@ -2763,7 +2731,6 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
 
 TEST_F(PortTest, TestComputeCandidatePriority) {
   auto port = CreateTestPort(kLocalAddr1, "name", "pass");
-  port->SetIceTiebreaker(kTiebreakerDefault);
   port->set_type_preference(90);
   port->set_component(177);
   port->AddCandidateAddress(SocketAddress("192.168.1.4", 1234));
@@ -2801,7 +2768,6 @@ TEST_F(PortTest, TestComputeCandidatePriorityWithPriorityAdjustment) {
   FieldTrials field_trials = CreateTestFieldTrials(
       "WebRTC-IncreaseIceCandidatePriorityHostSrflx/Enabled/");
   auto port = CreateTestPort(kLocalAddr1, "name", "pass", &field_trials);
-  port->SetIceTiebreaker(kTiebreakerDefault);
   port->set_type_preference(90);
   port->set_component(177);
   port->AddCandidateAddress(SocketAddress("192.168.1.4", 1234));
@@ -2839,7 +2805,6 @@ TEST_F(PortTest, TestComputeCandidatePriorityWithPriorityAdjustment) {
 // Test that candidates with different types will have different foundation.
 TEST_F(PortTest, TestFoundation) {
   auto testport = CreateTestPort(kLocalAddr1, "name", "pass");
-  testport->SetIceTiebreaker(kTiebreakerDefault);
   testport->AddCandidateAddress(kLocalAddr1, kLocalAddr1,
                                 IceCandidateType::kHost,
                                 ICE_TYPE_PREFERENCE_HOST, false);
@@ -2983,11 +2948,9 @@ TEST_F(PortTest, TestCandidatePriority) {
 // Test the Connection priority is calculated correctly.
 TEST_F(PortTest, TestConnectionPriority) {
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass");
-  lport->SetIceTiebreaker(kTiebreakerDefault);
   lport->set_type_preference(ICE_TYPE_PREFERENCE_HOST);
 
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass");
-  rport->SetIceTiebreaker(kTiebreakerDefault);
   rport->set_type_preference(ICE_TYPE_PREFERENCE_RELAY_UDP);
   lport->set_component(123);
   lport->AddCandidateAddress(SocketAddress("192.168.1.4", 1234));
@@ -3031,11 +2994,9 @@ TEST_F(PortTest, TestConnectionPriorityWithPriorityAdjustment) {
   FieldTrials field_trials = CreateTestFieldTrials(
       "WebRTC-IncreaseIceCandidatePriorityHostSrflx/Enabled/");
   auto lport = CreateTestPort(kLocalAddr1, "lfrag", "lpass", &field_trials);
-  lport->SetIceTiebreaker(kTiebreakerDefault);
   lport->set_type_preference(ICE_TYPE_PREFERENCE_HOST);
 
   auto rport = CreateTestPort(kLocalAddr2, "rfrag", "rpass", &field_trials);
-  rport->SetIceTiebreaker(kTiebreakerDefault);
   rport->set_type_preference(ICE_TYPE_PREFERENCE_RELAY_UDP);
   lport->set_component(123);
   lport->AddCandidateAddress(SocketAddress("192.168.1.4", 1234));
@@ -3104,20 +3065,17 @@ TEST_F(PortTest, TestWritableState) {
   ASSERT_TRUE(ch1.conn() != nullptr);
   EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
   // for TCP connect
-  EXPECT_THAT(
-      WaitUntil([&] { return ch1.conn()->connected(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ch1.conn()->connected(); },
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}));
   ch1.Ping();
-  EXPECT_THAT(WaitUntil([&] { return !ch2.remote_address().IsNil(); }, IsTrue(),
-                        {.clock = &time_controller_}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !ch2.remote_address().IsNil(); },
+                        {.clock = &time_controller_}));
 
   // Data should be sendable before the connection is accepted.
-  char data[] = "abcd";
-  int data_size = std::ssize(data);
+  auto data = std::to_array<uint8_t>({'a', 'b', 'c', 'd', '\0'});
   AsyncSocketPacketOptions options;
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   // Accept the connection to return the binding response, transition to
   // writable, and allow data to be sent.
@@ -3127,7 +3085,7 @@ TEST_F(PortTest, TestWritableState) {
                 Eq(Connection::STATE_WRITABLE),
                 {.timeout = kDefaultTimeout, .clock = &time_controller_}),
       IsRtcOk());
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   // Ask the connection to update state as if enough time has passed to lose
   // full writability and 5 pings went unresponded to. We'll accomplish the
@@ -3142,7 +3100,7 @@ TEST_F(PortTest, TestWritableState) {
   EXPECT_EQ(Connection::STATE_WRITE_UNRELIABLE, ch1.conn()->write_state());
 
   // Data should be able to be sent in this state.
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   // And now allow the other side to process the pings and send binding
   // responses.
@@ -3162,7 +3120,7 @@ TEST_F(PortTest, TestWritableState) {
 
   // Even if the connection has timed out, the Connection shouldn't block
   // the sending of data.
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   ch1.Stop();
   ch2.Stop();
@@ -3197,9 +3155,8 @@ TEST_F(PortTest, TestWritableStateWithConfiguredThreshold) {
   ch1.CreateConnection(GetCandidate(ch2.port()));
   ASSERT_TRUE(ch1.conn() != nullptr);
   ch1.Ping();
-  EXPECT_THAT(WaitUntil([&] { return !ch2.remote_address().IsNil(); }, IsTrue(),
-                        {.clock = &time_controller_}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !ch2.remote_address().IsNil(); },
+                        {.clock = &time_controller_}));
 
   // Accept the connection to return the binding response, transition to
   // writable, and allow data to be sent.
@@ -3271,12 +3228,12 @@ TEST_F(PortTest, TestTimeoutForNeverWritable) {
 // In this test `ch1` behaves like FULL mode client and we have created
 // port which responds to the ping message just like LITE client.
 TEST_F(PortTest, TestIceLiteConnectivity) {
-  auto ice_full_port = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                                      ICEROLE_CONTROLLING, kTiebreaker1);
+  auto ice_full_port =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
   auto* ice_full_port_ptr = ice_full_port.get();
 
-  auto ice_lite_port = CreateTestPort(kLocalAddr2, "rfrag", "rpass",
-                                      ICEROLE_CONTROLLED, kTiebreaker2);
+  auto ice_lite_port =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
   // Setup TestChannel. This behaves like FULL mode client.
   TestChannel ch1(std::move(ice_full_port), time_controller_);
   ch1.SetIceMode(ICEMODE_FULL);
@@ -3327,10 +3284,9 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
                 Eq(Connection::STATE_WRITABLE),
                 {.timeout = kDefaultTimeout, .clock = &time_controller_}),
       IsRtcOk());
-  EXPECT_THAT(
-      WaitUntil([&] { return ch1.nominated(); }, IsTrue(),
-                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ch1.nominated(); },
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}));
 
   // Clear existing stun messsages. Otherwise we will process old stun
   // message right after we send ping.
@@ -3356,9 +3312,9 @@ std::optional<int> GetSupportedGoogPingVersion(const StunMessage* msg) {
   }
 
   if (msg->type() == STUN_BINDING_REQUEST) {
-    if (goog_misc->Size() <
-        static_cast<int>(IceGoogMiscInfoBindingRequestAttributeIndex::
-                             SUPPORT_GOOG_PING_VERSION)) {
+    if (goog_misc->Size() <=
+        static_cast<size_t>(IceGoogMiscInfoBindingRequestAttributeIndex::
+                                SUPPORT_GOOG_PING_VERSION)) {
       return std::nullopt;
     }
 
@@ -3368,9 +3324,9 @@ std::optional<int> GetSupportedGoogPingVersion(const StunMessage* msg) {
   }
 
   if (msg->type() == STUN_BINDING_RESPONSE) {
-    if (goog_misc->Size() <
-        static_cast<int>(IceGoogMiscInfoBindingResponseAttributeIndex::
-                             SUPPORT_GOOG_PING_VERSION)) {
+    if (goog_misc->Size() <=
+        static_cast<size_t>(IceGoogMiscInfoBindingResponseAttributeIndex::
+                                SUPPORT_GOOG_PING_VERSION)) {
       return std::nullopt;
     }
 
@@ -3397,11 +3353,11 @@ TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
                    << trials.announce_goog_ping
                    << " enable:" << trials.enable_goog_ping;
 
-  auto port1_unique = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                                     ICEROLE_CONTROLLING, kTiebreaker1);
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
   auto* port1 = port1_unique.get();
-  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreaker2);
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
 
   TestChannel ch1(std::move(port1_unique), time_controller_);
   // Block usage of STUN_ATTR_USE_CANDIDATE so that
@@ -3496,11 +3452,11 @@ TEST_F(PortTest, TestGoogPingUnsupportedVersionInStunBinding) {
   trials.announce_goog_ping = true;
   trials.enable_goog_ping = true;
 
-  auto port1_unique = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                                     ICEROLE_CONTROLLING, kTiebreaker1);
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
   auto* port1 = port1_unique.get();
-  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreaker2);
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
 
   TestChannel ch1(std::move(port1_unique), time_controller_);
   // Block usage of STUN_ATTR_USE_CANDIDATE so that
@@ -3571,11 +3527,11 @@ TEST_F(PortTest, TestGoogPingUnsupportedVersionInStunBindingResponse) {
   trials.announce_goog_ping = true;
   trials.enable_goog_ping = true;
 
-  auto port1_unique = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                                     ICEROLE_CONTROLLING, kTiebreaker1);
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
   auto* port1 = port1_unique.get();
-  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreaker2);
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
 
   TestChannel ch1(std::move(port1_unique), time_controller_);
   // Block usage of STUN_ATTR_USE_CANDIDATE so that
@@ -3665,6 +3621,158 @@ TEST_F(PortTest, TestGoogPingUnsupportedVersionInStunBindingResponse) {
   ch1.Stop();
 }
 
+// Test that we don't crash if we receive a STUN_BINDING request with an empty
+// STUN_ATTR_GOOG_MISC_INFO attribute.
+TEST_F(PortTest, TestGoogPingEmptyMiscInfoInStunBindingRequest) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = true;
+  trials.enable_goog_ping = true;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
+  auto* port1 = port1_unique.get();
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
+
+  TestChannel ch1(std::move(port1_unique), time_controller_);
+  ch1.SetIceMode(ICEMODE_LITE);
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_THAT(
+      WaitUntil([&] { return ch1.complete_count(); }, Eq(1),
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
+      IsRtcOk());
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != nullptr);
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  ch1.Ping();
+
+  ASSERT_THAT(
+      WaitUntil([&] { return port1->last_stun_msg(); }, NotNull(),
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
+      IsRtcOk());
+  const IceMessage* request1 = port1->last_stun_msg();
+
+  // Modify the STUN message request1 to send empty STUN_ATTR_GOOG_MISC_INFO
+  auto modified_request1 = request1->Clone();
+  ASSERT_TRUE(modified_request1->RemoveAttribute(STUN_ATTR_MESSAGE_INTEGRITY) !=
+              nullptr);
+  ASSERT_TRUE(modified_request1->RemoveAttribute(STUN_ATTR_GOOG_MISC_INFO) !=
+              nullptr);
+  {
+    auto list =
+        StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+    modified_request1->AddAttribute(std::move(list));
+    modified_request1->AddMessageIntegrity("rpass");
+    modified_request1->AddFingerprint();
+  }
+  auto* con =
+      port2->CreateConnection(port1->Candidates()[0], Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  // This should not crash.
+  con->SendStunBindingResponse(modified_request1.get());
+
+  // The response should not contain GOOG_PING_VERSION because request was
+  // empty/invalid.
+  const auto* response = port2->last_stun_msg();
+  EXPECT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  EXPECT_FALSE(GetSupportedGoogPingVersion(response));
+
+  ch1.Stop();
+}
+
+// Test that we don't crash if we receive a STUN_BINDING response with an empty
+// STUN_ATTR_GOOG_MISC_INFO attribute.
+TEST_F(PortTest, TestGoogPingEmptyMiscInfoInStunBindingResponse) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = true;
+  trials.enable_goog_ping = true;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
+  auto* port1 = port1_unique.get();
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
+
+  TestChannel ch1(std::move(port1_unique), time_controller_);
+  ch1.SetIceMode(ICEMODE_LITE);
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_THAT(
+      WaitUntil([&] { return ch1.complete_count(); }, Eq(1),
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
+      IsRtcOk());
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != nullptr);
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  ch1.Ping();
+
+  ASSERT_THAT(
+      WaitUntil([&] { return port1->last_stun_msg(); }, NotNull(),
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
+      IsRtcOk());
+  const IceMessage* request1 = port1->last_stun_msg();
+
+  auto* con =
+      port2->CreateConnection(port1->Candidates()[0], Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  con->SendStunBindingResponse(request1);
+
+  const auto* response = port2->last_stun_msg();
+  EXPECT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  EXPECT_TRUE(GetSupportedGoogPingVersion(response));
+
+  // Modify the STUN message response to contain empty STUN_ATTR_GOOG_MISC_INFO
+  auto modified_response = response->Clone();
+  ASSERT_TRUE(modified_response->RemoveAttribute(STUN_ATTR_GOOG_MISC_INFO) !=
+              nullptr);
+  ASSERT_TRUE(modified_response->RemoveAttribute(STUN_ATTR_MESSAGE_INTEGRITY) !=
+              nullptr);
+  ASSERT_TRUE(modified_response->RemoveAttribute(STUN_ATTR_FINGERPRINT) !=
+              nullptr);
+  {
+    auto list =
+        StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+    ASSERT_EQ(0U, list->Size());
+    modified_response->AddAttribute(std::move(list));
+    modified_response->AddMessageIntegrity("rpass");
+    modified_response->AddFingerprint();
+  }
+
+  ByteBufferWriter buf;
+  modified_response->Write(&buf);
+
+  // Feeding the modified response message back. This should not crash.
+  ch1.conn()->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      buf.Data(), buf.Length(), /*packet_time_us=*/-1));
+
+  port1->Reset();
+  port2->Reset();
+
+  ch1.Ping();
+  ASSERT_THAT(
+      WaitUntil([&] { return port1->last_stun_msg(); }, NotNull(),
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
+      IsRtcOk());
+
+  // This should now be a STUN_BINDING...without a kGoogPingVersion
+  const IceMessage* request2 = port1->last_stun_msg();
+  EXPECT_EQ(request2->type(), STUN_BINDING_REQUEST);
+  EXPECT_FALSE(GetSupportedGoogPingVersion(request2));
+
+  ch1.Stop();
+}
+
 INSTANTIATE_TEST_SUITE_P(GoogPingTest,
                          GoogPingTest,
                          // test all combinations of <announce, enable> pairs.
@@ -3679,11 +3787,11 @@ TEST_F(PortTest, TestChangeInAttributeMakesGoogPingFallsbackToStunBinding) {
   trials.announce_goog_ping = true;
   trials.enable_goog_ping = true;
 
-  auto port1_unique = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                                     ICEROLE_CONTROLLING, kTiebreaker1);
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
   auto* port1 = port1_unique.get();
-  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreaker2);
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
 
   TestChannel ch1(std::move(port1_unique), time_controller_);
   // Block usage of STUN_ATTR_USE_CANDIDATE so that
@@ -3775,11 +3883,11 @@ TEST_F(PortTest, TestErrorResponseMakesGoogPingFallBackToStunBinding) {
   trials.announce_goog_ping = true;
   trials.enable_goog_ping = true;
 
-  auto port1_unique = CreateTestPort(kLocalAddr1, "lfrag", "lpass",
-                                     ICEROLE_CONTROLLING, kTiebreaker1);
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass", ICEROLE_CONTROLLING);
   auto* port1 = port1_unique.get();
-  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED,
-                              kTiebreaker2);
+  auto port2 =
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass", ICEROLE_CONTROLLED);
 
   TestChannel ch1(std::move(port1_unique), time_controller_);
   // Block usage of STUN_ATTR_USE_CANDIDATE so that
@@ -3881,14 +3989,10 @@ TEST_F(PortTest, TestPortTimeoutIfNotKeptAlive) {
   ConnectToSignalDestroyed(port1.get());
   port1->set_timeout_delay(timeout_delay);  // milliseconds
   port1->SetIceRole(ICEROLE_CONTROLLING);
-  port1->SetIceTiebreaker(kTiebreaker1);
-
   auto port2 = CreateUdpPort(kLocalAddr2);
   ConnectToSignalDestroyed(port2.get());
   port2->set_timeout_delay(timeout_delay);  // milliseconds
   port2->SetIceRole(ICEROLE_CONTROLLED);
-  port2->SetIceTiebreaker(kTiebreaker2);
-
   // Set up channels and ensure both ports will be deleted.
   TestChannel ch1(std::move(port1), time_controller_);
   TestChannel ch2(std::move(port2), time_controller_);
@@ -3911,15 +4015,11 @@ TEST_F(PortTest, TestPortTimeoutAfterNewConnectionCreatedAndDestroyed) {
   ConnectToSignalDestroyed(port1.get());
   port1->set_timeout_delay(timeout_delay);  // milliseconds
   port1->SetIceRole(ICEROLE_CONTROLLING);
-  port1->SetIceTiebreaker(kTiebreaker1);
-
   auto port2 = CreateUdpPort(kLocalAddr2);
   ConnectToSignalDestroyed(port2.get());
   port2->set_timeout_delay(timeout_delay);  // milliseconds
 
   port2->SetIceRole(ICEROLE_CONTROLLED);
-  port2->SetIceTiebreaker(kTiebreaker2);
-
   // Set up channels and ensure both ports will be deleted.
   TestChannel ch1(std::move(port1), time_controller_);
   TestChannel ch2(std::move(port2), time_controller_);
@@ -3953,14 +4053,12 @@ TEST_F(PortTest, TestPortNotTimeoutUntilPruned) {
   ConnectToSignalDestroyed(port1.get());
   port1->set_timeout_delay(timeout_delay);  // milliseconds
   port1->SetIceRole(ICEROLE_CONTROLLING);
-  port1->SetIceTiebreaker(kTiebreaker1);
-
   auto port2 = CreateUdpPort(kLocalAddr2);
   ConnectToSignalDestroyed(port2.get());
   port2->set_timeout_delay(timeout_delay);  // milliseconds
-  port2->SetIceRole(ICEROLE_CONTROLLED);
-  port2->SetIceTiebreaker(kTiebreaker2);
-  // The connection must not be destroyed before a connection is attempted.
+  port2->SetIceRole(
+      ICEROLE_CONTROLLED);  // The connection must not be destroyed before a
+                            // connection is attempted.
   EXPECT_EQ(0, ports_destroyed());
 
   port1->set_component(ICE_CANDIDATE_COMPONENT_DEFAULT);
@@ -4010,7 +4108,6 @@ TEST_F(PortTest, TestSupportsProtocol) {
 // on both the port itself and its candidates.
 TEST_F(PortTest, TestSetIceParameters) {
   auto port = CreateTestPort(kLocalAddr1, "ufrag1", "password1");
-  port->SetIceTiebreaker(kTiebreakerDefault);
   port->PrepareAddress();
   EXPECT_EQ(1UL, port->Candidates().size());
   port->SetIceParameters(1, "ufrag2", "password2");
@@ -4025,7 +4122,6 @@ TEST_F(PortTest, TestSetIceParameters) {
 
 TEST_F(PortTest, TestAddConnectionWithSameAddress) {
   auto port = CreateTestPort(kLocalAddr1, "ufrag1", "password1");
-  port->SetIceTiebreaker(kTiebreakerDefault);
   port->PrepareAddress();
   EXPECT_EQ(1u, port->Candidates().size());
   SocketAddress address("1.1.1.1", 5000);
@@ -4049,6 +4145,26 @@ TEST_F(PortTest, TestAddConnectionWithSameAddress) {
   time_controller_.AdvanceTime(TimeDelta::Millis(300));
   EXPECT_TRUE(port->GetConnection(address) != nullptr);
 }
+
+// This is a COMPILE time check to ensure that the TurnPort class can be
+// subclassed properly.
+class TestPortWrapper : public TurnPort {
+  TestPortWrapper()
+      : TurnPort(args_,
+                 /*socket=*/nullptr,
+                 my_server_address_,
+                 credentials_,
+                 /*server_priority=*/1,
+                 /*tls_alpn_protocols=*/{"alpn"},
+                 /*tls_elliptic_curves=*/{"ecc"},
+                 /*customizer=*/nullptr,
+                 /*tls_cert_verifier=*/nullptr) {}
+
+ private:
+  PortParametersRef args_{.env = CreateTestEnvironment()};
+  ProtocolAddress my_server_address_{kLocalAddr1, PROTO_UDP};
+  RelayCredentials credentials_;
+};
 
 }  // namespace
 }  // namespace webrtc

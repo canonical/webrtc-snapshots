@@ -26,15 +26,6 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
-<enum name="AggregatedSearchRankerError">
-  <int value="0" label="Unknown"/>
-  <int value="1" label="LoadModelFailed"/>
-  <int value="2" label="CreateGraphFailed"/>
-  <int value="3" label="LoadExamplePreprocessorConfigFailed"/>
-  <int value="4" label="VectorizeFeaturesFailed"/>
-  <int value="5" label="InferenceExecutionFailed"/>
-</enum>
-
 <enum name="AnnotationStorageStatus">
   <int value="0" label="Ok"/>
   <int value="1" label="Failed to create new schema"/>
@@ -63,6 +54,20 @@ chromium-metrics-reviews@google.com.
   <int value="11" label="kInstallUrlFallback"/>
 </enum>
 
+<!-- LINT.IfChange(WebAppInstallResult) -->
+
+<enum name="AppInstallServiceWebAppInstallResult">
+  <int value="0" label="Success"/>
+  <int value="1" label="InvalidManifestUrl"/>
+  <int value="2" label="ManifestNetworkError"/>
+  <int value="3" label="ManifestResponseError"/>
+  <int value="4" label="ManifestResponseEmpty"/>
+  <int value="5" label="WebAppInstallError"/>
+  <int value="6" label="InvalidManifestId"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/apps/app_service/app_install/web_app_installer.h:WebAppInstallResult) -->
+
 <enum name="AppListAppCollections">
   <int value="0" label="Unknown"/>
   <int value="1" label="Essentials"/>
@@ -83,13 +88,6 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="REORDER_BY_KEYBOARD_IN_TOP_LEVEL"/>
   <int value="7" label="MOVE_BY_KEYBOARD_INTO_FOLDER"/>
   <int value="8" label="MOVE_BY_KEYBOARD_OUT_OF_FOLDER"/>
-</enum>
-
-<enum name="AppListAppType">
-  <int value="0" label="Other"/>
-  <int value="1" label="Chrome"/>
-  <int value="2" label="Play"/>
-  <int value="3" label="PWA"/>
 </enum>
 
 <enum name="AppListContinueFileSuggestionType">
@@ -354,6 +352,15 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Encryption Failed"/>
 </enum>
 
+<enum name="AppShimRegistryVerifyCdHashResult">
+  <int value="0" label="Success"/>
+  <int value="1" label="No App Info"/>
+  <int value="2" label="No CD Hash"/>
+  <int value="3" label="Decode Failure"/>
+  <int value="4" label="Unexpected Size"/>
+  <int value="5" label="Verification Failed"/>
+</enum>
+
 <enum name="AppTypeV2">
   <int value="0" label="Unknown"/>
   <int value="1" label="Android app"/>
@@ -398,7 +405,10 @@ chromium-metrics-reviews@google.com.
   <int value="11" label="Not Chrome App Allowed"/>
   <int value="12" label="Default Allowed"/>
   <int value="13" label="Default Blocked"/>
+  <int value="14" label="KioskMode BlockedButAllowedByAdminPolicy"/>
 </enum>
+
+<!-- LINT.IfChange(ChromeOSUICommands) -->
 
 <enum name="ChromeOSUICommands">
 <!-- Please put in checks to ensure Command IDs are stable before adding them to this enum. -->
@@ -436,7 +446,12 @@ chromium-metrics-reviews@google.com.
   <int value="506" label="Personalization Hub"/>
   <int value="507" label="Hide Continue Section"/>
   <int value="508" label="Show Continue Section"/>
+  <int value="509" label="Hide Desk Name"/>
+  <int value="510" label="Show Desk Name"/>
+  <int value="511" label="Task Manager"/>
 </enum>
+
+<!-- LINT.ThenChange(//ash/public/cpp/app_menu_constants.h:CommandId, //ash/shelf/shelf_context_menu_model.h:CommandId) -->
 
 <enum name="CopyShortcutResult">
   <summary>Result of copying the app shortcut.</summary>
@@ -552,25 +567,6 @@ chromium-metrics-reviews@google.com.
   <int value="4" label="Language Not Supported Error"/>
 </enum>
 
-<enum name="ItemSuggestCacheStatus">
-  <int value="0" label="Ok"/>
-  <int value="1" label="Disabled by experiment"/>
-  <int value="2" label="Disabled by policy"/>
-  <int value="3" label="Invalid server URL"/>
-  <int value="4" label="No identity manager"/>
-  <int value="5" label="Google auth error"/>
-  <int value="6" label="Net error"/>
-  <int value="7" label="Response too large"/>
-  <int value="8" label="3xx status"/>
-  <int value="9" label="4xx status"/>
-  <int value="10" label="5xx status"/>
-  <int value="11" label="Empty response"/>
-  <int value="12" label="No results in response"/>
-  <int value="13" label="JSON parse failure"/>
-  <int value="14" label="JSON conversion failure"/>
-  <int value="15" label="Post launch update ignored"/>
-</enum>
-
 <enum name="LauncherContinueSectionResultType">
   <int value="0" label="Local file"/>
   <int value="1" label="Drive file"/>
@@ -660,10 +656,16 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Serialization error"/>
 </enum>
 
+<!-- LINT.IfChange(PromiseAppIconType) -->
+
 <enum name="PromiseAppIconType">
   <int value="0" label="Placeholder icon"/>
   <int value="1" label="Real app icon"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/browser/apps/app_service/promise_apps/promise_app_metrics.h:PromiseAppIconType) -->
+
+<!-- LINT.IfChange(PromiseAppLifecycleEvent) -->
 
 <enum name="PromiseAppLifecycleEvent">
   <int value="0" label="Promise app created in PromiseAppRegistryCache"/>
@@ -677,20 +679,17 @@ chromium-metrics-reviews@google.com.
   <int value="4" label="Promise icon created in the Shelf"/>
 </enum>
 
+<!-- LINT.ThenChange(//chrome/browser/apps/app_service/promise_apps/promise_app_metrics.h:PromiseAppLifecycleEvent) -->
+
+<!-- LINT.IfChange(PromiseAppType) -->
+
 <enum name="PromiseAppType">
   <int value="0" label="Unknown"/>
   <int value="1" label="Arc"/>
   <int value="2" label="Twa"/>
 </enum>
 
-<enum name="ReinstallResponseParseResult">
-  <int value="0" label="Good result."/>
-  <int value="1" label="Timeout."/>
-  <int value="2" label="No acccount"/>
-  <int value="3" label="Null data"/>
-  <int value="4" label="Bundle error."/>
-  <int value="5" label="Unknown error."/>
-</enum>
+<!-- LINT.ThenChange(//chrome/browser/apps/app_service/promise_apps/promise_app_metrics.h:PromiseAppType) -->
 
 <enum name="RestoreSetting">
   <int value="0" label="Unknown"/>

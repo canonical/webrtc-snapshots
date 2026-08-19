@@ -113,8 +113,8 @@ class CppBundleGenerator(object):
     c = code_util.Code()
     c.Append(cpp_util.CHROMIUM_LICENSE)
     c.Append()
-    c.Append(cpp_util.GENERATED_BUNDLE_FILE_MESSAGE %
-             cpp_util.ToPosixPath(self._source_file_dir))
+    c.Append(cpp_util.GENERATED_BUNDLE_FILE_MESSAGE % (cpp_util.ToPosixPath(
+        self._source_file_dir), cpp_util.GetGeneratedByCommandLine()))
     ifndef_name = cpp_util.GenerateIfndefName(
         '%s/%s.h' % (cpp_util.ToPosixPath(self._source_file_dir), file_base))
     c.Append()
@@ -244,6 +244,9 @@ class _APICCGenerator(object):
     c = code_util.Code()
     c.Append(cpp_util.CHROMIUM_LICENSE)
     c.Append()
+    c.Append(cpp_util.GENERATED_BUNDLE_FILE_MESSAGE % (cpp_util.ToPosixPath(
+        self._bundle._source_file_dir), cpp_util.GetGeneratedByCommandLine()))
+    c.Append()
     c.Append('#include "%s"' % (cpp_util.ToPosixPath(
         os.path.join(self._bundle._impl_dir, 'generated_api_registration.h'))))
     c.Append()
@@ -258,11 +261,10 @@ class _APICCGenerator(object):
       if not os.path.exists(
           os.path.join(self._bundle._root,
                        os.path.normpath(implementation_header))):
-        if "implemented_in" in namespace.compiler_options:
-          raise ValueError('Header file for namespace "%s" specified in '
-                           'compiler_options not found: %s' %
-                           (namespace.unix_name, implementation_header))
-        continue
+        raise ValueError(
+            'Header file for namespace "%s" (either at the'
+            ' default path or specified in compiler_options) not found: %s' %
+            (namespace.unix_name, implementation_header))
       ifdefs = self._bundle._GetPlatformIfdefs(namespace)
       if ifdefs is not None:
         c.Append("#if %s" % ifdefs, indent_level=0)
@@ -326,6 +328,9 @@ class _SchemasCCGenerator(object):
   def Generate(self, _):  # namespace not relevant, this is a bundle
     c = code_util.Code()
     c.Append(cpp_util.CHROMIUM_LICENSE)
+    c.Append()
+    c.Append(cpp_util.GENERATED_BUNDLE_FILE_MESSAGE % (cpp_util.ToPosixPath(
+        self._bundle._source_file_dir), cpp_util.GetGeneratedByCommandLine()))
     c.Append()
     c.Append('#include "%s"' % (cpp_util.ToPosixPath(
         os.path.join(self._bundle._source_file_dir, 'generated_schemas.h'))))

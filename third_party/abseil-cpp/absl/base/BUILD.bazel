@@ -62,10 +62,25 @@ cc_library(
 )
 
 cc_library(
-    name = "hardening",
+    name = "cpu_detect",
     srcs = [
-        "internal/hardening.cc",
+        "internal/cpu_detect.cc",
     ],
+    hdrs = ["internal/cpu_detect.h"],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        "//absl:__subpackages__",
+        "//absl:friends",
+    ],
+    deps = [
+        ":config",
+    ],
+)
+
+cc_library(
+    name = "hardening",
+    srcs = ["internal/hardening.cc"],
     hdrs = [
         "internal/hardening.h",
     ],
@@ -73,6 +88,7 @@ cc_library(
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
         "//absl:__subpackages__",
+        "//absl:friends",
     ],
     deps = [
         ":config",
@@ -653,6 +669,7 @@ cc_test(
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
         ":config",
+        ":core_headers",
         ":hardening",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -742,6 +759,20 @@ cc_test(
     deps = [
         ":base",
         "//absl/synchronization",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "cpu_detect_test",
+    size = "small",
+    srcs = ["internal/cpu_detect_test.cc"],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":config",
+        ":cpu_detect",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -1008,6 +1039,7 @@ cc_library(
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
         "//absl:__subpackages__",
+        "//absl:friends",
     ],
     deps = [
         ":config",
@@ -1037,6 +1069,7 @@ cc_library(
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
         "//absl:__subpackages__",
+        "//absl:friends",
     ],
     deps = [
         "//absl/base:config",

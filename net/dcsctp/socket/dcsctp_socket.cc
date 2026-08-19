@@ -96,46 +96,37 @@ constexpr uint32_t kMaxVerificationTag = std::numeric_limits<uint32_t>::max();
 constexpr uint32_t kMinInitialTsn = 0;
 constexpr uint32_t kMaxInitialTsn = std::numeric_limits<uint32_t>::max();
 
-Capabilities ComputeCapabilities(const DcSctpOptions& options,
-                                 uint16_t peer_nbr_outbound_streams,
+Capabilities GetPeerCapabilities(uint16_t peer_nbr_outbound_streams,
                                  uint16_t peer_nbr_inbound_streams,
                                  const Parameters& parameters) {
   Capabilities capabilities;
   std::optional<SupportedExtensionsParameter> supported_extensions =
       parameters.get<SupportedExtensionsParameter>();
 
-  if (options.enable_partial_reliability) {
-    capabilities.partial_reliability =
-        parameters.get<ForwardTsnSupportedParameter>().has_value();
-    if (supported_extensions.has_value()) {
-      capabilities.partial_reliability |=
-          supported_extensions->supports(ForwardTsnChunk::kType);
-    }
+  capabilities.partial_reliability =
+      parameters.get<ForwardTsnSupportedParameter>().has_value();
+  if (supported_extensions.has_value()) {
+    capabilities.partial_reliability |=
+        supported_extensions->supports(ForwardTsnChunk::kType);
   }
 
-  if (options.enable_message_interleaving && supported_extensions.has_value()) {
+  if (supported_extensions.has_value()) {
     capabilities.message_interleaving =
-        supported_extensions->supports(IDataChunk::kType) &&
-        supported_extensions->supports(IForwardTsnChunk::kType);
+        supported_extensions->supports(IDataChunk::kType);
   }
   if (supported_extensions.has_value() &&
       supported_extensions->supports(ReConfigChunk::kType)) {
     capabilities.reconfig = true;
   }
 
-  if (options.zero_checksum_alternate_error_detection_method !=
-          ZeroChecksumAlternateErrorDetectionMethod::None() &&
-      parameters.get<ZeroChecksumAcceptableChunkParameter>().has_value() &&
-      parameters.get<ZeroChecksumAcceptableChunkParameter>()
-              ->error_detection_method() ==
-          options.zero_checksum_alternate_error_detection_method) {
-    capabilities.zero_checksum = true;
+  if (parameters.get<ZeroChecksumAcceptableChunkParameter>().has_value()) {
+    capabilities.zero_checksum_method =
+        parameters.get<ZeroChecksumAcceptableChunkParameter>()
+            ->error_detection_method();
   }
 
-  capabilities.negotiated_maximum_incoming_streams = std::min(
-      options.announced_maximum_incoming_streams, peer_nbr_outbound_streams);
-  capabilities.negotiated_maximum_outgoing_streams = std::min(
-      options.announced_maximum_outgoing_streams, peer_nbr_inbound_streams);
+  capabilities.negotiated_maximum_incoming_streams = peer_nbr_outbound_streams;
+  capabilities.negotiated_maximum_outgoing_streams = peer_nbr_inbound_streams;
 
   return capabilities;
 }
@@ -375,9 +366,11 @@ bool DcSctpSocket::ConnectWithConnectionToken(
     return false;
   }
 
-  Capabilities capabilities = ComputeCapabilities(
-      options_, peer_init->nbr_outbound_streams(),
-      peer_init->nbr_inbound_streams(), peer_init->parameters());
+  Capabilities capabilities =
+      GetPeerCapabilities(peer_init->nbr_outbound_streams(),
+                          peer_init->nbr_inbound_streams(),
+                          peer_init->parameters())
+          .Negotiate(options_);
 
   CreateTransmissionControlBlock(
       capabilities, my_init->initiate_tag(), my_init->initial_tsn(),
@@ -399,7 +392,7 @@ void DcSctpSocket::CreateTransmissionControlBlock(
     size_t a_rwnd,
     TieTag tie_tag) {
   metrics_.uses_message_interleaving = capabilities.message_interleaving;
-  metrics_.uses_zero_checksum = capabilities.zero_checksum;
+  metrics_.uses_zero_checksum = capabilities.zero_checksum_enabled();
   metrics_.negotiated_maximum_incoming_streams =
       capabilities.negotiated_maximum_incoming_streams;
   metrics_.negotiated_maximum_outgoing_streams =
@@ -430,7 +423,13 @@ void DcSctpSocket::RestoreFromState(const DcSctpSocketHandoverState& state) {
       capabilities.message_interleaving =
           state.capabilities.message_interleaving;
       capabilities.reconfig = state.capabilities.reconfig;
-      capabilities.zero_checksum = state.capabilities.zero_checksum;
+      if (state.capabilities.zero_checksum) {
+        capabilities.zero_checksum_method =
+            options_.zero_checksum_alternate_error_detection_method;
+      } else {
+        capabilities.zero_checksum_method =
+            ZeroChecksumAlternateErrorDetectionMethod::None();
+      }
       capabilities.negotiated_maximum_incoming_streams =
           state.capabilities.negotiated_maximum_incoming_streams;
       capabilities.negotiated_maximum_outgoing_streams =
@@ -466,7 +465,9 @@ void DcSctpSocket::Shutdown() {
     // TODO(webrtc:12739): Remove this check, as it just hides the problem that
     // the socket can transition from ShutdownSent to ShutdownPending, or
     // ShutdownAckSent to ShutdownPending which is illegal.
-    if (state_ != State::kShutdownSent && state_ != State::kShutdownAckSent) {
+    if (state_ != State::kShutdownSent && state_ != State::kShutdownAckSent &&
+        state_ != State::kShutdownReceived &&
+        state_ != State::kShutdownPending) {
       SetState(State::kShutdownPending, "Shutdown called");
       t1_init_->Stop();
       t1_cookie_->Stop();
@@ -1036,6 +1037,8 @@ TimeDelta DcSctpSocket::OnCookieTimerExpiry() {
 }
 
 TimeDelta DcSctpSocket::OnShutdownTimerExpiry() {
+  RTC_DCHECK(state_ == State::kShutdownSent ||
+             state_ == State::kShutdownAckSent);
   RTC_DLOG(LS_VERBOSE) << log_prefix() << "Timer " << t2_shutdown_->name()
                        << " has expired: " << t2_shutdown_->expiration_count()
                        << "/"
@@ -1058,10 +1061,19 @@ TimeDelta DcSctpSocket::OnShutdownTimerExpiry() {
     return TimeDelta::Zero();
   }
 
-  // https://tools.ietf.org/html/rfc4960#section-9.2
-  // "If the timer expires, the endpoint must resend the SHUTDOWN with the
-  // updated last sequential TSN received from its peer."
-  SendShutdown();
+  if (state_ == State::kShutdownAckSent) {
+    // https://tools.ietf.org/html/rfc4960#section-9.2
+    // "... and start a T2-shutdown timer of its own, entering the
+    // SHUTDOWN-ACK-SENT state.  If the timer expires, the endpoint must
+    // resend the SHUTDOWN ACK."
+    SendShutdownAck();
+  } else {
+    // https://tools.ietf.org/html/rfc4960#section-9.2
+    // "It shall then start the T2-shutdown timer and enter the SHUTDOWN-SENT
+    // state.  If the timer expires, the endpoint must resend the SHUTDOWN
+    // with the updated last sequential TSN received from its peer."
+    SendShutdown();
+  }
   RTC_DCHECK(IsConsistent());
   return tcb_->current_rto();
 }
@@ -1289,18 +1301,20 @@ void DcSctpSocket::HandleInit(const CommonHeader& /* header */,
              *my_verification_tag, *my_initial_tsn, *chunk->initiate_tag(),
              *chunk->initial_tsn());
 
-  Capabilities capabilities =
-      ComputeCapabilities(options_, chunk->nbr_outbound_streams(),
+  Capabilities peer_capabilities =
+      GetPeerCapabilities(chunk->nbr_outbound_streams(),
                           chunk->nbr_inbound_streams(), chunk->parameters());
+  Capabilities capabilities = peer_capabilities.Negotiate(options_);
 
   SctpPacket::Builder b(chunk->initiate_tag(), options_);
   Parameters::Builder params_builder =
       Parameters::Builder().Add(StateCookieParameter(
           StateCookie(chunk->initiate_tag(), my_verification_tag,
                       chunk->initial_tsn(), my_initial_tsn, chunk->a_rwnd(),
-                      tie_tag, capabilities)
+                      tie_tag, peer_capabilities)
               .Serialize()));
-  AddCapabilityParameters(options_, capabilities.zero_checksum, params_builder);
+  AddCapabilityParameters(options_, capabilities.zero_checksum_enabled(),
+                          params_builder);
 
   InitAckChunk init_ack(/*initiate_tag=*/my_verification_tag,
                         options_.max_receiver_window_buffer_size,
@@ -1310,7 +1324,8 @@ void DcSctpSocket::HandleInit(const CommonHeader& /* header */,
   b.Add(init_ack);
   // If the peer has signaled that it supports zero checksum, INIT-ACK can then
   // have its checksum as zero.
-  packet_sender_.Send(b, /*write_checksum=*/!capabilities.zero_checksum);
+  packet_sender_.Send(b,
+                      /*write_checksum=*/!capabilities.zero_checksum_enabled());
 }
 
 void DcSctpSocket::HandleInitAck(
@@ -1344,8 +1359,9 @@ void DcSctpSocket::HandleInitAck(
     return;
   }
   Capabilities capabilities =
-      ComputeCapabilities(options_, chunk->nbr_outbound_streams(),
-                          chunk->nbr_inbound_streams(), chunk->parameters());
+      GetPeerCapabilities(chunk->nbr_outbound_streams(),
+                          chunk->nbr_inbound_streams(), chunk->parameters())
+          .Negotiate(options_);
   t1_init_->Stop();
 
   metrics_.peer_implementation = DeterminePeerImplementation(cookie->data());
@@ -1422,7 +1438,8 @@ void DcSctpSocket::HandleCookieEcho(
     // send queue is already re-configured, and shouldn't be reset.
     send_queue_.Reset();
 
-    CreateTransmissionControlBlock(cookie->capabilities(), cookie->my_tag(),
+    Capabilities capabilities = cookie->peer_capabilities().Negotiate(options_);
+    CreateTransmissionControlBlock(capabilities, cookie->my_tag(),
                                    cookie->my_initial_tsn(), cookie->peer_tag(),
                                    cookie->peer_initial_tsn(), cookie->a_rwnd(),
                                    MakeTieTag(callbacks_));
@@ -1702,8 +1719,7 @@ void DcSctpSocket::HandleShutdown(
     SendShutdownAck();
     SetState(State::kShutdownAckSent, "SHUTDOWN received");
   } else if (state_ == State::kShutdownAckSent) {
-    // TODO(webrtc:12739): This condition should be removed and handled by the
-    // next (state_ != State::kShutdownReceived).
+    SendShutdownAck();
     return;
   } else if (state_ != State::kShutdownReceived) {
     RTC_DLOG(LS_VERBOSE) << log_prefix()

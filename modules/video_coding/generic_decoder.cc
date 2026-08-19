@@ -164,7 +164,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   const TimeDelta decode_time = decode_time_ms
                                     ? TimeDelta::Millis(*decode_time_ms)
                                     : now - *frame_info->decode_start;
-  timing_->StopDecodeTimer(decode_time, now);
+  timing_->UpdateDecodeTimeEstimate(decode_time, now);
   decodedImage.set_processing_time(
       {.start = *frame_info->decode_start,
        .finish = *frame_info->decode_start + decode_time});
@@ -249,7 +249,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   if (corruption_score_calculator_ &&
       frame_info->frame_instrumentation_data.has_value()) {
     corruption_score_calculator_->CalculateCorruptionScore(
-        decodedImage, *frame_info->frame_instrumentation_data,
+        decodedImage, std::move(*frame_info->frame_instrumentation_data),
         frame_info->content_type);
   }
 }

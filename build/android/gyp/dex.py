@@ -34,6 +34,11 @@ DEFAULT_IGNORE_WARNINGS = (
     r'The companion object Companion could not be found',
     # https://crbug.com/408280256
     r'MethodHandle.invoke',
+    # JDK update warnings
+    r'A terminally deprecated method in sun.misc.Unsafe',
+    r'sun.misc.Unsafe::.* has been called',
+    r'sun.misc.Unsafe::.* will be removed',
+    r'Please consider reporting this to the maintainers of',
 )
 
 _MERGE_SERVICE_ENTRIES = (
@@ -42,6 +47,10 @@ _MERGE_SERVICE_ENTRIES = (
     'META-INF/services/androidx.appsearch.app.AppSearchDocumentClassMap',
     'META-INF/services/kotlinx.coroutines.CoroutineExceptionHandler',
     'META-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory',
+    'META-INF/services/org.chromium.base.test.util.LeakCanaryChecker$LeakCanaryConfigProvider',
+    'META-INF/services/org.chromium.base.test.BaseJUnit4ClassRunner$ClassCleanupHook',
+    'META-INF/services/org.chromium.base.test.BaseJUnit4ClassRunner$AfterCleanupCheck',
+    'META-INF/services/org.chromium.on_device_model.AiCoreFactory',
 )
 
 _IGNORE_SERVICE_ENTRIES = (
@@ -123,6 +132,10 @@ def _ParseArgs(args):
                       action='store_true',
                       help='Use when filing D8 bugs to capture inputs.'
                       ' Stores inputs to d8inputs.zip')
+  parser.add_argument(
+      '--tiered-dex-assembly',
+      action='store_true',
+      help='Assemble input dex archives into final zip (bypassing D8 merge).')
   options = parser.parse_args(args)
 
   if options.force_enable_assertions and options.assertion_handler:
@@ -200,8 +213,10 @@ def _RunD8(dex_cmd, input_paths, output_path, warnings_as_errors,
     # Stripped invalid locals information from 1 method.
     try:
       build_utils.CheckOutput(dex_cmd,
+                              print_stdout=is_debug,
                               stderr_filter=stderr_filter,
-                              fail_on_output=warnings_as_errors)
+                              fail_on_output=(warnings_as_errors
+                                              and not is_debug))
     except Exception as e:
       if isinstance(e, build_utils.CalledProcessError):
         output = e.output
@@ -245,7 +260,7 @@ def _CreateServicesMap(service_jars):
           new_lines = z.read(n).decode('utf8').splitlines()
           old_lines.extend(l for l in new_lines if l not in old_lines)
           data = '\n'.join(old_lines) + '\n'
-          if _MERGE_SERVICE_ENTRIES or ret.get(n, data) == data:
+          if n in _MERGE_SERVICE_ENTRIES or ret.get(n, data) == data:
             ret[n] = data
             origins[n] = jar_path
           else:
@@ -267,38 +282,72 @@ _MERGE_SERVICE_ENTRIES in dex.py.
   return ret
 
 
+def _PerformTieredDexAssembly(d8_inputs, output_path, services_map):
+  """Packages dex files from intermediate jars sequentially into the final zip.
+
+  Args:
+    d8_inputs: List of intermediate jar paths.
+    output_path: The output zip path.
+    services_map: Map of service paths to data.
+  """
+  dex_idx = 0
+  with zipfile.ZipFile(output_path, 'w') as out_zip:
+    for input_jar in d8_inputs:
+      with zipfile.ZipFile(input_jar, 'r') as in_zip:
+        dex_names = sorted([n for n in in_zip.namelist() if n.endswith('.dex')])
+        for name in dex_names:
+          data = in_zip.read(name)
+          dest_name = 'classes{}.dex'.format(dex_idx + 1 if dex_idx > 0 else '')
+          zip_helpers.add_to_zip_hermetic(out_zip,
+                                          dest_name,
+                                          data=data,
+                                          alignment=4)
+          dex_idx += 1
+
+    for path, data in sorted(services_map.items()):
+      zip_helpers.add_to_zip_hermetic(out_zip, path, data=data, alignment=4)
+
+
 def _CreateFinalDex(d8_inputs,
                     output,
                     tmp_dir,
                     dex_cmd,
+                    tiered_dex_assembly=False,
                     options=None,
                     service_jars=None):
   tmp_dex_output = os.path.join(tmp_dir, 'tmp_dex_output.zip')
-  needs_dexing = not all(f.endswith('.dex') for f in d8_inputs)
-  needs_dexmerge = output.endswith('.dex') or not (options
-                                                   and options.intermediate)
   services_map = _CreateServicesMap(service_jars or [])
-  if needs_dexing or needs_dexmerge:
-    tmp_dex_dir = os.path.join(tmp_dir, 'tmp_dex_dir')
-    os.mkdir(tmp_dex_dir)
 
-    _RunD8(dex_cmd, d8_inputs, tmp_dex_dir,
-           (not options or options.warnings_as_errors),
-           (options and options.show_desugar_default_interface_warnings))
-    logging.debug('Performed dex merging')
-
-    dex_files = [os.path.join(tmp_dex_dir, f) for f in os.listdir(tmp_dex_dir)]
-
-    if output.endswith('.dex'):
-      if len(dex_files) > 1:
-        raise Exception('%d files created, expected 1' % len(dex_files))
-      tmp_dex_output = dex_files[0]
-    else:
-      _ZipAligned(sorted(dex_files), tmp_dex_output, services_map)
+  if tiered_dex_assembly:
+    _PerformTieredDexAssembly(d8_inputs, tmp_dex_output, services_map)
+    logging.debug('Performed tiered dex assembly')
   else:
-    # Skip dexmerger. Just put all incrementals into the .jar individually.
-    _ZipAligned(sorted(d8_inputs), tmp_dex_output, services_map)
-    logging.debug('Quick-zipped %d files', len(d8_inputs))
+    needs_dexing = not all(f.endswith('.dex') for f in d8_inputs)
+    needs_dexmerge = output.endswith('.dex') or not (options
+                                                     and options.intermediate)
+    if needs_dexing or needs_dexmerge:
+      tmp_dex_dir = os.path.join(tmp_dir, 'tmp_dex_dir')
+      os.mkdir(tmp_dex_dir)
+
+      _RunD8(dex_cmd, d8_inputs, tmp_dex_dir,
+             (not options or options.warnings_as_errors),
+             (options and options.show_desugar_default_interface_warnings))
+      logging.debug('Performed dex merging')
+
+      dex_files = [
+          os.path.join(tmp_dex_dir, f) for f in os.listdir(tmp_dex_dir)
+      ]
+
+      if output.endswith('.dex'):
+        if len(dex_files) > 1:
+          raise Exception('%d files created, expected 1' % len(dex_files))
+        tmp_dex_output = dex_files[0]
+      else:
+        _ZipAligned(sorted(dex_files), tmp_dex_output, services_map)
+    else:
+      # Skip dexmerger. Just put all incrementals into the .jar individually.
+      _ZipAligned(sorted(d8_inputs), tmp_dex_output, services_map)
+      logging.debug('Quick-zipped %d files', len(d8_inputs))
 
   # The dex file is complete and can be moved out of tmp_dir.
   shutil.move(tmp_dex_output, output)
@@ -381,13 +430,41 @@ def _IsClassFile(path):
   return path.endswith('.class')
 
 
+def _ClassFileNestPrefix(class_path):
+  """Returns the javac nest-host prefix for a .class subpath.
+
+  Nest members follow the binary-name convention "Outer$Member.class"; the
+  nest host's binary name never contains '$'.
+
+  E.g. 'pkg/Outer$Inner.class' -> 'pkg/Outer'
+       'pkg/Outer.class'       -> 'pkg/Outer'
+  """
+  base = class_path[:-len('.class')]
+  slash = base.rfind('/')
+  dollar = base.find('$', slash + 1)
+  if dollar != -1:
+    base = base[:dollar]
+  return base
+
+
 def _ExtractClassFiles(changes, tmp_dir, class_inputs, required_classes_set):
   classes_list = []
   for jar in class_inputs:
     if changes:
-      changed_class_list = (set(changes.IterChangedSubpaths(jar))
-                            | required_classes_set)
-      predicate = lambda x: x in changed_class_list and _IsClassFile(x)  # pylint: disable=cell-var-from-loop
+      changed_class_set = (set(changes.IterChangedSubpaths(jar))
+                           | required_classes_set)
+
+      # D8 nest-based access desugaring requires the entire nest group to be
+      # present, else it aborts with "Class X requires its nest host Y to be
+      # on program or class path." Pull in sibling nestmates by host prefix.
+      nest_prefixes = {
+          _ClassFileNestPrefix(path)
+          for path in changed_class_set if _IsClassFile(path)
+      }
+
+      def predicate(path, nest_prefixes=nest_prefixes):
+        return (_IsClassFile(path)
+                and _ClassFileNestPrefix(path) in nest_prefixes)
     else:
       predicate = _IsClassFile
 
@@ -461,6 +538,7 @@ def _OnStaleMd5(changes, options, final_dex_inputs, service_jars, dex_cmd):
                     options.output,
                     tmp_dir,
                     dex_cmd,
+                    tiered_dex_assembly=options.tiered_dex_assembly,
                     options=options,
                     service_jars=service_jars)
 
@@ -509,6 +587,19 @@ def main(args):
     service_jars = final_dex_inputs
   service_jars += options.dex_inputs
   final_dex_inputs += options.dex_inputs
+  if options.tiered_dex_assembly:
+    with build_utils.TempDir() as tmp_dir:
+      _CreateFinalDex(final_dex_inputs,
+                      options.output,
+                      tmp_dir,
+                      None,
+                      tiered_dex_assembly=True,
+                      options=options,
+                      service_jars=service_jars)
+    if options.depfile:
+      action_helpers.write_depfile(options.depfile, options.output,
+                                   final_dex_inputs)
+    return
 
   dex_cmd = build_utils.JavaCmd(xmx=_DEX_XMX)
 
@@ -518,6 +609,9 @@ def main(args):
   # With flags:
   # Time (mean ± σ): 6.579 s ±  0.057 s   [User: 37.612 s, System: 8.015 s]
   dex_cmd += ['-XX:TieredStopAtLevel=1']
+
+  if logging.getLogger().isEnabledFor(logging.DEBUG):
+    dex_cmd += ['-Dcom.android.tools.r8.printtimes=1']
 
   if options.dump_inputs:
     dex_cmd += ['-Dcom.android.tools.r8.dumpinputtofile=d8inputs.zip']

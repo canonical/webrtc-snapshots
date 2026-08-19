@@ -28,7 +28,6 @@
 #include "api/audio/audio_device.h"
 #include "api/audio/audio_device_defines.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/scoped_refptr.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -37,6 +36,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
@@ -103,16 +103,20 @@ TEST(BoundedWavFileWriterTest, SomeStartSilence) {
 TEST(BoundedWavFileWriterTest, NegativeStartSilence) {
   static const std::vector<int16_t> kInputSamples = {
       0, -4, -6, 0, 3, 0, 0, 0, 0, 3, -13222, -7, -3525, 5787, -25247, 8};
-  static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin() + 2,
-                                                     kInputSamples.end());
+  // The element at index 4 is below kAmplitudeThreshold and it is at the end
+  // of the first frame so gets speculatively cut off, then restored as 0.
+  static const std::vector<int16_t> kExpectedSamples = {
+      -6, 0, 0, 0, 0, 0, 0, 3, -13222, -7, -3525, 5787, -25247, 8};
   RunWavTest(kInputSamples, kExpectedSamples);
 }
 
 TEST(BoundedWavFileWriterTest, SomeEndSilence) {
   static const std::vector<int16_t> kInputSamples = {
       75, 1234, 243, -1231, -22222, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  // The trailing zeros and the 1 (which has amplitude below
+  // kAmplitudeThreshold) are cut off at the end.
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
-                                                     kInputSamples.end() - 9);
+                                                     kInputSamples.end() - 11);
   RunWavTest(kInputSamples, kExpectedSamples);
 }
 
@@ -136,8 +140,10 @@ TEST(BoundedWavFileWriterTest, DoubleSilence) {
 TEST(BoundedWavFileWriterTest, EndSilenceCutoff) {
   static const std::vector<int16_t> kInputSamples = {
       75, 1234, 243, -1231, -22222, 0, 1, 0, 0, 0, 0};
+  // The trailing zeros and the 1 (which has amplitude below
+  // kAmplitudeThreshold) are cut off at the end.
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
-                                                     kInputSamples.end() - 4);
+                                                     kInputSamples.end() - 6);
   RunWavTest(kInputSamples, kExpectedSamples);
 }
 
@@ -478,8 +484,7 @@ class TestAudioTransport : public AudioTransport {
 
 TEST(TestAudioDeviceModuleTest, CreatedADMCanRecord) {
   GlobalSimulatedTimeController time_controller(kStartTime);
-  const Environment env = CreateEnvironment(
-      time_controller.GetClock(), time_controller.GetTaskQueueFactory());
+  const Environment env = CreateTestEnvironment({.time = &time_controller});
   TestAudioTransport audio_transport(TestAudioTransport::Mode::kRecording);
   std::unique_ptr<TestAudioDeviceModule::PulsedNoiseCapturer> capturer =
       TestAudioDeviceModule::CreatePulsedNoiseCapturer(
@@ -512,8 +517,7 @@ TEST(TestAudioDeviceModuleTest, CreatedADMCanRecord) {
 
 TEST(TestAudioDeviceModuleTest, CreatedADMCanPlay) {
   GlobalSimulatedTimeController time_controller(kStartTime);
-  const Environment env = CreateEnvironment(
-      time_controller.GetClock(), time_controller.GetTaskQueueFactory());
+  const Environment env = CreateTestEnvironment({.time = &time_controller});
   TestAudioTransport audio_transport(TestAudioTransport::Mode::kPlaying);
   std::unique_ptr<TestAudioDeviceModule::Renderer> renderer =
       TestAudioDeviceModule::CreateDiscardRenderer(

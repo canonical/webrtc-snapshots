@@ -17,11 +17,13 @@
 #include <span>
 #include <utility>
 
+#include "absl/base/nullability.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
 #include "api/media_types.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
+#include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "call/call.h"
@@ -35,6 +37,7 @@
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
@@ -58,58 +61,57 @@ MediaType Demuxer::GetMediaType(const uint8_t* packet_data,
 }
 
 DirectTransport::DirectTransport(
-    TaskQueueBase* task_queue,
-    std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
-    Call* send_call,
-    const std::map<uint8_t, MediaType>& payload_type_map,
-    std::span<const RtpExtension> audio_extensions,
-    std::span<const RtpExtension> video_extensions)
-    : clock_(*Clock::GetRealTimeClock()),
-      send_call_(send_call),
-      task_queue_(task_queue),
-      demuxer_(payload_type_map),
-      fake_network_(std::move(pipe)),
-      audio_extensions_(audio_extensions),
-      video_extensions_(video_extensions) {
-  Start();
-}
-
-DirectTransport::DirectTransport(
     const Environment& env,
-    TaskQueueBase* task_queue,
-    std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
-    Call* send_call,
+    TaskQueueBase* absl_nonnull network_thread,
+    absl_nonnull std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
+    Call* absl_nullable send_call,
     const std::map<uint8_t, MediaType>& payload_type_map,
     std::span<const RtpExtension> audio_extensions,
     std::span<const RtpExtension> video_extensions)
     : env_(env),
-      clock_(env.clock()),
       send_call_(send_call),
-      task_queue_(task_queue),
+      network_thread_(*network_thread),
       demuxer_(payload_type_map),
       fake_network_(std::move(pipe)),
       audio_extensions_(audio_extensions),
       video_extensions_(video_extensions) {
+  RTC_DCHECK(network_thread != nullptr);
+  if (send_call != nullptr) {
+    RTC_DCHECK_EQ(network_thread, send_call->network_thread());
+  }
   Start();
 }
 
 DirectTransport::~DirectTransport() {
-  next_process_task_.Stop();
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  // Synchronously stop delayed packet processing on the network thread. This
+  // prevents use-after-free crashes if a scheduled process task executes after
+  // the DirectTransport instance is destroyed.
+  SendTask(&network_thread_, [&] {
+    MutexLock lock(&process_lock_);
+    next_process_task_.Stop();
+  });
 }
 
 void DirectTransport::SetReceiver(PacketReceiver* receiver) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   fake_network_->SetReceiver(receiver);
 }
 
 bool DirectTransport::SendRtp(std::span<const uint8_t> data,
                               const PacketOptions& options) {
+  // Note: This method is thread-agnostic and must not enforce SequenceChecker
+  // constraints, as legacy out-of-tree pacing frameworks may trigger sending
+  // media packets off-thread.
   if (send_call_) {
-    SentPacketInfo sent_packet(options.packet_id, clock_.TimeInMilliseconds());
+    SentPacketInfo sent_packet(options.packet_id,
+                               env_.clock().TimeInMilliseconds());
     sent_packet.info.included_in_feedback = options.included_in_feedback;
     sent_packet.info.included_in_allocation = options.included_in_allocation;
     sent_packet.info.packet_size_bytes = data.size();
     sent_packet.info.packet_type = PacketType::kData;
-    send_call_->OnSentPacket(sent_packet);
+    SendTask(&network_thread_,
+             [&]() { send_call_->OnSentPacket(sent_packet); });
   }
 
   const RtpHeaderExtensionMap* extensions = nullptr;
@@ -124,7 +126,7 @@ bool DirectTransport::SendRtp(std::span<const uint8_t> data,
     default:
       RTC_CHECK_NOTREACHED();
   }
-  RtpPacketReceived packet(extensions, clock_.CurrentTime());
+  RtpPacketReceived packet(extensions, env_.clock().CurrentTime());
   if (media_type == MediaType::VIDEO) {
     packet.set_payload_type_frequency(kVideoPayloadTypeFrequency);
   }
@@ -141,6 +143,8 @@ bool DirectTransport::SendRtp(std::span<const uint8_t> data,
 
 bool DirectTransport::SendRtcp(std::span<const uint8_t> data,
                                const PacketOptions& /* options */) {
+  // Note: This method is thread-agnostic to support paced background RTCP
+  // feedback tasks triggered from downstream thread pool worker threads safely.
   fake_network_->DeliverRtcpPacket(CopyOnWriteBuffer(data));
   MutexLock lock(&process_lock_);
   if (!next_process_task_.Running())
@@ -153,10 +157,12 @@ int DirectTransport::GetAverageDelayMs() {
 }
 
 void DirectTransport::Start() {
-  RTC_DCHECK(task_queue_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (send_call_) {
-    send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
-    send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    SendTask(&network_thread_, [this]() {
+      send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+      send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    });
   }
 }
 
@@ -167,7 +173,7 @@ void DirectTransport::ProcessPackets() {
     return;
 
   next_process_task_ = RepeatingTaskHandle::DelayedStart(
-      task_queue_, TimeDelta::Millis(*initial_delay_ms), [this] {
+      &network_thread_, TimeDelta::Millis(*initial_delay_ms), [this] {
         fake_network_->Process();
         if (auto delay_ms = fake_network_->TimeUntilNextProcess())
           return TimeDelta::Millis(*delay_ms);

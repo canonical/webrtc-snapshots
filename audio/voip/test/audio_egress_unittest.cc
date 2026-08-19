@@ -22,7 +22,6 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
 #include "api/units/time_delta.h"
@@ -32,6 +31,7 @@
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "rtc_base/event.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
@@ -51,9 +51,9 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpStack(const Environment& env,
   rtp_config.rtcp_report_interval_ms = 5000;
   rtp_config.outgoing_transport = transport;
   rtp_config.local_media_ssrc = remote_ssrc;
+  rtp_config.rtcp_mode = RtcpMode::kCompound;
   auto rtp_rtcp = ModuleRtpRtcpImpl2::CreateSendModule(env, rtp_config);
   rtp_rtcp->SetSendingMediaStatus(false);
-  rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
   return rtp_rtcp;
 }
 
@@ -110,9 +110,7 @@ class AudioEgressTest : public ::testing::Test {
   }
 
   GlobalSimulatedTimeController time_controller_{Timestamp::Micros(kStartTime)};
-  const Environment env_ =
-      CreateEnvironment(time_controller_.GetClock(),
-                        time_controller_.GetTaskQueueFactory());
+  const Environment env_ = CreateTestEnvironment({.time = &time_controller_});
   NiceMock<MockTransport> transport_;
   SineWaveGenerator wave_generator_;
   std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;

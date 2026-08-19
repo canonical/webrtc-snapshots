@@ -45,10 +45,41 @@ import utils.telemetry as telemetry
 
 from utils.command_error import AutotestError, CommandError
 from utils.options import AutotestConfig, Formatter, autotest_options
+from utils.builders import display_utr_help, run_utr_tests
 
 sys.path.append(str(const.SRC_DIR / 'build' / 'android'))
 from pylib import constants
 
+import logging
+from colorama import init, Fore, Style
+
+
+class AutotestLogFormatter(logging.Formatter):
+
+  def format(self, record):
+    msg = record.getMessage()
+    color = getattr(record, 'color', None)
+    prefix = ""
+
+    if not color:
+      if record.levelno == logging.WARNING:
+        color = Fore.YELLOW
+        prefix = "Warning: "
+      elif record.levelno >= logging.ERROR:
+        color = Fore.RED
+        prefix = "Error: "
+
+    if color:
+      msg = f"{color}{prefix}{msg}{Style.RESET_ALL}"
+    return msg
+
+
+def configure_logging():
+  init()
+  handler = logging.StreamHandler(sys.stdout)
+  handler.setFormatter(AutotestLogFormatter())
+  level = logging.DEBUG if const.DEBUG else logging.INFO
+  logging.basicConfig(level=level, handlers=[handler])
 
 @click.command(cls=Formatter,
                help=__doc__,
@@ -60,6 +91,7 @@ from pylib import constants
 @click.pass_context
 @telemetry.tracer.start_as_current_span('chromium.tools.autotest.main')
 def main(ctx, **kwargs) -> int:
+  configure_logging()
 
   files_to_test = []
   extras = []
@@ -78,9 +110,16 @@ def main(ctx, **kwargs) -> int:
       extras.append(arg)
 
   kwargs['files'] = tuple(files_to_test)
+  if kwargs.get('device'):
+    extras.extend(['-d', kwargs['device']])
   kwargs['extras'] = extras
 
   config: AutotestConfig = AutotestConfig(**kwargs)
+
+  if config.builder and not (config.run_changed or config.run_related
+                             or config.files or config.name or config.target):
+    display_utr_help()
+    ctx.exit(0)
 
   if config.out_dir:
     constants.SetOutputDirectory(config.out_dir)
@@ -93,23 +132,31 @@ def main(ctx, **kwargs) -> int:
   target_cache: target_finder.TargetCache = target_finder.TargetCache(out_dir)
 
   if (not config.run_changed and not config.run_related and not config.files
-      and not config.name):
+      and not config.name and not config.target):
     raise click.UsageError(
         'Specify a file to test or use --run-changed or --run-related')
+
+  direct_suites = []
+  if config.suite:
+    for f in config.files:
+      direct_suites.append(f)
+    config.files = tuple()
+    config.run_changed = False
+    if config.name:
+      config.name = None
 
   # Cog is almost unusable with local search, so turn on remote_search.
   use_remote_search: bool = config.remote_search
   if not use_remote_search and const.SRC_DIR.parts[:3] == ('/', 'google',
                                                            'cog'):
-    if const.DEBUG:
-      click.echo('Detected cog, turning on remote-search.')
+    logging.debug('Detected cog, turning on remote-search.')
     use_remote_search = True
 
   # Don't try to search if rg is not installed, and use the old behavior.
   if not use_remote_search and not shutil.which('rg'):
     if not config.quiet:
-      click.echo('rg command not found. '
-                 'Install ripgrep to enable running tests by name.')
+      logging.info('rg command not found. '
+                   'Install ripgrep to enable running tests by name.')
     files_to_test = list(config.files)
     test_names = []
   else:
@@ -143,22 +190,36 @@ def main(ctx, **kwargs) -> int:
         file_finder.FindMatchingTestFiles(f, use_remote_search,
                                           config.path_index))
 
-  if not filenames:
-    command.ExitWithMessage('No associated test files found.')
+  web_test_files = {f for f in filenames if file_finder.IsWebTestFile(f)}
+  gn_files = [f for f in filenames if f not in web_test_files]
 
-  targets, used_cache = target_finder.FindTestTargets(
-      target_cache, out_dir, filenames, config.run_all, config.run_changed
-      or config.run_related, config.target_index)
+  if config.target:
+    targets = [t.removeprefix('//') for t in config.target]
+    used_cache = False
+  else:
+    if not filenames and not direct_suites:
+      command.ExitWithMessage('No associated test files found.')
 
-  if not current_gtest_filter:
-    current_gtest_filter = filters.BuildTestFilter(filenames, config.line)
+    targets, used_cache = target_finder.FindTestTargets(
+        target_cache, out_dir, filenames, config.run_all, config.run_changed
+        or config.run_related, config.target_index, config.files)
 
-  if not current_gtest_filter:
+  # Add any direct suites
+  for suite in direct_suites:
+    target_name = suite.removeprefix('//')
+    if target_name not in targets:
+      targets.append(target_name)
+
+  if not current_gtest_filter and not config.suite:
+    if gn_files:
+      current_gtest_filter = filters.BuildTestFilter(gn_files, config.line)
+
+  if not current_gtest_filter and not config.suite and gn_files:
     command.ExitWithMessage('Failed to derive a gtest filter')
 
   pref_mapping_filter: str | None = config.test_policy_to_pref_mappings_filter
   if not pref_mapping_filter:
-    pref_mapping_filter = filters.BuildPrefMappingTestFilter(filenames)
+    pref_mapping_filter = filters.BuildPrefMappingTestFilter(gn_files)
 
   assert targets
 
@@ -178,30 +239,40 @@ def main(ctx, **kwargs) -> int:
           or config.run_related, config.target_index)
       if targets != new_targets:
         # Note that this can happen, for example, if you rename a test target.
-        click.echo('gn config was changed, trying to build again', err=True)
+        logging.warning('gn config was changed, trying to build again')
         targets = new_targets
         build_ok = test_executor.BuildTestTargets(out_dir, targets,
                                                   config.dry_run, config.quiet,
                                                   True)
 
-  telemetry.RecordMainAttributes(targets, current_gtest_filter, used_cache,
-                                 out_dir)
+  telemetry.RecordMainAttributes(targets, current_gtest_filter or '*',
+                                 used_cache, out_dir)
 
   if not build_ok:
-    return 1
+    ctx.exit(1)
 
-  return test_executor.RunTestTargets(out_dir, targets, current_gtest_filter,
-                                      pref_mapping_filter, config.extras,
-                                      config.dry_run,
-                                      config.no_try_android_wrappers,
-                                      config.no_fast_local_dev,
-                                      config.no_single_variant)
+  if config.builder:
+    ctx.exit(run_utr_tests(config, out_dir, targets))
+
+  ctx.exit(
+      test_executor.RunTestTargets(out_dir,
+                                   targets,
+                                   current_gtest_filter,
+                                   pref_mapping_filter,
+                                   config.extras,
+                                   config.dry_run,
+                                   config.no_try_android_wrappers,
+                                   config.no_fast_local_dev,
+                                   config.no_single_variant,
+                                   is_suite=config.suite,
+                                   gemini=config.gemini,
+                                   web_test_files=web_test_files))
 
 if __name__ == '__main__':
   telemetry.telemetry.initialize('chromium.tools.autotest')
 
   try:
-    sys.exit(main(prog_name='tools/autotest.py'))
+    main(prog_name='tools/autotest.py')
   except (AutotestError, CommandError) as e:
-    print(e, file=sys.stderr)
+    logging.error(e)
     sys.exit(1)

@@ -26,6 +26,32 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
+<!-- LINT.IfChange(AIPageContentExtractionConcurrency) -->
+
+<enum name="AIPageContentExtractionConcurrency">
+  <int value="0" label="No active extraction"/>
+  <int value="1" label="Active extraction with matching options"/>
+  <int value="2" label="Active extraction with different options only"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/optimization_guide/content/browser/page_content_proto_provider.cc:AIPageContentExtractionConcurrency) -->
+
+<!-- LINT.IfChange(AIPageContentGetImageBytesStatus) -->
+
+<enum name="AIPageContentGetImageBytesStatus">
+  <int value="0" label="Success"/>
+  <int value="1" label="Node not found"/>
+  <int value="2" label="Target frame not found"/>
+  <int value="3" label="Agent frame not found"/>
+  <int value="4" label="Cross-tree query"/>
+  <int value="5" label="Not an image node"/>
+  <int value="6" label="Image resource error"/>
+  <int value="7" label="No resource buffer"/>
+  <int value="8" label="BigBuffer copy failed"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/modules/content_extraction/ai_page_content_agent.cc:GetImageBytesStatus) -->
+
 <enum name="AIPageContentMode">
   <int value="0" label="Default"/>
   <int value="1" label="ActionableElements"/>
@@ -92,13 +118,25 @@ chromium-metrics-reviews@google.com.
   <int value="5" label="[Deprecated] Host Model Features"/>
 </enum>
 
+<!-- LINT.IfChange(OnDeviceBaseModelEnum) -->
+
 <enum name="InstalledModel">
   <int value="0" label="Unknown"/>
   <int value="1" label="XXS"/>
   <int value="2" label="XS"/>
   <int value="3" label="v2Nano"/>
   <int value="4" label="v3Nano"/>
+  <int value="5" label="v3NanoCpu"/>
+  <int value="6" label="v3NanoGpu"/>
+  <int value="7" label="Gemma4"/>
+  <int value="8" label="Classifier"/>
+  <int value="9" label="LanguageDetection"/>
+  <int value="10" label="ProofreaderSmallExpert"/>
+  <int value="11" label="SpeechRecognitionSmallExpert"/>
+  <int value="12" label="SummarizerSmallExpert"/>
 </enum>
+
+<!-- LINT.ThenChange(//components/optimization_guide/core/model_execution/on_device_model_names.h:OnDeviceBaseModelEnum) -->
 
 <!-- Use following code to get the hash from the model version.
 import struct
@@ -143,6 +181,20 @@ struct.unpack('>L', hashlib.md5(version.encode('utf-8')).digest()[4:8])[0]
   <int value="8" label="GPU blocked"/>
   <int value="9" label="Failed to load library"/>
 </enum>
+
+<!-- LINT.IfChange(OnDeviceModelUninstallReason) -->
+
+<enum name="OnDeviceModelUninstallReason">
+  <int value="0" label="Unknown reason"/>
+  <int value="1" label="Insufficient disk"/>
+  <int value="2" label="Policy not allowed"/>
+  <int value="3" label="Device not capable"/>
+  <int value="4" label="Parse error"/>
+  <int value="5" label="Not allowed by user setting"/>
+  <int value="6" label="The installed component is obsolete"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/optimization_guide/core/model_execution/manifest_broker/manifest.h:UninstallReason) -->
 
 <enum name="OnDeviceModelValidationResult">
   <int value="0" label="Unknown"/>
@@ -301,6 +353,18 @@ struct.unpack('>L', hashlib.md5(version.encode('utf-8')).digest()[4:8])[0]
     Upload is disabled because the feature is not enabled for the user.
   </int>
 </enum>
+
+<!-- LINT.IfChange(OptimizationGuideOnDemandExtractionState2) -->
+
+<enum name="OptimizationGuideOnDemandExtractionState2">
+  <int value="0" label="Initial"/>
+  <int value="1" label="Navigated"/>
+  <int value="2" label="Scheduled"/>
+  <int value="3" label="Running"/>
+  <int value="4" label="Extracted"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/page_content_annotations/content/annotate_page_content_request.h:Lifecycle) -->
 
 <enum name="OptimizationGuideOnDeviceAddContextResult">
   <int value="0" label="Used Server"/>
@@ -559,6 +623,16 @@ struct.unpack('>L', hashlib.md5(version.encode('utf-8')).digest()[4:8])[0]
   </int>
 </enum>
 
+<!-- LINT.IfChange(OptimizationGuidePageContentExtractionTriggerSource) -->
+
+<enum name="OptimizationGuidePageContentExtractionTriggerSource">
+  <int value="0" label="On load"/>
+  <int value="1" label="On hidden"/>
+  <int value="2" label="On demand"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/page_content_annotations/content/annotate_page_content_request.h:TriggerSource) -->
+
 <enum name="OptimizationGuidePredictionModelDownloadState">
   <int value="0" label="Unknown"/>
   <int value="1" label="Requested">Model was requested to be downloaded.</int>
@@ -815,6 +889,16 @@ struct.unpack('>L', hashlib.md5(version.encode('utf-8')).digest()[4:8])[0]
   <int value="120" label="PIX_PSP_ALLOWLIST"/>
   <int value="121" label="INDIGO"/>
   <int value="123" label="OMNIBOX_AUTOFILL_IFRAME_ALLOWLIST"/>
+  <int value="124" label="BUY_NOW_PAY_LATER_BLOCKLIST_AFFIRM_ANDROID"/>
+  <int value="125" label="BUY_NOW_PAY_LATER_BLOCKLIST_ZIP_ANDROID"/>
+  <int value="126" label="BUY_NOW_PAY_LATER_BLOCKLIST_KLARNA_ANDROID"/>
+  <int value="127" label="CURINOS_CREDIT_CARD_FLIGHT_BENEFITS"/>
+  <int value="128" label="CURINOS_CREDIT_CARD_HOTEL_BENEFITS"/>
+  <int value="129" label="CURINOS_CREDIT_CARD_CAR_RENTAL_BENEFITS"/>
+  <int value="130" label="FILTER_TASKS_SUPPORTED"/>
+  <int value="131" label="FILTER_EXTRACT_ATTRIBUTES"/>
+  <int value="132" label="AUTOFILL_AT_MEMORY_BLOCKED"/>
+  <int value="133" label="FILTER_EXECUTION_STRATEGY"/>
 </enum>
 
 <enum name="PageContentAnnotationsStorageStatus">
@@ -843,6 +927,48 @@ struct.unpack('>L', hashlib.md5(version.encode('utf-8')).digest()[4:8])[0]
   <int value="5" label="ContentsDeletedOnTabClose"/>
   <int value="6" label="ContentsDeletedOnTabUpdate"/>
 </enum>
+
+<!-- LINT.IfChange(PageContentExtractionEnablementReason) -->
+
+<enum name="PageContentExtractionEnablementReason">
+  <int value="0" label="Automatic extraction feature enabled"/>
+  <int value="1" label="Observer registered"/>
+  <int value="2" label="Allowed on-demand without observers"/>
+  <int value="3" label="Disabled: on-demand request denied"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/page_content_annotations/content/page_content_extraction_service.h:PageContentExtractionEnablementReason) -->
+
+<!-- LINT.IfChange(PageContentExtractionEnablementSource) -->
+
+<enum name="PageContentExtractionEnablementSource">
+  <int value="0" label="None"/>
+  <int value="1" label="Feature flag"/>
+  <int value="2" label="Observer(s) present"/>
+  <int value="3" label="Both"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/page_content_annotations/content/page_content_extraction_service.cc:EnablementSource) -->
+
+<!-- LINT.IfChange(PageContentExtractionPDFDocumentStatus) -->
+
+<enum name="PageContentExtractionPDFDocumentStatus">
+  <int value="0" label="LoadComplete"/>
+  <int value="1" label="LoadNotComplete"/>
+  <int value="2" label="PDFDocumentHelperUnavailable"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/page_content_annotations/content/annotate_page_content_request_metrics.h:PDFDocumentStatus) -->
+
+<!-- LINT.IfChange(PageContentExtractionRequestType) -->
+
+<enum name="PageContentExtractionRequestType">
+  <int value="0" label="AnnotatedPageContent"/>
+  <int value="1" label="PdfText"/>
+  <int value="2" label="PdfPageCount"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/page_content_annotations/content/annotate_page_content_request_metrics.h:ExtractionRequestType) -->
 
 </enums>
 

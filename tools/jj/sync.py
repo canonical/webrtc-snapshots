@@ -6,13 +6,19 @@
 
 import argparse
 import logging
+import subprocess
 from util import jj_log
 from util import run_command
 from util import run_jj
 
 
 def _fetch(shallow: bool) -> None:
-  args = ['git', 'fetch', 'origin', 'main']
+  # Specify git dir explicitly in case we're in a JJ workspace.
+  git_dir = run_jj(['git', 'root'],
+                   ignore_working_copy=True,
+                   stdout=subprocess.PIPE,
+                   text=True).stdout.strip()
+  args = ['git', f'--git-dir={git_dir}', 'fetch', 'origin', 'main']
   if shallow:
     # Do something similar to a shallow clone with depth 2
     # For rationale, see:
@@ -32,7 +38,12 @@ def main(args):
   _fetch(args.shallow)
 
   logging.info('Rebasing onto main@origin')
-  rebase_source = 'mutable()' if args.all else '@'
+  if args.all:
+    rebase_source = 'mutable()'
+  elif args.revision:
+    rebase_source = f'mutable() & ({args.revision})'
+  else:
+    rebase_source = '@'
   run_jj(['rebase', '-b', rebase_source, '-d', 'trunk()', '--skip-emptied'])
   # Skip-emptied with merge commits can produce weird shapes.
   run_jj(['simplify-parents', '-r', 'mutable()'], ignore_working_copy=True)
@@ -64,6 +75,12 @@ if __name__ == '__main__':
       help='Rebases all local changes onto head',
       action='store_true',
   )
+
+  parser.add_argument('-r',
+                      '--revision',
+                      metavar='REVSETS',
+                      help='Revisions to rebase onto head',
+                      type=str)
 
   parser.add_argument(
       '-s',

@@ -60,10 +60,13 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
+#include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mappable_native_buffer.h"
+#include "test/testsupport/file_utils.h"
+#include "test/testsupport/frame_reader.h"
 #include "test/video_codec_settings.h"
 #include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
 #include "third_party/libvpx/source/libvpx/vpx/vpx_codec.h"
@@ -133,6 +136,32 @@ void ConfigureSvc(VideoCodec& codec_settings,
       /*first_active_layer=*/0, num_spatial_layers, num_temporal_layers, false);
   for (size_t i = 0; i < layers.size(); ++i) {
     codec_settings.spatialLayers[i] = layers[i];
+  }
+}
+
+void ConfigureSimulcast(VideoCodec& codec_settings,
+                        int num_simulcast_streams,
+                        int num_temporal_layers) {
+  codec_settings.VP9()->numberOfSpatialLayers = 1;
+  codec_settings.VP9()->numberOfTemporalLayers = num_temporal_layers;
+  codec_settings.numberOfSimulcastStreams = num_simulcast_streams;
+  codec_settings.VP9()->interLayerPred = InterLayerPredMode::kOff;
+
+  std::vector<SpatialLayer> layers = GetSvcConfig(
+      codec_settings.width, codec_settings.height, codec_settings.maxFramerate,
+      /*first_active_layer=*/0, num_simulcast_streams, num_temporal_layers,
+      false);
+  for (size_t i = 0; i < layers.size(); ++i) {
+    codec_settings.simulcastStream[i].width = layers[i].width;
+    codec_settings.simulcastStream[i].height = layers[i].height;
+    codec_settings.simulcastStream[i].maxFramerate = layers[i].maxFramerate;
+    codec_settings.simulcastStream[i].numberOfTemporalLayers =
+        layers[i].numberOfTemporalLayers;
+    codec_settings.simulcastStream[i].maxBitrate = layers[i].maxBitrate;
+    codec_settings.simulcastStream[i].targetBitrate = layers[i].targetBitrate;
+    codec_settings.simulcastStream[i].minBitrate = layers[i].minBitrate;
+    codec_settings.simulcastStream[i].qpMax = layers[i].qpMax;
+    codec_settings.simulcastStream[i].active = layers[i].active;
   }
 }
 
@@ -341,8 +370,55 @@ TEST_F(TestVp9Impl, SwitchInputPixelFormatsWithoutReconfigure) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 }
 
+TEST_F(TestVp9Impl, PostEncodeFrameDrop) {
+  // To trigger post-encode frame drop, encode a frame of a high complexity
+  // using a medium bitrate, then reduce the bitrate and encode the same frame
+  // again.
+  // Using a medium bitrate for the first frame prevents quality and QP
+  // saturation. Encoding the same content twice prevents scene change
+  // detection. The second frame overshoots RC buffer and provokes post-encode
+  // drop.
+  VideoFrame input_frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(
+              test::CreateYuvFrameReader(
+                  test::ResourcePath("photo_1850_1110", "yuv"),
+                  {.width = 1850, .height = 1110})
+                  ->PullFrame())
+          .build();
+
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 10000000);
+
+  codec_settings_.width = input_frame.width();
+  codec_settings_.height = input_frame.height();
+  codec_settings_.startBitrate = allocation.get_sum_kbps();
+  codec_settings_.SetFrameDropEnabled(true);
+  ConfigureSvc(codec_settings_, 1, 1);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kSettings));
+
+  encoder_->SetRates(VideoEncoder::RateControlParameters(
+      allocation, codec_settings_.maxFramerate));
+
+  input_frame.set_rtp_timestamp(1 * kVideoPayloadTypeFrequency /
+                                codec_settings_.maxFramerate);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(input_frame, nullptr));
+  EXPECT_EQ(GetNumEncodedFrames(), 1u);
+
+  allocation.SetBitrate(0, 0, 1000);
+  encoder_->SetRates(VideoEncoder::RateControlParameters(
+      allocation, codec_settings_.maxFramerate));
+
+  input_frame.set_rtp_timestamp(2 * kVideoPayloadTypeFrequency /
+                                codec_settings_.maxFramerate);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(input_frame, nullptr));
+  EXPECT_EQ(GetNumEncodedFrames(), 1u);
+}
+
 TEST(Vp9ImplTest, ParserQpEqualsEncodedQp) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   encoder->InitEncode(&codec_settings, kSettings);
 
@@ -359,7 +435,8 @@ TEST(Vp9ImplTest, ParserQpEqualsEncodedQp) {
 }
 
 TEST(Vp9ImplTest, EncodeAttachesTemplateStructureWithSvcController) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   EXPECT_EQ(encoder->InitEncode(&codec_settings, kSettings),
             WEBRTC_VIDEO_CODEC_OK);
@@ -379,7 +456,8 @@ TEST(Vp9ImplTest, EncodeAttachesTemplateStructureWithSvcController) {
 }
 
 TEST(Vp9ImplTest, EncoderWith2TemporalLayers) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   // Tl0PidIdx is only used in non-flexible mode.
   codec_settings.VP9()->flexibleMode = false;
@@ -402,7 +480,8 @@ TEST(Vp9ImplTest, EncoderWith2TemporalLayers) {
 }
 
 TEST(Vp9ImplTest, EncodeTemporalLayersWithSvcController) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   ConfigureSvc(codec_settings, /*num_spatial_layers=*/1,
                /*num_temporal_layers=*/2);
@@ -432,7 +511,8 @@ TEST(Vp9ImplTest, EncodeTemporalLayersWithSvcController) {
 }
 
 TEST(Vp9ImplTest, EncoderWith2SpatialLayers) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   ConfigureSvc(codec_settings, /*num_spatial_layers=*/2);
   EXPECT_EQ(encoder->InitEncode(&codec_settings, kSettings),
@@ -450,7 +530,8 @@ TEST(Vp9ImplTest, EncoderWith2SpatialLayers) {
 }
 
 TEST(Vp9ImplTest, EncodeSpatialLayersWithSvcController) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   ConfigureSvc(codec_settings, /*num_spatial_layers=*/2);
   EXPECT_EQ(encoder->InitEncode(&codec_settings, kSettings),
@@ -502,54 +583,12 @@ TEST_F(TestVp9Impl, EncoderExplicitLayering) {
 }
 
 TEST_F(TestVp9Impl, EncoderAcceptsSvcLikeSimulcast) {
-  // Override default settings.
-  codec_settings_.VP9()->numberOfTemporalLayers = 3;
-  codec_settings_.VP9()->numberOfSpatialLayers = 1;
-  codec_settings_.numberOfSimulcastStreams = 3;
-
   codec_settings_.width = 1280;
   codec_settings_.height = 720;
-  codec_settings_.simulcastStream[0].minBitrate = 30;
-  codec_settings_.simulcastStream[0].maxBitrate = 150;
-  codec_settings_.simulcastStream[0].targetBitrate =
-      (codec_settings_.simulcastStream[0].minBitrate +
-       codec_settings_.simulcastStream[0].maxBitrate) /
-      2;
-  codec_settings_.simulcastStream[0].numberOfTemporalLayers = 3;
-  codec_settings_.simulcastStream[0].active = true;
+  ConfigureSimulcast(codec_settings_, /*num_simulcast_streams=*/3,
+                     /*num_temporal_layers=*/3);
 
-  codec_settings_.simulcastStream[1].minBitrate = 200;
-  codec_settings_.simulcastStream[1].maxBitrate = 500;
-  codec_settings_.simulcastStream[1].targetBitrate =
-      (codec_settings_.simulcastStream[1].minBitrate +
-       codec_settings_.simulcastStream[1].maxBitrate) /
-      2;
-  codec_settings_.simulcastStream[1].numberOfTemporalLayers = 3;
-  codec_settings_.simulcastStream[1].active = true;
-
-  codec_settings_.simulcastStream[2].minBitrate = 600;
-  codec_settings_.simulcastStream[2].maxBitrate = 1200;
-  codec_settings_.simulcastStream[2].targetBitrate =
-      (codec_settings_.simulcastStream[2].minBitrate +
-       codec_settings_.simulcastStream[2].maxBitrate) /
-      2;
-  codec_settings_.simulcastStream[2].numberOfTemporalLayers = 3;
-  codec_settings_.simulcastStream[2].active = true;
-
-  codec_settings_.simulcastStream[0].width = codec_settings_.width / 4;
-  codec_settings_.simulcastStream[0].height = codec_settings_.height / 4;
-  codec_settings_.simulcastStream[0].maxFramerate =
-      codec_settings_.maxFramerate;
-  codec_settings_.simulcastStream[1].width = codec_settings_.width / 2;
-  codec_settings_.simulcastStream[1].height = codec_settings_.height / 2;
-  codec_settings_.simulcastStream[1].maxFramerate =
-      codec_settings_.maxFramerate;
-  codec_settings_.simulcastStream[2].width = codec_settings_.width;
-  codec_settings_.simulcastStream[2].height = codec_settings_.height;
-  codec_settings_.simulcastStream[2].maxFramerate =
-      codec_settings_.maxFramerate;
-
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+  ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, kSettings));
 
   // Ensure it fails if temporal configs are different.
@@ -581,34 +620,11 @@ TEST_F(TestVp9Impl, SvcSimulcastThenSinglecastWithCorrectSimulcastIndex) {
   const int kTargetBitrate = 1200;
   const int kMaxFramerate = 30;
 
-  // Configure 720p 4:2:1
-  codec_settings_.VP9()->numberOfTemporalLayers = 1;
-  codec_settings_.VP9()->numberOfSpatialLayers = 1;
-  codec_settings_.numberOfSimulcastStreams = 3;
   codec_settings_.width = 1280;
   codec_settings_.height = 720;
-  codec_settings_.simulcastStream[0].width = codec_settings_.width / 4;
-  codec_settings_.simulcastStream[0].height = codec_settings_.height / 4;
-  codec_settings_.simulcastStream[0].maxFramerate = kMaxFramerate;
-  codec_settings_.simulcastStream[0].minBitrate = kTargetBitrate / 2;
-  codec_settings_.simulcastStream[0].maxBitrate = kTargetBitrate;
-  codec_settings_.simulcastStream[0].targetBitrate = kTargetBitrate;
-  codec_settings_.simulcastStream[0].active = true;
-  codec_settings_.simulcastStream[1].width = codec_settings_.width / 2;
-  codec_settings_.simulcastStream[1].height = codec_settings_.height / 2;
-  codec_settings_.simulcastStream[1].maxFramerate = kMaxFramerate;
-  codec_settings_.simulcastStream[1].minBitrate = kTargetBitrate / 2;
-  codec_settings_.simulcastStream[1].maxBitrate = kTargetBitrate;
-  codec_settings_.simulcastStream[1].targetBitrate = kTargetBitrate;
-  codec_settings_.simulcastStream[1].active = true;
-  codec_settings_.simulcastStream[2].width = codec_settings_.width;
-  codec_settings_.simulcastStream[2].height = codec_settings_.height;
-  codec_settings_.simulcastStream[2].maxFramerate = kMaxFramerate;
-  codec_settings_.simulcastStream[2].minBitrate = kTargetBitrate / 2;
-  codec_settings_.simulcastStream[2].maxBitrate = kTargetBitrate;
-  codec_settings_.simulcastStream[2].targetBitrate = kTargetBitrate;
-  codec_settings_.simulcastStream[2].active = true;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+  ConfigureSimulcast(codec_settings_, /*num_simulcast_streams=*/3,
+                     /*num_temporal_layers=*/1);
+  ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, kSettings));
 
   // Bitrate must be set for all layers to be produced.
@@ -646,6 +662,57 @@ TEST_F(TestVp9Impl, SvcSimulcastThenSinglecastWithCorrectSimulcastIndex) {
               encoder_->Encode(NextInputFrame(), nullptr));
     ASSERT_TRUE(WaitForEncodedFrames(&encoded_frame, &codec_specific_info));
     EXPECT_FALSE(encoded_frame[0].SimulcastIndex().has_value());
+  }
+}
+
+TEST_F(TestVp9Impl, KeyframeRequestOnAnyStreamForcesKeyframeOnAllStreams) {
+  codec_settings_.width = 1280;
+  codec_settings_.height = 720;
+  ConfigureSimulcast(codec_settings_, /*num_simulcast_streams=*/3,
+                     /*num_temporal_layers=*/3);
+
+  ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kSettings));
+
+  VideoBitrateAllocation bitrate_allocation;
+  for (size_t sl_idx = 0; sl_idx < 3; ++sl_idx) {
+    for (size_t tl_idx = 0; tl_idx < 3; ++tl_idx) {
+      bitrate_allocation.SetBitrate(
+          sl_idx, tl_idx,
+          codec_settings_.simulcastStream[sl_idx].targetBitrate * 1000 * 2 / 3);
+    }
+  }
+  encoder_->SetRates(VideoEncoder::RateControlParameters(
+      bitrate_allocation, codec_settings_.maxFramerate));
+
+  // 1st frame: keyframe on all layers.
+  {
+    SetWaitForEncodedFramesThreshold(3);
+    ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(NextInputFrame(), nullptr));
+    std::vector<EncodedImage> encoded_frames;
+    std::vector<CodecSpecificInfo> codec_specific_infos;
+    ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific_infos));
+  }
+
+  for (int stream_requesting_kf = 0; stream_requesting_kf < 3;
+       ++stream_requesting_kf) {
+    // Request keyframe only on `stream_requesting_kf`.
+    {
+      std::vector<VideoFrameType> frame_types(3,
+                                              VideoFrameType::kVideoFrameDelta);
+      frame_types[stream_requesting_kf] = VideoFrameType::kVideoFrameKey;
+      SetWaitForEncodedFramesThreshold(3);
+      ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK,
+                encoder_->Encode(NextInputFrame(), &frame_types));
+      std::vector<EncodedImage> encoded_frames;
+      std::vector<CodecSpecificInfo> codec_specific_infos;
+      ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific_infos));
+      ASSERT_EQ(encoded_frames.size(), 3u);
+      EXPECT_EQ(encoded_frames[0]._frameType, VideoFrameType::kVideoFrameKey);
+      EXPECT_EQ(encoded_frames[1]._frameType, VideoFrameType::kVideoFrameKey);
+      EXPECT_EQ(encoded_frames[2]._frameType, VideoFrameType::kVideoFrameKey);
+    }
   }
 }
 
@@ -713,7 +780,8 @@ TEST(Vp9ImplTest, EnableDisableSpatialLayersWithSvcController) {
   // Note: bit rate allocation is high to avoid frame dropping due to rate
   // control, the encoder should always produce a frame. A dropped
   // frame indicates a problem and the test will fail.
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   ConfigureSvc(codec_settings, num_spatial_layers);
   codec_settings.SetFrameDropEnabled(true);
@@ -780,7 +848,8 @@ MATCHER_P2(GenericLayerIs, spatial_id, temporal_id, "") {
 }
 
 TEST(Vp9ImplTest, SpatialUpswitchNotAtGOFBoundary) {
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   ConfigureSvc(codec_settings, /*num_spatial_layers=*/3,
                /*num_temporal_layers=*/3);
@@ -986,7 +1055,8 @@ TEST(Vp9ImplTest, DisableEnableBaseLayerWithSvcControllerTriggersKeyFrame) {
   // Must not be multiple of temporal period to exercise all code paths.
   const size_t num_frames_to_encode = 5;
 
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   ConfigureSvc(codec_settings, num_spatial_layers, num_temporal_layers);
   codec_settings.SetFrameDropEnabled(false);
@@ -2068,7 +2138,8 @@ TEST_P(Vp9ImplWithLayeringTest, FlexibleMode) {
   // encoder and writes it into RTP payload descriptor. Check that reference
   // list in payload descriptor matches the predefined one, which is used
   // in non-flexible mode.
-  std::unique_ptr<VideoEncoder> encoder = CreateVp9Encoder(CreateEnvironment());
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateVp9Encoder(CreateTestEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
   codec_settings.VP9()->flexibleMode = true;
   codec_settings.SetFrameDropEnabled(false);
@@ -2422,7 +2493,7 @@ TEST_F(TestVp9Impl, ScalesInputToActiveResolution) {
   // Keep a raw pointer for EXPECT calls and the like. Ownership is otherwise
   // passed on to LibvpxVp9Encoder.
   auto* const vpx = new NiceMock<MockLibvpxInterface>();
-  LibvpxVp9Encoder encoder(CreateEnvironment(), {},
+  LibvpxVp9Encoder encoder(CreateTestEnvironment(), {},
                            absl::WrapUnique<LibvpxInterface>(vpx));
 
   VideoCodec settings = DefaultCodecSettings();
@@ -2520,7 +2591,7 @@ TEST_F(TestVp9Impl, ReportFrameDroppedOnZeroSizePacket) {
   // Keep a raw pointer for EXPECT calls and the like. Ownership is otherwise
   // passed on to LibvpxVp9Encoder.
   auto* const vpx = new NiceMock<MockLibvpxInterface>();
-  LibvpxVp9Encoder encoder(CreateEnvironment(), {},
+  LibvpxVp9Encoder encoder(CreateTestEnvironment(), {},
                            absl::WrapUnique<LibvpxInterface>(vpx));
 
   VideoCodec settings = DefaultCodecSettings();
@@ -2611,7 +2682,7 @@ TEST_F(TestVp9Impl, ReportFrameDroppedOnLayerDrop) {
   // Keep a raw pointer for EXPECT calls and the like. Ownership is otherwise
   // passed on to LibvpxVp9Encoder.
   auto* const vpx = new NiceMock<MockLibvpxInterface>();
-  LibvpxVp9Encoder encoder(CreateEnvironment(), {},
+  LibvpxVp9Encoder encoder(CreateTestEnvironment(), {},
                            absl::WrapUnique<LibvpxInterface>(vpx));
 
   VideoCodec settings = DefaultCodecSettings();

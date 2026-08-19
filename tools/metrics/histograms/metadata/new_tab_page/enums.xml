@@ -193,11 +193,15 @@ chromium-metrics-reviews@google.com.
   <int value="7" label="Network error"/>
 </enum>
 
+<!-- LINT.IfChange(NewTabPageLogoClick) -->
+
 <enum name="NewTabPageLogoClick">
   <int value="0" label="Static logo clicked"/>
-  <int value="1" label="CTA image clicked"/>
+  <int value="1" label="(Deprecated) CTA image clicked"/>
   <int value="2" label="Animated logo clicked"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/search/ntp_user_data_logger.h:LogoClickType) -->
 
 <enum name="NewTabPageLogoDownloadOutcome">
   <summary>
@@ -213,10 +217,15 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="Missing image"/>
 </enum>
 
+<!-- LINT.IfChange(NewTabPageLogoShown) -->
+
 <enum name="NewTabPageLogoShown">
   <int value="0" label="Static logo shown"/>
-  <int value="1" label="CTA image shown"/>
+  <int value="1" label="(Deprecated) CTA image shown"/>
+  <int value="2" label="Animated logo shown"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/search/ntp_user_data_logger.h:LogoImpressionType) -->
 
 <!-- LINT.IfChange(NewTabPageLogoShowniOSGoogleDSEEnum) -->
 
@@ -381,6 +390,7 @@ chromium-metrics-reviews@google.com.
   <int value="7" label="Chrome Colors"/>
   <int value="8" label="Upload Image Photo Picker"/>
   <int value="9" label="Chrome Default"/>
+  <int value="10" label="Theme Tip"/>
 </enum>
 
 <enum name="NtpCustomizationEntryPoint">
@@ -388,6 +398,12 @@ chromium-metrics-reviews@google.com.
   <int value="0" label="App Menu"/>
   <int value="1" label="Customization button in toolbar"/>
   <int value="2" label="Customization button on NTP for tablet"/>
+</enum>
+
+<enum name="NtpCustomizationThemeTipButtonType">
+  <summary>Click actions on the NTP theme tip bottom sheet.</summary>
+  <int value="0" label="Customize"/>
+  <int value="1" label="Cancel"/>
 </enum>
 
 <enum name="NtpCustomizationThemeUploadImagePreviewInteractions">
@@ -673,36 +689,6 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="History"/>
 </enum>
 
-<!-- LINT.IfChange(OmniboxAutofocusOutcome) -->
-
-<enum name="OmniboxAutofocusOutcome">
-  <int value="0" label="Not triggered"/>
-  <int value="1" label="Always on"/>
-  <int value="2" label="On not first tab"/>
-  <int value="3" label="With prediction"/>
-  <int value="4" label="With hardware keyboard"/>
-  <int value="5" label="On not first tab and with prediction"/>
-  <int value="6" label="On not first tab and with hardware keyboard"/>
-  <int value="7" label="With prediction and with hardware keyboard"/>
-  <int value="8"
-      label="On not first tab, with prediction, and with hardware keyboard"/>
-</enum>
-
-<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/ntp/IncognitoNtpOmniboxAutofocusTracker.java:OmniboxAutofocusOutcome) -->
-
-<!-- LINT.IfChange(OmniboxAutofocusTabHeightChange) -->
-
-<enum name="OmniboxAutofocusTabHeightChange">
-  <int value="0" label="Increased from zero"/>
-  <int value="1" label="Unchanged at zero"/>
-  <int value="2" label="Decreased to zero"/>
-  <int value="3" label="Increased from non-zero"/>
-  <int value="4" label="Unchanged at non-zero"/>
-  <int value="5" label="Decreased to non-zero"/>
-</enum>
-
-<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/ntp/IncognitoNtpOmniboxAutofocusTracker.java:OmniboxAutofocusTabHeightChange) -->
-
 <enum name="OutlookCalendarRequestResult">
   <int value="0" label="Success"/>
   <int value="1" label="Network error"/>
@@ -733,9 +719,9 @@ chromium-metrics-reviews@google.com.
   <int value="15" label="[Deprecated] Open History Search Settings"/>
   <int value="16" label="Open Glic"/>
   <int value="17" label="Open Glic settings"/>
-  <int value="18" label="Prewarm Glic FRE"/>
-  <int value="19" label="[Deprecated] Open Split View"/>
-  <int value="20" label="Open Autofill Settings"/>
+  <int value="18" label="[Deprecated] Prewarm Glic FRE"/>
+  <int value="19" label="Open Split View"/>
+  <int value="20" label="[Deprecated] Open Autofill Settings"/>
   <int value="21" label="Enable Vertical Tabs"/>
 </enum>
 
@@ -778,7 +764,8 @@ chromium-metrics-reviews@google.com.
   <int value="31" label="From Tab List Interface"/>
   <int value="32" label="From Link, Creating New Window"/>
   <int value="33" label="From Tips Notifications"/>
-  <int value="34" label="Size"/>
+  <int value="34" label="From Tab List Interface Background"/>
+  <int value="35" label="Size"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/android/tab_model/tab_model.h:TabLaunchType) -->

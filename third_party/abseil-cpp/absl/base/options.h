@@ -99,7 +99,9 @@
 // the source location type is an alias of std::source_location type, use the
 // feature macro ABSL_USES_STD_SOURCE_LOCATION.
 //
-#define ABSL_OPTION_USE_STD_SOURCE_LOCATION 2
+// std::source_location is banned in Chrome, and disabling it save significant
+// binary size. https://crbug.com/517512695
+#define ABSL_OPTION_USE_STD_SOURCE_LOCATION 0
 
 // ABSL_OPTION_USE_STD_ORDERING
 //
@@ -182,5 +184,31 @@
 // log additional information when `NDEBUG` is not defined.
 
 #define ABSL_OPTION_HARDENED 1
+
+// ABSL_OPTION_INLINE_HW_ACCEL_STRATEGY
+//
+// This option controls whether Abseil is allowed to use non-portable
+// hardware-accelerated implementations in headers (where they are typically
+// inlined into the caller's translation unit).
+//
+// Using such optimizations in headers can lead to One Definition Rule (ODR)
+// violations if different translation units are built with different CPU
+// architecture flags (e.g., -march=native vs -march=generic) and linked
+// together.
+//
+// A value of 0 means to use the portable software implementation in headers.
+// This provides the best ODR guarantees when linking code built with
+// inconsistent flags, but may be slower.
+//
+// A value of 1 means that the implementation requires the use of a
+// hardware-accelerated implementation. This requires the compiler environment
+// to support these instructions; otherwise, the build will fail.
+//
+// A value of 2 means to select the best available implementation based on
+// the compiler flags, but can't guarantee ODR safety if translation units are
+// built with inconsistent flags.
+//
+// User code should not inspect this macro.
+#define ABSL_OPTION_INLINE_HW_ACCEL_STRATEGY 0
 
 #endif  // ABSL_BASE_OPTIONS_H_
