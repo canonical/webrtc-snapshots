@@ -173,6 +173,12 @@ chromium-metrics-reviews@google.com.
       label="Can not parse a vault and security domain member keys from a
              CBOR map"/>
   <int value="44" label="Account mismatch in DoNextAction"/>
+  <int value="45"
+      label="Failed to parse wrapped PIN or PIN invariants check failed in
+             AddDeviceToAccount"/>
+  <int value="46"
+      label="Failed to parse wrapped PIN or PIN invariants check failed in
+             ConsiderSecurityDomainState"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/webauthn/enclave_manager.h:EnclaveManagerActionOutcome) -->
@@ -474,6 +480,7 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Cloud-assisted BLE"/>
   <int value="4" label="Internal"/>
   <int value="5" label="Android Accessory (Deprecated)"/>
+  <int value="6" label="Smart Card"/>
 </enum>
 
 <enum name="WebAuthenticationGetAssertionOutcome">
@@ -585,6 +592,15 @@ chromium-metrics-reviews@google.com.
   </int>
   <int value="7" label="CancelRequested">
     Page cancelled a WebAuthn credential request via an AbortSignal.
+  </int>
+  <int value="8" label="SignalUnknownCredentialRequested">
+    Page requested a WebAuthn signalUnknownCredential call.
+  </int>
+  <int value="9" label="SignalCurrentUserDetailsRequested">
+    Page requested a WebAuthn signalCurrentUserDetails call.
+  </int>
+  <int value="10" label="SignalAllAcceptedCredentialsRequested">
+    Page requested a WebAuthn signalAllAcceptedCredentials call.
   </int>
 </enum>
 

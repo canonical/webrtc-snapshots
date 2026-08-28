@@ -595,7 +595,8 @@
             "pool": "chrome.tests",
             "ssd": "0"
           },
-          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
+          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com",
+          "shards": 2
         },
         "test": "blink_unittests",
         "test_id_prefix": "ninja://third_party/blink/renderer/controller:blink_unittests/"
@@ -1349,6 +1350,42 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_gtest_merge.py"
         },
+        "module_name": "//chromeos/ash/components/mojo_proxy/mojo_core:mojo_legacy_unittests",
+        "module_scheme": "gtest",
+        "name": "mojo_legacy_unittests",
+        "swarming": {
+          "dimensions": {
+            "os": "Ubuntu-22.04",
+            "pool": "chrome.tests",
+            "ssd": "0"
+          },
+          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "mojo_legacy_unittests",
+        "test_id_prefix": "ninja://chromeos/ash/components/mojo_proxy/mojo_core:mojo_legacy_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
+        "module_name": "//chromeos/ash/components/mojo_proxy/service:mojo_proxy_unittests",
+        "module_scheme": "gtest",
+        "name": "mojo_proxy_unittests",
+        "swarming": {
+          "dimensions": {
+            "os": "Ubuntu-22.04",
+            "pool": "chrome.tests",
+            "ssd": "0"
+          },
+          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "mojo_proxy_unittests",
+        "test_id_prefix": "ninja://chromeos/ash/components/mojo_proxy/service:mojo_proxy_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
         "module_name": "//mojo:mojo_unittests",
         "module_scheme": "gtest",
         "name": "mojo_unittests",
@@ -1819,7 +1856,8 @@
             "pool": "chrome.tests",
             "ssd": "0"
           },
-          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
+          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com",
+          "shards": 2
         },
         "test": "unit_tests",
         "test_id_prefix": "ninja://chrome/test:unit_tests/"

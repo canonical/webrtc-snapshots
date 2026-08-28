@@ -1480,6 +1480,13 @@ class MetaBuildWrapper:
               'ChromeEnterpriseCompanion.app/',
               'ChromeEnterpriseCompanion_test.app/',
               'Chromium Framework.framework/',
+              'Chromium Helper (Alerts).app/',
+              'Chromium Helper (Aperitif).app/',
+              'Chromium Helper (Aperitif Alerts).app/',
+              'Chromium Helper (Aperitif GPU).app/',
+              'Chromium Helper (Aperitif Renderer).app/',
+              'Chromium Helper (GPU).app/',
+              'Chromium Helper (Renderer).app/',
               'Chromium Helper.app/',
               'Chromium.app/',
               'ChromiumEnterpriseCompanion.app/',
@@ -1491,8 +1498,11 @@ class MetaBuildWrapper:
               'Google Chrome for Testing.app/',
               'Google Chrome Framework.framework/',
               'Google Chrome Helper (Alerts).app/',
+              'Google Chrome Helper (Aperitif).app/',
+              'Google Chrome Helper (Aperitif Alerts).app/',
+              'Google Chrome Helper (Aperitif GPU).app/',
+              'Google Chrome Helper (Aperitif Renderer).app/',
               'Google Chrome Helper (GPU).app/',
-              'Google Chrome Helper (Plugin).app/',
               'Google Chrome Helper (Renderer).app/',
               'Google Chrome Helper.app/',
               'Google Chrome.app/',
@@ -1669,7 +1679,8 @@ class MetaBuildWrapper:
     else:
       bot_mode = ()
 
-    if test_type == 'generated_script' or is_ios:
+    if test_type == 'generated_script' or (is_ios and test_type
+                                           not in ('script', 'raw')):
       assert 'script' not in isolate_map[target], (
           'generated_scripts can no longer customize the script path')
       if is_win:

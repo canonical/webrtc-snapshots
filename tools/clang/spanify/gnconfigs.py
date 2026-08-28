@@ -9,6 +9,7 @@
 # platforms you are interested in, and to configure them as required.
 
 import os
+import subprocess
 
 
 class GnConfigsImpl:
@@ -191,7 +192,6 @@ class GnConfigsImpl:
             'symbol_level=1',
             'target_cpu="arm64"',
             'target_os="android"',
-            'v8_is_on_release_branch=true',
         ] + current_exec
         self.android_configs["android_compile_dbg"] = [
             'android_static_analysis="on"',
@@ -307,7 +307,6 @@ class GnConfigsImpl:
                 'symbol_level=0',
                 'target_cpu="x64"',
                 'target_os="linux"',
-                f'clang_base_path="{clang_base_path}"',
             ] + current_exec
         }
         self.angle_configs = {
@@ -430,9 +429,11 @@ def GnConfigs(use_remoteexec) -> GnConfigsImpl:
 
 # This function will generate out/<target> to use <args> this is the same as
 # running `gn args` yourself and manually entering <args>.
-def GenerateGnTarget(target, args):
+def GenerateGnTarget(target, args, cwd=None):
     # Configure the target.
-    ret = os.system("gn gen out/%s --args='%s'" % (target, "\n".join(args)))
-    if os.WIFEXITED(ret) and os.WEXITSTATUS(ret) == 0:
-        return True
-    return False
+    cmd = ['gn', 'gen', f'out/{target}', f'--args={" ".join(args)}']
+    try:
+        result = subprocess.run(cmd, check=True, text=True, cwd=cwd)
+        return result.returncode == 0
+    except subprocess.CalledProcessError:
+        return False

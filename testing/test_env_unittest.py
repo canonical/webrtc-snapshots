@@ -16,27 +16,39 @@ import sys
 import time
 import unittest
 
+if sys.platform == 'win32':
+  try:
+    import win32api
+    import win32con
+    import win32process
+  except ImportError:
+    win32api = None
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEST_SCRIPT = os.path.join(HERE, 'test_env_user_script.py')
 
 
 def launch_process_windows(args):
   # The `universal_newlines` option is equivalent to `text` in Python 3.
-  return subprocess.Popen([sys.executable, TEST_SCRIPT] + args,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT,
-                          env=os.environ.copy(),
-                          creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-                          universal_newlines=True)
+  return subprocess.Popen(
+    [sys.executable, TEST_SCRIPT] + args,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    env=os.environ.copy(),
+    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+    universal_newlines=True,
+  )
 
 
 def launch_process_nonwindows(args):
   # The `universal_newlines` option is equivalent to `text` in Python 3.
-  return subprocess.Popen([sys.executable, TEST_SCRIPT] + args,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT,
-                          env=os.environ.copy(),
-                          universal_newlines=True)
+  return subprocess.Popen(
+    [sys.executable, TEST_SCRIPT] + args,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    env=os.environ.copy(),
+    universal_newlines=True,
+  )
 
 
 # pylint: disable=inconsistent-return-statements
@@ -58,7 +70,6 @@ def send_and_wait(proc, sig, sleep_time=0.6):
 
 
 class SignalingWindowsTest(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     if sys.platform != 'win32':
@@ -72,11 +83,37 @@ class SignalingWindowsTest(unittest.TestCase):
     # "enough", which it fails to do sometimes. This is tracked by
     # https://crbug.com/1335123 and it is hoped that increasing the timeout will
     # reduce the flakiness.
-    self.assertEqual(sig, str(int(signal.SIGBREAK)))  # pylint: disable=no-member
+    self.assertEqual(
+      sig,
+      str(int(signal.SIGBREAK)),  # pylint: disable=no-member
+    )
+
+  def test_job_object_kills_leaked_child_process(self):
+    proc = launch_process_windows(['--spawn-leaked-child'])
+    leaked_pid_str = read_subprocess_message(proc, 'Leaked PID:')
+    proc.wait()
+    self.assertIsNotNone(leaked_pid_str)
+    leaked_pid = int(leaked_pid_str)
+    time.sleep(0.2)
+
+    if not win32api:
+      return
+
+    try:
+      hproc = win32api.OpenProcess(
+        win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, leaked_pid
+      )
+      if hproc:
+        exit_code = win32process.GetExitCodeProcess(hproc)
+        win32api.CloseHandle(hproc)
+        # 259 is STILL_ACTIVE; process should be terminated.
+        self.assertNotEqual(exit_code, 259)
+    except Exception:  # pylint: disable=broad-except
+      # OpenProcess failing indicates the PID is no longer valid (process dead).
+      pass
 
 
 class SignalingNonWindowsTest(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     if sys.platform == 'win32':

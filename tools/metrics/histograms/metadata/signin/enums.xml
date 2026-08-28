@@ -213,6 +213,17 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//components/signin/core/browser/account_preview_data_fetcher.h:AccountPreviewDataFetchState) -->
 
+<!-- LINT.IfChange(AccountPreviewFetchTriggerCause) -->
+
+<enum name="AccountPreviewFetchTriggerCause">
+  <int value="0" label="PeriodicRefresh"/>
+  <int value="1" label="RefreshTokenUpdated"/>
+  <int value="2" label="RefreshTokenRemoved"/>
+  <int value="3" label="RefreshTokenInvalidated"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/signin/core/browser/account_preview_data_service_impl.h:FetchTriggerCause) -->
+
 <!-- LINT.IfChange(AccountProfileStartupState) -->
 
 <enum name="AccountProfileStartupState">
@@ -493,6 +504,16 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/signin/dice_response_handler.h:TokenBindingOutcome) -->
 
+<!-- LINT.IfChange(ExplicitSigninDatatypeMigrationState) -->
+
+<enum name="ExplicitSigninDatatypeMigrationState">
+  <int value="0" label="SignedIn"/>
+  <int value="1" label="SignedInWithExplicitBookmarks"/>
+  <int value="2" label="SignedInWithExplicitExtensions"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/signin/internal/identity_manager/primary_account_manager.h:ExplicitSigninDatatypeMigrationState) -->
+
 <enum name="FRESigninEvents">
   <int value="0" label="Checking managed status"/>
   <int value="1" label="Signing in - unmanaged"/>
@@ -723,6 +744,19 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//ios/chrome/browser/signin/model/authentication_service.h:IOSProfileInitializationOutcome) -->
 
+<!-- LINT.IfChange(IOSResizedAvatarCacheGetAvatarResult) -->
+
+<enum name="IOSResizedAvatarCacheGetAvatarResult">
+  <int value="0" label="Success"/>
+  <int value="1" label="Missing (Fetch triggered)"/>
+  <int value="2" label="Invalid dimensions (Fetch triggered)"/>
+  <int value="3" label="Resize failed"/>
+</enum>
+
+<!-- LINT.ThenChange(//ios/chrome/browser/signin/model/avatar/resized_avatar_cache.h:IOSResizedAvatarCacheGetAvatarResult) -->
+
+<!-- LINT.IfChange(LaunchWebAuthFlowResult) -->
+
 <enum name="LaunchWebAuthFlowResult">
   <int value="0" label="Success"/>
   <int value="1" label="kOffTheRecord"/>
@@ -734,7 +768,10 @@ chromium-metrics-reviews@google.com.
   <int value="7" label="kCannotCreateWindow"/>
   <int value="8" label="kInvalidURLScheme"/>
   <int value="9" label="kBrowserContextShutDown"/>
+  <int value="10" label="kWebAuthFlowInProgress"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/browser/extensions/api/identity/identity_launch_web_auth_flow_function.h:LaunchWebAuthFlowResult) -->
 
 <!-- LINT.IfChange(MirrorHeaderEvent) -->
 
@@ -841,7 +878,7 @@ chromium-metrics-reviews@google.com.
   <int value="55" label="Arc Background Auth Code Fetcher"/>
   <int value="56" label="GCM Account Tracker"/>
   <int value="57" label="Policy Token Forwarder"/>
-  <int value="58" label="Plugin Vm License Checker"/>
+  <int value="58" label="Plugin Vm License Checker (deprecated 07/2026)"/>
   <int value="59" label="Drivefs Auth"/>
   <int value="60" label="Nearby Presence Server Client"/>
   <int value="61" label="Crypt Auth Client"/>
@@ -887,7 +924,11 @@ chromium-metrics-reviews@google.com.
   <int value="101" label="Context Memory Service"/>
   <int value="102" label="Sync Preview"/>
   <int value="103" label="Fpop Service"/>
-  <int value="104" label="Context Containers Service"/>
+  <int value="104" label="Notebooks Service"/>
+  <int value="105" label="Remote Actor Login Credentials Service"/>
+  <int value="106" label="Browser Actuator"/>
+  <int value="107" label="Tab Context Containers Service"/>
+  <int value="108" label="Site Token Provider"/>
 </enum>
 
 <!-- LINT.ThenChange(//components/signin/public/base/oauth_consumer_id.h:OAuthConsumerId) -->
@@ -1126,6 +1167,8 @@ chromium-metrics-reviews@google.com.
   <int value="105" label="Indigo"/>
   <int value="106" label="Overflow Menu (iOS only)"/>
   <int value="107" label="Level Up (iOS only)"/>
+  <int value="108" label="Undo button from the signout snackbar (iOS only)"/>
+  <int value="109" label="Composebox Drive context menu option (Desktop only)"/>
 </enum>
 
 <enum name="SigninAccountReconcilorState">
@@ -1257,6 +1300,7 @@ chromium-metrics-reviews@google.com.
   <int value="21"
       label="Abort: not the first account but there is no primary account."/>
   <int value="22" label="Abort: management disclaimer service in progress"/>
+  <int value="23" label="Abort: account connected to primary"/>
 </enum>
 
 <enum name="SigninInterceptionDismissReason">

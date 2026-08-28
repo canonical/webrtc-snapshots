@@ -141,7 +141,6 @@ def validateJavaScriptAllowed(source_dir, out_dir, platform):
     ash_directories = [
         'ash/webui/annotator/resources/untrusted/',
         'ash/webui/camera_app_ui/',
-        'ash/webui/color_internals/',
         'ash/webui/common/resources/',
         'ash/webui/file_manager/resources/labs/',
         # TODO(b/314827247): Migrate media_app_ui to TypeScript and remove
@@ -205,7 +204,6 @@ def isMappingAllowed(is_ash_target, target_path, mapping_path):
 def isUnsupportedJsTarget(gen_dir, root_gen_dir):
   target_path = getTargetPath(gen_dir, root_gen_dir)
   exceptions = [
-      'ash/webui/color_internals/resources',
       'chrome/browser/resources/chromeos/accessibility/select_to_speak',
   ]
   return target_path in exceptions
@@ -274,6 +272,7 @@ def validateDefinitionDeps(definitions_files, target_path, gen_dir,
       'third_party/material_web_components/',
       'third_party/node/node_modules/',
       'third_party/polymer/v3_0/',
+      'third_party/typescript/',
       'tools/typescript/tests/',
   ]
   exceptions = [getPathFromCwd(e) for e in exceptions_list]

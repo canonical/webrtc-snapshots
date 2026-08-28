@@ -361,7 +361,7 @@ chromium-metrics-reviews@google.com.
   <int value="126" label="COLLABORATION_OUT_OF_DATE_INFOBAR_DELEGATE"/>
   <int value="127" label="PIN_TO_TASKBAR_INFOBAR_DELEGATE"/>
   <int value="128" label="SESSION_RESTORE_INFOBAR_DELEGATE"/>
-  <int value="129" label="ROLL_BACK_MODE_B_INFOBAR_DELEGATE"/>
+  <int value="129" label="ROLL_BACK_MODE_B_INFOBAR_DELEGATE (Obsolete)"/>
   <int value="130" label="DEV_TOOLS_REMOTE_DEBUGGING_INFOBAR_DELEGATE"/>
   <int value="131" label="STARTUP_LAUNCH_INFOBAR_DELEGATE"/>
   <int value="132" label="AUTOFILL_AI_SAVE_ENTITY_INFOBAR_DELEGATE_IOS"/>
@@ -369,6 +369,9 @@ chromium-metrics-reviews@google.com.
   <int value="134" label="WEB_APP_BLOCKED_MIGRATION_INFOBAR_DELEGATE"/>
   <int value="135" label="OSCRYPTASYNC_AVAILABILITY_INFOBAR_DELEGATE"/>
   <int value="136" label="AUTOFILL_AI_PRE_FETCH_FAILURE_INFOBAR_DELEGATE_IOS"/>
+  <int value="137" label="SIGNIN_QRCODE_INFOBAR_DELEGATE"/>
+  <int value="138" label="FORMS_AI_PRIVATE_INFERENCE_INFOBAR_DELEGATE_IOS"/>
+  <int value="139" label="PASSWORD_SAVED_INFOBAR_DELEGATE_IOS"/>
 </enum>
 
 <!-- LINT.ThenChange(//components/infobars/core/infobar_delegate.h:InfoBarIdentifier) -->

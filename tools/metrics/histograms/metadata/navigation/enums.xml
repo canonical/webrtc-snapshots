@@ -265,6 +265,35 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//content/public/browser/error_navigation_trigger.h:ErrorNavigationTrigger) -->
 
+<!-- LINT.IfChange(FastFetchEligibilityReason) -->
+
+<enum name="FastFetchEligibilityReason">
+  <int value="0" label="Eligible"/>
+  <int value="1" label="Not in outermost main frame"/>
+  <int value="2" label="Not GET method"/>
+  <int value="3" label="Not HTTPS scheme"/>
+  <int value="4" label="Is reload"/>
+  <int value="5" label="Is history navigation"/>
+  <int value="6" label="DevTools attached"/>
+  <int value="7" label="Has signed exchange"/>
+  <int value="8" label="Has service worker"/>
+  <int value="9" label="Same document"/>
+  <int value="10" label="Is prerender"/>
+  <int value="11" label="Is prerender activation"/>
+</enum>
+
+<!-- LINT.ThenChange(//content/browser/loader/navigation_fast_fetch_manager.h:EligibilityReason) -->
+
+<!-- LINT.IfChange(FastFetchNavigationOutcome) -->
+
+<enum name="FastFetchNavigationOutcome">
+  <int value="0" label="Committed"/>
+  <int value="1" label="Failed"/>
+  <int value="2" label="Cancelled"/>
+</enum>
+
+<!-- LINT.ThenChange(//content/browser/loader/navigation_fast_fetch_manager.h:NavigationOutcome) -->
+
 <!-- LINT.IfChange(HistoryNavigationDirection) -->
 
 <enum name="HistoryNavigationDirection">
@@ -304,9 +333,13 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="New Tab Page"/>
   <int value="3" label="Omnibox Direct URL Input"/>
   <int value="4" label="Omnibox Default Search Engine"/>
+  <int value="5" label="Link Click"/>
+  <int value="6" label="Forward"/>
+  <int value="7" label="Backward"/>
+  <int value="8" label="Reload"/>
 </enum>
 
-<!-- LINT.ThenChange(//components/page_load_metrics/browser/navigation_handle_user_data.h:NavigationInitiatorType) -->
+<!-- LINT.ThenChange(//chrome/browser/page_load_metrics/chrome_initiator_location.h:ChromeInitiatorLocation) -->
 
 <enum name="NavigationIsGuest">
   <int value="0" label="Not a guest navigation"/>
@@ -452,6 +485,7 @@ chromium-metrics-reviews@google.com.
   <int value="18" label="Captured Empty Bitmap From Embedder"/>
   <int value="19" label="Forward transition animation not supported"/>
   <int value="20" label="Failed read back"/>
+  <int value="21" label="Size Exceeds Limit"/>
 </enum>
 
 <!-- LINT.ThenChange(//content/browser/renderer_host/navigation_transitions/navigation_transition_data.h:CacheHitOrMissReason)-->
@@ -1657,7 +1691,7 @@ chromium-metrics-reviews@google.com.
   <int value="10" label="kTrustTokenParams"/>
   <int value="11" label="kWebBundleToken"/>
   <int value="12" label="kRequestContextType"/>
-  <int value="13" label="kImpressionHasValue"/>
+  <int value="13" label="kImpressionHasValue (Obsolete)"/>
   <int value="14" label="kInitiatorOrigin"/>
   <int value="15" label="kTransition"/>
   <int value="16" label="kNavigationType"/>
@@ -1729,7 +1763,7 @@ chromium-metrics-reviews@google.com.
       label="extensions.mojom.EventRouter (Obsolete in M122)"/>
   <int value="-71187962" label="supervised_user.mojom.SupervisedUserCommands"/>
   <int value="-10666109" label="chrome.mojom.PluginInfoHost"/>
-  <int value="-4973921" label="blink.mojom.AttributionHost"/>
+  <int value="-4973921" label="blink.mojom.AttributionHost (Obsolete in M152)"/>
   <int value="191605727" label="content.mojom.PepperHost"/>
   <int value="828689080" label="blink.mojom.BlobURLStore (Obsolete)"/>
   <int value="1054828948" label="extensions.mojom.GuestView"/>
@@ -1846,6 +1880,7 @@ chromium-metrics-reviews@google.com.
   <int value="11" label="Running in Kiosk Session"/>
   <int value="12" label="Low memory device"/>
   <int value="13" label="Disabled by blackout"/>
+  <int value="14" label="Disabled on startup"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/preloading/prerender/prerender_manager.h:PrewarmDecision) -->

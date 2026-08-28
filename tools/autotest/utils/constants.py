@@ -23,11 +23,11 @@ DEPOT_TOOLS_DIR: Path = SRC_DIR / 'third_party' / 'depot_tools'
 
 # Some test suites use suffixes that would also match non-test-suite targets.
 # Those test suites should be manually added here.
+# pylint: disable=line-too-long
 TEST_TARGET_ALLOWLIST: list[str] = [
 
     # The tests below this line were output from the ripgrep command just below:
     '//ash:ash_pixeltests',
-    '//build/rust/tests/test_serde_json_lenient:test_serde_json_lenient',
     '//chrome/browser/apps/app_service/app_install:app_install_fuzztests',
     '//chrome/browser/glic/e2e_test:glic_internal_e2e_interactive_ui_tests',
     '//chrome/browser/mac:install_sh_test',
@@ -91,7 +91,6 @@ TEST_TARGET_ALLOWLIST: list[str] = [
     '//third_party/dawn/src/dawn/tests/benchmarks:dawn_benchmarks',
     '//third_party/federated_compute:federated_compute_tests',
     '//third_party/highway:highway_tests',
-    '//third_party/ipcz/src:ipcz_tests',
     '//third_party/libaom:av1_encoder_fuzz_test',
     '//third_party/libaom:test_libaom',
     '//third_party/libvpx:test_libvpx',
@@ -113,9 +112,10 @@ TEST_TARGET_ALLOWLIST: list[str] = [
     '//third_party/rapidhash:rapidhash_fuzztests',
     '//ui/ozone:ozone_integration_tests',
 ]
+# pylint: disable=line-too-long
 r"""
- You can run this command to find test targets that do not match _TEST_TARGET_SUFFIXES,
- and use it to update _TEST_TARGET_ALLOWLIST.
+ You can run this command to find test targets that do not match
+ _TEST_TARGET_SUFFIXES, and use it to update _TEST_TARGET_ALLOWLIST.
 rg '^(instrumentation_test_runner|test)\("([^"]*)' -o -g'BUILD.gn' -r'$2' -N \
   | rg -v '(_browsertests|_perftests|_wpr_tests|_unittests)$' \
   | rg '^(.*)/BUILD.gn(.*)$' -r'\'//$1$2\',' \
@@ -134,12 +134,14 @@ PREF_MAPPING_FILE_PATTERN: str = re.escape(
     r'/') + r'.*\.json'
 
 # `rg` always uses forward slashes for globs, even on Windows.
-PREF_MAPPING_FILE_NAME_GLOB: str = '*components/policy/test/data/pref_mapping/*.json'
-GTEST_FILE_NAME_GLOB: str = '*{test,tests}*.{cc,mm,java}'
+PREF_MAPPING_FILE_NAME_GLOB: str = (
+    '*components/policy/test/data/pref_mapping/*.json')
+GTEST_FILE_NAME_GLOB: str = '*{test,tests}*.{cc,mm,java,rs}'
 
 # Regex version of `(PREF_MAPPING_FILE_GLOB) | (GTEST_FILE_GLOB)`
 TEST_FILE_NAME_REGEX: re.Pattern[str] = re.compile(
-    r'.*(?:tests?.*\.(?:cc|mm)|Test\.java|' + PREF_MAPPING_FILE_PATTERN + ')$',
+    r'.*(?:tests?.*\.(?:cc|mm|rs)|Test\.java|' + PREF_MAPPING_FILE_PATTERN +
+    ')$',
     flags=re.IGNORECASE)
 
 _PREF_MAPPING_GTEST_FILTER: str = '*PolicyPrefsTest.PolicyToPrefsMapping*'
@@ -152,10 +154,15 @@ SPECIAL_TEST_FILTERS: list[tuple[re.Pattern[str], str]] = [
 
 # If these test definition macros appear as the first thing on a line of a C++
 # file, we are certain that the file contains GTests.
-GTEST_TEST_DEFINITION_MACRO_REGEX = re.compile(
+CXX_GTEST_TEST_DEFINITION_MACRO_REGEX = re.compile(
     r'^(TEST|TEST_F|TEST_P|INSTANTIATE_TEST_SUITE_P|TYPED_TEST|TYPED_TEST_P|'
     r'INSTANTIATE_TYPED_TEST_SUITE_P)\(',
     flags=re.MULTILINE)
+
+# If this annotation appears on a line in a Rust file, we are certain it
+# contains GTests.
+RUST_GTEST_TEST_DEFINITION_MACRO_REGEX = re.compile(r'^\s*#\[gtest\(',
+                                                    flags=re.MULTILINE)
 
 JUNIT_TEST_ANNOTATION_REGEX = re.compile(r'^\s*@Test', flags=re.MULTILINE)
 

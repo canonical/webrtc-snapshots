@@ -96,17 +96,17 @@
         <message key="name.invalidPattern" value="Method names should start with a lower case letter (e.g. getWidth())"/>
     </module>
     <module name="ParameterName">
-      <property name="format" value="^(unused_)?[a-z][a-zA-Z0-9]*$"/>
+      <property name="format" value="^((unused_)?[a-z][a-zA-Z0-9]*|_)$"/>
       <property name="severity" value="error"/>
     </module>
     <module name="LocalFinalVariableName">
       <property name="severity" value="warning"/>
-      <property name="format" value="^(m|s|((([ms][a-z0-9])|([a-ln-rt-z]))[a-zA-Z0-9]*))$"/>
+      <property name="format" value="^(m|s|_|((([ms][a-z0-9])|([a-ln-rt-z]))[a-zA-Z0-9]*))$"/>
       <message key="name.invalidPattern" value="Local variables should be camel-cased (e.g. int minWidth = 4)."/>
     </module>
     <module name="LocalVariableName">
       <property name="severity" value="warning"/>
-      <property name="format" value="^(m|s|((([ms][a-z0-9])|([a-ln-rt-z]))[a-zA-Z0-9]*))$"/>
+      <property name="format" value="^(m|s|_|((([ms][a-z0-9])|([a-ln-rt-z]))[a-zA-Z0-9]*))$"/>
       <message key="name.invalidPattern" value="Local variables should be camel-cased (e.g. int minWidth = 4)."/>
     </module>
     <module name="FallThrough">
@@ -127,6 +127,13 @@
       <property name="format" value="StringBuffer"/>
       <property name="ignoreComments" value="true"/>
       <property name="message" value="Avoid StringBuffer; use StringBuilder instead, which is faster (it's not thread-safe, but this is almost never needed)"/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <property name="id" value="LogStringConcatenationCheck"/>
+      <property name="severity" value="warning"/>
+      <property name="format" value="Log\.(d|v)\([^)]*(?:&quot;\s*\+|\+\s*&quot;)[^)]*\)"/>
+      <property name="ignoreComments" value="true"/>
+      <property name="message" value="String concatenation (+) inside Log.d or Log.v is discouraged. Please use string formatters (e.g., %s) instead. This allows ProGuard/R8 to safely strip the log arguments in release builds."/>
     </module>
     <module name="RegexpSinglelineJava">
       <property name="id" value="AlertDialogCheck"/>
@@ -236,7 +243,7 @@
     <module name="RegexpSinglelineJava">
       <property name="id" value="ParamComments"/>
       <property name="severity" value="warning"/>
-      <property name="format" value="/\*\*? ?\w+ ?\*/(,|\))|(,|\() */\*\*? ?\w+ ?\*/(?!\s+InvocationHandler\b)"/>
+      <property name="format" value="/\*\*? ?(?!(?:index|element)\b)\w+ ?\*/(,|\))|(,|\() */\*\*? ?(?!(?:index|element)\b)\w+ ?\*/(?!\s+InvocationHandler\b)"/>
       <property name="message" value="Parameter comments should use the ErrorProne-aware syntax: /* paramName= */."/>
     </module>
     <module name="RegexpSinglelineJava">

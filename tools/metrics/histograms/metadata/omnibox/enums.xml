@@ -434,9 +434,10 @@ chromium-metrics-reviews@google.com.
   <int value="8" label="DisableSuggest"/>
   <int value="9" label="Aim"/>
   <int value="10" label="AimGenPrompt"/>
+  <int value="11" label="AgentTask"/>
 </enum>
 
-<!-- LINT.ThenChange(//components/omnibox/common/omnibox_metrics_utils.cc:ToolMode) -->
+<!-- LINT.ThenChange(//components/omnibox/common/omnibox_metrics_utils.cc:ToolMode,//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/FuseboxMetrics.java:ToolMode) -->
 
 <enum name="OmniboxWebUIRendererProcessGoneStatus">
   <int value="0" label="Normal termination"/>
@@ -786,6 +787,17 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//ui/webui/resources/cr_components/composebox/composebox_voice_search.ts:VoiceSearchError) -->
+
+<!-- LINT.IfChange(VoiceSearchQuerySource) -->
+
+<enum name="VoiceSearchQuerySource">
+  <int value="0" label="NTP Realbox Classic Voice Input"/>
+  <int value="1" label="NTP Composebox Voice Input"/>
+  <int value="2" label="Omnibox Composebox Voice Input"/>
+  <int value="3" label="Nextbox Composebox Voice Input"/>
+</enum>
+
+<!-- LINT.ThenChange(//ui/webui/resources/cr_components/composebox/composebox_voice_search.ts:VoiceSearchQuerySource) -->
 
 <!-- LINT.IfChange(VoiceSearchState) -->
 

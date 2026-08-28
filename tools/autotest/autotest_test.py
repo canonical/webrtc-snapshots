@@ -22,6 +22,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 # Helper to create a dummy test file content
 GTEST_CONTENT = 'TEST(A, B) {}'
 
+
 class FindMatchingTestFilesTest(TestCase):
 
   def setUp(self):
@@ -38,6 +39,14 @@ class FindMatchingTestFilesTest(TestCase):
     self.assertEqual(['foo_unittest.cc'],
                      file_finder.FindMatchingTestFiles('foo_unittest.cc'))
 
+  def create_rs_test(self, path):
+    self.fs.create_file(path, contents='#[gtest(A, B)]')
+
+  def test_rs_test(self):
+    self.create_rs_test('foo_unittest.rs')
+    self.assertEqual(['foo_unittest.rs'],
+                     file_finder.FindMatchingTestFiles('foo_unittest.rs'))
+
   def test_mm_test(self):
     self.create_cc_test('foo_unittest.mm')
     self.assertEqual(['foo_unittest.mm'],
@@ -48,6 +57,12 @@ class FindMatchingTestFilesTest(TestCase):
     self.create_cc_test('foo_unittest.cc')
     self.assertEqual(['foo_unittest.cc'],
                      file_finder.FindMatchingTestFiles('foo.cc'))
+
+  def test_rs_alt_test(self):
+    self.fs.create_file('foo.rs')
+    self.create_rs_test('foo_unittest.rs')
+    self.assertEqual(['foo_unittest.rs'],
+                     file_finder.FindMatchingTestFiles('foo.rs'))
 
   def test_cc_maybe_test(self):
     self.fs.create_file('foo_unittest.cc')
@@ -283,7 +298,8 @@ class FindMatchingTestFilesTest(TestCase):
   def test_windows_path_normalization(self):
     with mock.patch.object(file_finder.os.path, 'altsep', '/'), \
          mock.patch.object(file_finder.os.path, 'sep', '\\'), \
-         mock.patch('finders.file_finder._RecursiveMatchFilename') as mock_recursive:
+         mock.patch(
+             'finders.file_finder._RecursiveMatchFilename') as mock_recursive:
 
       mock_recursive.return_value = ([], [])
       with self.assertRaises(AutotestError):
@@ -339,6 +355,20 @@ class FindTestTargetsTest(TestCase):
     self.setUpPyfakefs()
     # Mock command_util.RunCommand to simulate gn refs
     self.mock_run_command = mock.patch('utils.command_util.RunCommand').start()
+    self.mock_run_command.runnable_targets = []
+    self.mock_run_command.non_runnable_targets = []
+
+    def side_effect(cmd, *args, **kwargs):
+      runnable = '\n'.join(self.mock_run_command.runnable_targets)
+      non_runnable = '\n'.join(self.mock_run_command.non_runnable_targets)
+      if any(
+          c.startswith('--exclude-type=source_set,static_library,rust_library')
+          for c in cmd):
+        return runnable
+      return runnable + ('\n' + non_runnable if non_runnable else '')
+
+    self.mock_run_command.side_effect = side_effect
+
     self.mock_exit = mock.patch('utils.command_util.ExitWithMessage').start()
     self.mock_exit.side_effect = Exception("ExitWithMessage called")
     self.addCleanup(mock.patch.stopall)
@@ -356,15 +386,13 @@ class FindTestTargetsTest(TestCase):
     # $ gn refs out_/Default --all --relation=source --relation=input \
     #     chrome/browser/ui/browser_browsertest.cc \
     #     third_party/blink/renderer/platform/wtf/vector_test.cc
-    self.mock_run_command.return_value = """
-//:blink_tests
-//:gn_all
-//chrome/test:browser_tests
-//chrome/test:performance_browser_tests
-//third_party/blink/public:all_blink
-//third_party/blink/renderer/platform/wtf:wtf_unittests
-//third_party/blink/renderer/platform/wtf:wtf_unittests_sources
-"""
+    self.mock_run_command.runnable_targets = [
+        "//:blink_tests", "//:gn_all", "//chrome/test:browser_tests",
+        "//chrome/test:performance_browser_tests",
+        "//third_party/blink/public:all_blink",
+        "//third_party/blink/renderer/platform/wtf:wtf_unittests",
+        "//third_party/blink/renderer/platform/wtf:wtf_unittests_sources"
+    ]
     targets, _ = target_finder.FindTestTargets(self.mock_cache,
                                                self.out_dir, ['foo.cc'],
                                                run_all=True)
@@ -375,28 +403,36 @@ class FindTestTargetsTest(TestCase):
     self.assertNotIn('//:blink_tests', targets)
 
   def test_internal_suffixes(self):
-    self.mock_run_command.return_value = """
-//chrome/android:chrome_public_test_apk__java_binary
-//chrome/android:chrome_public_test_apk__test_apk
-"""
+    self.mock_run_command.runnable_targets = [
+        "//chrome/android:chrome_public_test_apk__java_binary",
+        "//chrome/android:chrome_public_test_apk__test_apk"
+    ]
     targets, _ = target_finder.FindTestTargets(self.mock_cache, self.out_dir,
                                                ['foo.java'])
     # Should strip suffix
     self.assertIn('chrome/android:chrome_public_test_apk', targets)
 
+  def test_filter_non_runnable_targets(self):
+    self.mock_run_command.runnable_targets = ["//chrome/test:browser_tests"]
+    self.mock_run_command.non_runnable_targets = [
+        "//components/payments:passkey_browser_binder_unittests"
+    ]
+
+    targets, _ = target_finder.FindTestTargets(self.mock_cache, self.out_dir,
+                                               ['foo.cc'])
+
+    self.assertEqual(['chrome/test:browser_tests'], targets)
+
   def test_allowlist(self):
-    self.mock_run_command.return_value = """
-//chrome/test:browser_tests
-"""
+    self.mock_run_command.runnable_targets = ["//chrome/test:browser_tests"]
     targets, _ = target_finder.FindTestTargets(self.mock_cache, self.out_dir,
                                                ['foo.cc'])
     self.assertIn('chrome/test:browser_tests', targets)
 
   def test_target_ambiguity_prompt(self):
-    self.mock_run_command.return_value = """
-//chrome/test:unit_tests
-//chrome/test:browser_tests
-"""
+    self.mock_run_command.runnable_targets = [
+        "//chrome/test:unit_tests", "//chrome/test:browser_tests"
+    ]
     with mock.patch('utils.command_util.HaveUserPickTarget',
                     return_value='//chrome/test:unit_tests') as mock_pick:
       targets, _ = target_finder.FindTestTargets(self.mock_cache, self.out_dir,
@@ -406,10 +442,9 @@ class FindTestTargetsTest(TestCase):
       self.assertEqual(mock_pick.call_args[0][0], None)
 
   def test_target_ambiguity_prompt_gemini_cli(self):
-    self.mock_run_command.return_value = """
-//chrome/test:unit_tests
-//chrome/test:browser_tests
-"""
+    self.mock_run_command.runnable_targets = [
+        "//chrome/test:unit_tests", "//chrome/test:browser_tests"
+    ]
     with mock.patch('utils.IsGeminiCli', return_value=True) as mock_pick:
       orig_paths = ['foo.cc']
       with self.assertRaises(SystemExit):
@@ -418,10 +453,9 @@ class FindTestTargetsTest(TestCase):
                                       orig_paths=orig_paths)
 
   def test_target_index(self):
-    self.mock_run_command.return_value = """
-//chrome/test:unit_tests
-//chrome/test:browser_tests
-"""
+    self.mock_run_command.runnable_targets = [
+        "//chrome/test:unit_tests", "//chrome/test:browser_tests"
+    ]
     # Sorted: browser_tests, unit_tests. Index 0 -> browser_tests
     targets, _ = target_finder.FindTestTargets(self.mock_cache,
                                                self.out_dir, ['foo.cc'],
@@ -429,16 +463,41 @@ class FindTestTargetsTest(TestCase):
     self.assertEqual(['chrome/test:browser_tests'], targets)
 
   def test_run_all(self):
-    self.mock_run_command.return_value = """
-//chrome/test:unit_tests
-//chrome/test:browser_tests
-"""
+    self.mock_run_command.runnable_targets = [
+        "//chrome/test:unit_tests", "//chrome/test:browser_tests"
+    ]
     targets, _ = target_finder.FindTestTargets(self.mock_cache,
                                                self.out_dir, ['foo.cc'],
                                                run_all=True)
     self.assertEqual(len(targets), 2)
     self.assertIn('chrome/test:browser_tests', targets)
     self.assertIn('chrome/test:unit_tests', targets)
+
+  def test_no_matching_targets_with_raw_targets(self):
+
+    def side_effect(cmd, *args, **kwargs):
+      if any(c.startswith('--type=executable') for c in cmd):
+        return ''
+      return '//components/payments:passkey_unknown_target'
+
+    self.mock_run_command.side_effect = side_effect
+    with self.assertRaises(Exception):
+      target_finder.FindTestTargets(self.mock_cache, self.out_dir, ['foo.cc'])
+    self.mock_exit.assert_called_once()
+    exit_msg = self.mock_exit.call_args[0][0]
+    self.assertIn('did not match any test targets', exit_msg)
+    self.assertIn('TEST_TARGET_ALLOWLIST', exit_msg)
+    self.assertIn('//components/payments:passkey_unknown_target', exit_msg)
+
+  def test_no_matching_targets_no_raw_targets(self):
+    self.mock_run_command.runnable_targets = []
+    self.mock_run_command.non_runnable_targets = []
+    with self.assertRaises(Exception):
+      target_finder.FindTestTargets(self.mock_cache, self.out_dir, ['foo.cc'])
+    self.mock_exit.assert_called_once()
+    exit_msg = self.mock_exit.call_args[0][0]
+    self.assertIn('did not match any test targets', exit_msg)
+    self.assertNotIn('TEST_TARGET_ALLOWLIST', exit_msg)
 
 
 class FindRelatedTestFilesTest(TestCase):
@@ -501,6 +560,13 @@ class FindRelatedTestFilesTest(TestCase):
     self.mock_run_command.side_effect = rg_mock
     results = file_finder._FindRelatedTestFiles('foo.cc')
     self.assertEqual([], results)
+
+  def test_rs_exact_match(self):
+    self.fs.create_file('foo_unittest.rs', contents='#[gtest(A, B)]')
+    self.mock_run_command.return_value = 'foo_unittest.rs'
+
+    results = file_finder._FindRelatedTestFiles('foo.rs')
+    self.assertEqual(['foo_unittest.rs'], results)
 
   def test_java_exact_match(self):
     self.fs.create_file('FooTest.java', contents='@Test')
@@ -629,6 +695,20 @@ class SearchForTestsByNameTest(TestCase):
     called_args = self.mock_run_command.call_args[0][0]
     self.assertIn('(\\bFooTest\\b)', called_args)
 
+  def test_parameterized_test_syntax(self):
+    test_file = 'FooTest.cc'
+    self.fs.create_file(test_file,
+                        contents='IN_PROC_BROWSER_TEST_P(FooTest, Bar) {}')
+
+    self.mock_run_command.return_value = test_file
+
+    files, filter = file_finder.SearchForTestsByName(['FooTest.Bar'],
+                                                     quiet=True,
+                                                     remote_search=False)
+
+    self.assertEqual([test_file], files)
+    self.assertEqual('FooTest.Bar:FooTest.Bar/*:*/FooTest.Bar/*', filter)
+
 
 # Tests execution of multiple test targets to ensure correct flag isolation.
 class RunTestTargetsTest(TestCase):
@@ -708,9 +788,20 @@ class MainExitCodeTest(TestCase):
     self.fs.create_file(os.path.join(self.out_dir, 'build.ninja'))
 
     # Mock RunCommand to simulate gn refs (matches style of FindTestTargetsTest)
-    self.mock_run_command = mock.patch(
-        'utils.command_util.RunCommand',
-        return_value='//chrome/test:unit_tests').start()
+    self.mock_run_command = mock.patch('utils.command_util.RunCommand').start()
+    self.mock_run_command.runnable_targets = ["//chrome/test:unit_tests"]
+    self.mock_run_command.non_runnable_targets = []
+
+    def side_effect(cmd, *args, **kwargs):
+      runnable = '\n'.join(self.mock_run_command.runnable_targets)
+      non_runnable = '\n'.join(self.mock_run_command.non_runnable_targets)
+      if any(
+          c.startswith('--exclude-type=source_set,static_library,rust_library')
+          for c in cmd):
+        return runnable
+      return runnable + ('\n' + non_runnable if non_runnable else '')
+
+    self.mock_run_command.side_effect = side_effect
 
     # Mock build and run
     self.mock_build = mock.patch('main.test_executor.BuildTestTargets',
@@ -750,6 +841,21 @@ class MainExitCodeTest(TestCase):
     result = runner.invoke(main.main, ['-C', self.out_dir, self.test_file])
     self.assertEqual(result.exit_code, 1)
     self.mock_run.assert_not_called()
+
+  def test_main_suite(self):
+    self.mock_run.return_value = 0
+    runner = CliRunner()
+    result = runner.invoke(
+        main.main, ['-C', self.out_dir, '--suite', 'chrome_junit_tests'])
+    self.assertEqual(result.exit_code, 0)
+    self.mock_build.assert_called_once_with(self.out_dir,
+                                            ['chrome_junit_tests'], False,
+                                            False, False)
+    self.mock_run.assert_called_once()
+    call_args, call_kwargs = self.mock_run.call_args
+    self.assertEqual(call_args[1], ['chrome_junit_tests'])
+    self.assertIsNone(call_args[2])
+    self.assertTrue(call_kwargs.get('is_suite'))
 
 
 if __name__ == '__main__':

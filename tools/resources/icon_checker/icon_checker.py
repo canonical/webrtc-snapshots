@@ -4,6 +4,10 @@
 
 import json
 import os
+import re
+
+# Allowed primary suffix pattern for icon names: _custom, _filled, _flippable.
+_ALLOWED_PRIMARY_SUFFIX_PATTERN = re.compile(r'(_custom|_filled|_flippable)$')
 
 
 def FetchValidIconNames():
@@ -69,6 +73,12 @@ def CheckIcons(input_api, output_api, affected_icons):
   for file_path, icon_name, line_num in affected_icons:
     # Convert hyphens to underscores for comparison.
     name_to_check = icon_name.replace('-', '_')
+    while name_to_check not in valid_names:
+      match = _ALLOWED_PRIMARY_SUFFIX_PATTERN.search(name_to_check)
+      if not match:
+        break
+      name_to_check = name_to_check[:match.start()]
+
     if name_to_check not in valid_names:
       msg = (
           f'File {file_path}:{line_num if line_num else ""}\n'

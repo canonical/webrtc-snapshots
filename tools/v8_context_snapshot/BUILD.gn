@@ -45,9 +45,9 @@ if (use_v8_context_snapshot) {
     snapshot_blob_file = "$root_out_dir/snapshot_blob.bin"
     snapshot_blob_path = rebase_path(snapshot_blob_file, root_build_dir)
 
-    # All invocations of `v8_context_snapshot_generator`, whatever the
-    # toolchain, write their result into the root build dir.
-    output_file = "$root_build_dir/$v8_context_snapshot_filename"
+    # Write the snapshot into the current toolchain's root_out_dir to avoid
+    # collisions when building across multiple toolchains.
+    output_file = "$root_out_dir/$v8_context_snapshot_filename"
     output_path = rebase_path(output_file, root_build_dir)
 
     args = [
@@ -122,7 +122,7 @@ if (use_v8_context_snapshot) {
       ldflags = [ "/OPT:NOICF" ]  # link.exe, but also lld-link.exe.
     } else if (is_apple && !use_lld) {
       ldflags = [ "-Wl,-no_deduplicate" ]  # ld64.
-    } else if (use_lld) {
+    } else if (use_lld || linker_path != "") {
       ldflags = [ "-Wl,--icf=none" ]
     }
   }
