@@ -224,8 +224,11 @@ chromium-metrics-reviews@google.com.
 <!-- LINT.IfChange(OmniboxModelMode) -->
 
 <variants name="OmniboxModelMode">
+  <variant name="GeminiFlashLatest" summary="Gemini Flash Latest model"/>
+  <variant name="GeminiPreview" summary="Gemini Preview model"/>
   <variant name="GeminiPro" summary="Gemini Pro model"/>
   <variant name="GeminiProAutoroute" summary="Gemini Pro Autoroute model"/>
+  <variant name="GeminiProLatest" summary="Gemini Pro Latest model"/>
   <variant name="GeminiProNoGenUi" summary="Gemini Pro No-Gen-UI model"/>
   <variant name="GeminiRegular" summary="Gemini Regular model"/>
   <variant name="Unspecified" summary="Unspecified model"/>
@@ -243,6 +246,8 @@ chromium-metrics-reviews@google.com.
   <variant name="ANDROID_HUB" summary="Searchbox in the Android Hub"/>
   <variant name="ANDROID_SEARCH_WIDGET" summary="Android search widget"/>
   <variant name="ANDROID_SHORTCUTS_WIDGET" summary="Android Shortcuts widget"/>
+  <variant name="ANDROID_TAB_SEARCH_OVERLAY"
+      summary="Searchbox in the Android Tab Search overlay"/>
   <variant name="APP_HOME" summary="home screen"/>
   <variant name="APP_MAPS" summary="maps app"/>
   <variant name="APP_SEARCH" summary="search app"/>
@@ -264,6 +269,7 @@ chromium-metrics-reviews@google.com.
       summary="Lens side panel searchbox"/>
   <variant name="NTP"
       summary="extension-replaced new tab page OR obsolete new tab page"/>
+  <variant name="NTP_ACTION_CHIPS" summary="New Tab Page Action Chips"/>
   <variant name="NTP_COMPOSEBOX"
       summary="New Tab Page with focus in the composebox"/>
   <variant name="NTP_COMPOSEBOX_PREFETCH"
@@ -528,7 +534,7 @@ Keep consistent with active providers. Doesn't need to include every provider in
 </histogram>
 
 <histogram name="Omnibox.AimEligibility.CountryCodeEmpty" enum="Boolean"
-    expires_after="2026-12-16">
+    expires_after="2027-02-14">
   <owner>mahmadi@chromium.org</owner>
   <owner>mercerd@google.com</owner>
   <owner>chrome-desktop-search@google.com</owner>
@@ -1414,6 +1420,29 @@ Keep consistent with active providers. Doesn't need to include every provider in
     logged to once per autocomplete pass when there exists a suggestion of
     entity type. Recorded after attempting to find matching domains between a
     historical URL and a company entity website URI.
+  </summary>
+</histogram>
+
+<histogram name="Omnibox.ContextMenu.AnimationShown.ContextualTasks"
+    enum="Boolean" expires_after="2027-08-01">
+  <owner>dhruvkathpalia@google.com</owner>
+  <owner>chrome-desktop-search@google.com</owner>
+  <summary>
+    Records whether the context menu (nextbox) animation was shown to the user
+    or blocked due to the ContextMenuAnimationLimiting experiment on Contextual
+    Tasks page. Recorded when the context menu animation is shown on the
+    Nextbox.
+  </summary>
+</histogram>
+
+<histogram name="Omnibox.ContextMenu.AnimationShown.NTP" enum="Boolean"
+    expires_after="2027-08-01">
+  <owner>dhruvkathpalia@google.com</owner>
+  <owner>chrome-desktop-search@google.com</owner>
+  <summary>
+    Records whether the context menu (realbox) animation was shown to the user
+    or blocked due to the ContextMenuAnimationLimiting experiment on NTP.
+    Recorded when the context menu animation is shown on the Realbox.
   </summary>
 </histogram>
 
@@ -4272,7 +4301,7 @@ Keep consistent with active providers. Doesn't need to include every provider in
 
 <histogram
     name="Omnibox.SearchPrefetch.TakePrefetchResponseFromMemoryCache.ResourceResponseReceived"
-    enum="Boolean" expires_after="2026-12-16">
+    enum="Boolean" expires_after="2027-02-14">
   <owner>gjc@google.com</owner>
   <owner>chrome-prerendering@google.com</owner>
   <summary>
@@ -4784,7 +4813,7 @@ Keep consistent with active providers. Doesn't need to include every provider in
 
 <histogram
     name="Omnibox.SuggestionUsed.URL.NavigationToLargestContentfulPaint2.1"
-    units="ms" expires_after="2026-11-12">
+    units="ms" expires_after="2027-02-14">
   <owner>robertlin@chromium.org</owner>
   <owner>chrome-prerendering@google.com</owner>
   <owner>chrome-desktop-search@google.com</owner>

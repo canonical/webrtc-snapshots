@@ -271,7 +271,7 @@ Regular profiles start at bucket 1. Incognito profiles count towards the origina
 </histogram>
 
 <histogram name="Settings.GlassFrame.Enabled" enum="BooleanEnabled"
-    expires_after="2026-10-30">
+    expires_after="2027-02-14">
   <owner>dominicaustria@google.com</owner>
   <owner>dpenning@chromium.org</owner>
   <summary>
@@ -1676,16 +1676,6 @@ useful for Chirp alerts (go/crca-alerts). -->
     HMAC fallback reset flow had the config allowed it. Only emitted if the
     encrypted hash verification is not available causing the verification to
     fallback to HMAC-based verification.
-  </summary>
-</histogram>
-
-<histogram name="Settings.TrackingProtection.Enabled" enum="BooleanEnabled"
-    expires_after="2027-01-10">
-  <owner>fmacintosh@google.com</owner>
-  <owner>koilos@google.com</owner>
-  <summary>
-    Records the state of the pref that represents whether the user has the new
-    Tracking Protection prefs and UX. Logged on startup.
   </summary>
 </histogram>
 
