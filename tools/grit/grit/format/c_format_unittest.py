@@ -3,7 +3,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Unittest for c_format.py."""
+"""Unittest for c_format.py.
+"""
 
 import io
 import os
@@ -18,6 +19,7 @@ from grit.tool import build
 
 
 class CFormatUnittest(unittest.TestCase):
+
   def testMessages(self):
     root = util.ParseGrdForUnittest("""
     <messages>
@@ -39,8 +41,7 @@ Statement.  Two all.  Game point.
     buf = io.StringIO()
     build.RcBuilder.ProcessNode(root, DummyOutput('c_format', 'en'), buf)
     output = util.StripBlankLinesAndComments(buf.getvalue())
-    self.assertEqual(
-      """\
+    self.assertEqual("""\
 #include "resource.h"
 const char* GetString(int id) {
   switch (id) {
@@ -55,12 +56,11 @@ const char* GetString(int id) {
     default:
       return 0;
   }
-}""",
-      output,
-    )
+}""", output)
 
 
 class DummyOutput:
+
   def __init__(self, type, language):
     self.type = type
     self.language = language
@@ -76,7 +76,6 @@ class DummyOutput:
 
   def GetGender(self):
     return None
-
 
 if __name__ == '__main__':
   unittest.main()

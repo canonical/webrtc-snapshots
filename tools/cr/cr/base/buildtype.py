@@ -18,24 +18,23 @@ class BuildType(cr.Plugin, cr.Plugin.Type):
   SELECTOR = 'CR_BUILDTYPE'
 
   DEFAULT = cr.Config.From(
-    BUILDTYPE='{CR_BUILDTYPE}',
+      BUILDTYPE='{CR_BUILDTYPE}',
   )
 
   def __init__(self):
     super(BuildType, self).__init__()
     self.active_config.Set(
-      CR_TEST_MODE=self.name,
+        CR_TEST_MODE=self.name,
     )
 
   @classmethod
   def AddArguments(cls, parser):
-    parser.add_argument(
-      '--type',
-      dest=cls.SELECTOR,
-      choices=cls.Choices(),
-      default='Debug',
-      help='Sets the build type to use. Overrides ' + cls.SELECTOR,
-    )
+    parser.add_argument('--type',
+                        dest=cls.SELECTOR,
+                        choices=cls.Choices(),
+                        default='Debug',
+                        help='Sets the build type to use. Overrides ' +
+                        cls.SELECTOR)
 
 
 class DebugBuildType(BuildType):

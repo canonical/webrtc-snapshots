@@ -42,7 +42,6 @@
 #include "api/media_types.h"
 #include "api/payload_type.h"
 #include "api/peer_connection_interface.h"
-#include "api/peer_connection_tracer_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
@@ -1344,9 +1343,6 @@ class SdpOfferAnswerHandler::RemoteDescriptionOperation {
       error_.set_message(error_message);
     }
 
-    if (handler_) {
-      handler_->TraceSetRemoteDescriptionComplete(error_);
-    }
     observer_->OnSetRemoteDescriptionComplete(error_);
     observer_ = nullptr;  // Only fire the notification once.
   }
@@ -1590,15 +1586,10 @@ class SdpOfferAnswerHandler::ImplicitCreateSessionDescriptionObserver
   void OnFailure(RTCError error) override {
     RTC_DCHECK(!was_called_);
     was_called_ = true;
-    error = RTCError(error.type(),
-                     "SetLocalDescription failed to create "
-                     "session description - ")
-            << error.message();
-    if (sdp_handler_) {
-      sdp_handler_->TraceSetLocalDescriptionComplete(error);
-    }
-    set_local_description_observer_->OnSetLocalDescriptionComplete(
-        std::move(error));
+    set_local_description_observer_->OnSetLocalDescriptionComplete(RTCError(
+        error.type(), std::string("SetLocalDescription failed to create "
+                                  "session description - ") +
+                          error.message()));
     operation_complete_callback_();
   }
 
@@ -1613,18 +1604,14 @@ class SdpOfferAnswerHandler::ImplicitCreateSessionDescriptionObserver
 // Wraps a CreateSessionDescriptionObserver and an OperationsChain operation
 // complete callback. When the observer is invoked, the wrapped observer is
 // invoked followed by invoking the completion callback.
-class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
+class CreateSessionDescriptionObserverOperationWrapper
     : public CreateSessionDescriptionObserver {
  public:
   CreateSessionDescriptionObserverOperationWrapper(
       scoped_refptr<CreateSessionDescriptionObserver> observer,
-      std::function<void()> operation_complete_callback,
-      WeakPtr<SdpOfferAnswerHandler> sdp_handler,
-      SdpType type)
+      std::function<void()> operation_complete_callback)
       : observer_(std::move(observer)),
-        operation_complete_callback_(std::move(operation_complete_callback)),
-        sdp_handler_(std::move(sdp_handler)),
-        type_(type) {
+        operation_complete_callback_(std::move(operation_complete_callback)) {
     RTC_DCHECK(observer_);
   }
   ~CreateSessionDescriptionObserverOperationWrapper() override {
@@ -1638,12 +1625,6 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
     RTC_DCHECK(!was_called_);
     was_called_ = true;
 #endif  // RTC_DCHECK_IS_ON
-    // Trace before completing the operation, which may destroy the
-    // PeerConnection that owns the tracer.
-    if (sdp_handler_) {
-      sdp_handler_->TraceCreateSessionDescriptionComplete(type_, desc,
-                                                          RTCError::OK());
-    }
     // Completing the operation before invoking the observer allows the observer
     // to execute SetLocalDescription() without delay.
     operation_complete_callback_();
@@ -1656,10 +1637,6 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
     RTC_DCHECK(!was_called_);
     was_called_ = true;
 #endif  // RTC_DCHECK_IS_ON
-    if (sdp_handler_) {
-      sdp_handler_->TraceCreateSessionDescriptionComplete(type_, nullptr,
-                                                          error);
-    }
     operation_complete_callback_();
     observer_->OnFailure(std::move(error));
   }
@@ -1670,8 +1647,6 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
 #endif  // RTC_DCHECK_IS_ON
   scoped_refptr<CreateSessionDescriptionObserver> observer_;
   std::function<void()> operation_complete_callback_;
-  const WeakPtr<SdpOfferAnswerHandler> sdp_handler_;
-  const SdpType type_;
 };
 
 // Wraps a session description observer so a Clone of the last created
@@ -2004,9 +1979,6 @@ void SdpOfferAnswerHandler::CreateOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
   RTC_LOG_THREAD_BLOCK_COUNT();
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnCreateOffer(options);
-  }
   // Chain this operation. If asynchronous operations are pending on the chain,
   // this operation will be queued to be invoked, otherwise the contents of the
   // lambda will execute immediately.
@@ -2027,8 +1999,7 @@ void SdpOfferAnswerHandler::CreateOffer(
         auto observer_wrapper =
             make_ref_counted<CreateSessionDescriptionObserverOperationWrapper>(
                 std::move(observer_refptr),
-                std::move(operations_chain_callback), this_weak_ptr,
-                SdpType::kOffer);
+                std::move(operations_chain_callback));
         this_weak_ptr->DoCreateOffer(options, observer_wrapper);
       });
 }
@@ -2040,9 +2011,6 @@ void SdpOfferAnswerHandler::SetLocalDescription(
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(desc);
   RTC_DCHECK(observer);
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnSetLocalDescription(desc.get());
-  }
   // Chain this operation. If asynchronous operations are pending on the chain,
   // this operation will be queued to be invoked, otherwise the contents of the
   // lambda will execute immediately.
@@ -2080,9 +2048,6 @@ void SdpOfferAnswerHandler::SetLocalDescription(
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(desc);
   RTC_DCHECK(observer);
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnSetLocalDescription(desc.get());
-  }
   // Chain this operation. If asynchronous operations are pending on the chain,
   // this operation will be queued to be invoked, otherwise the contents of the
   // lambda will execute immediately.
@@ -2121,9 +2086,6 @@ void SdpOfferAnswerHandler::SetLocalDescription(
   RTC_LOG_THREAD_BLOCK_COUNT();
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(observer);
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnSetLocalDescription(nullptr);
-  }
   // The `create_sdp_observer` handles performing DoSetLocalDescription() with
   // the resulting description as well as completing the operation.
   auto create_sdp_observer =
@@ -2507,9 +2469,6 @@ void SdpOfferAnswerHandler::SetRemoteDescription(
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(desc);
   RTC_DCHECK(observer);
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnSetRemoteDescription(desc.get());
-  }
   // Chain this operation. If asynchronous operations are pending on the chain,
   // this operation will be queued to be invoked, otherwise the contents of the
   // lambda will execute immediately.
@@ -2927,52 +2886,6 @@ void SdpOfferAnswerHandler::ReportInitialSdpMunging(bool had_local_description,
   }
 }
 
-void SdpOfferAnswerHandler::TraceCreateSessionDescriptionComplete(
-    SdpType type,
-    const SessionDescriptionInterface* desc,
-    const RTCError& error) {
-  auto* tracer = pc_->tracer();
-  if (!tracer)
-    return;
-  if (error.ok()) {
-    if (type == SdpType::kOffer) {
-      tracer->OnCreateOfferSuccess(desc);
-    } else {
-      tracer->OnCreateAnswerSuccess(desc);
-    }
-  } else {
-    if (type == SdpType::kOffer) {
-      tracer->OnCreateOfferFailure(error);
-    } else {
-      tracer->OnCreateAnswerFailure(error);
-    }
-  }
-}
-
-void SdpOfferAnswerHandler::TraceSetLocalDescriptionComplete(
-    const RTCError& error) {
-  auto* tracer = pc_->tracer();
-  if (!tracer)
-    return;
-  if (error.ok()) {
-    tracer->OnSetLocalDescriptionSuccess(local_description());
-  } else {
-    tracer->OnSetLocalDescriptionFailure(error);
-  }
-}
-
-void SdpOfferAnswerHandler::TraceSetRemoteDescriptionComplete(
-    const RTCError& error) {
-  auto* tracer = pc_->tracer();
-  if (!tracer)
-    return;
-  if (error.ok()) {
-    tracer->OnSetRemoteDescriptionSuccess();
-  } else {
-    tracer->OnSetRemoteDescriptionFailure(error);
-  }
-}
-
 void SdpOfferAnswerHandler::DoSetLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     scoped_refptr<SetLocalDescriptionObserverInterface> observer) {
@@ -2987,23 +2900,19 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   if (session_error() != SessionError::kNone) {
     std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "SetLocalDescription: " << error_message;
-    RTCError error(RTCErrorType::INTERNAL_ERROR, std::move(error_message));
-    TraceSetLocalDescriptionComplete(error);
-    observer->OnSetLocalDescriptionComplete(std::move(error));
+    observer->OnSetLocalDescriptionComplete(
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
 
   // For SLD we support only explicit rollback.
   if (desc->GetType() == SdpType::kRollback) {
     if (IsUnifiedPlan()) {
-      RTCError error = Rollback(desc->GetType());
-      TraceSetLocalDescriptionComplete(error);
-      observer->OnSetLocalDescriptionComplete(std::move(error));
+      observer->OnSetLocalDescriptionComplete(Rollback(desc->GetType()));
     } else {
-      RTCError error(RTCErrorType::UNSUPPORTED_OPERATION,
-                     "Rollback not supported in Plan B");
-      TraceSetLocalDescriptionComplete(error);
-      observer->OnSetLocalDescriptionComplete(std::move(error));
+      observer->OnSetLocalDescriptionComplete(
+          RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                   "Rollback not supported in Plan B"));
     }
     return;
   }
@@ -3016,9 +2925,8 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
     std::string error_message =
         GetSetDescriptionErrorMessage(CS_LOCAL, desc->GetType(), error);
     RTC_LOG(LS_ERROR) << error_message;
-    error = RTCError(error.type(), std::move(error_message));
-    TraceSetLocalDescriptionComplete(error);
-    observer->OnSetLocalDescriptionComplete(std::move(error));
+    observer->OnSetLocalDescriptionComplete(
+        RTCError(error.type(), std::move(error_message)));
     return;
   }
 
@@ -3052,10 +2960,9 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
                               static_cast<int>(outcome),
                               static_cast<int>(SdpMungingOutcome::kMaxValue));
     if (reject_with_error) {
-      error = RTCError::InvalidModification(
-          "SDP is modified in a non-acceptable way");
-      TraceSetLocalDescriptionComplete(error);
-      observer->OnSetLocalDescriptionComplete(std::move(error));
+      observer->OnSetLocalDescriptionComplete(
+          RTCError(RTCErrorType::INVALID_MODIFICATION,
+                   "SDP is modified in a non-acceptable way"));
       last_sdp_munging_type_ = sdp_munging_type;
       ReportInitialSdpMunging(had_local_description, desc->GetType());
       RTC_HISTOGRAM_ENUMERATION_SPARSE(
@@ -3115,9 +3022,8 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
     std::string error_message =
         GetSetDescriptionErrorMessage(CS_LOCAL, type, error);
     RTC_LOG(LS_ERROR) << error_message;
-    error = RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message));
-    TraceSetLocalDescriptionComplete(error);
-    observer->OnSetLocalDescriptionComplete(std::move(error));
+    observer->OnSetLocalDescriptionComplete(
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
   RTC_DCHECK(local_description());
@@ -3155,7 +3061,6 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   ReportInitialSdpMunging(had_local_description,
                           local_description()->GetType());
 
-  TraceSetLocalDescriptionComplete(RTCError::OK());
   observer->OnSetLocalDescriptionComplete(RTCError::OK());
   pc_->NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED);
 
@@ -3259,9 +3164,6 @@ void SdpOfferAnswerHandler::CreateAnswer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::CreateAnswer");
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnCreateAnswer(options);
-  }
   // Chain this operation. If asynchronous operations are pending on the chain,
   // this operation will be queued to be invoked, otherwise the contents of the
   // lambda will execute immediately.
@@ -3282,8 +3184,7 @@ void SdpOfferAnswerHandler::CreateAnswer(
         auto observer_wrapper =
             make_ref_counted<CreateSessionDescriptionObserverOperationWrapper>(
                 std::move(observer_refptr),
-                std::move(operations_chain_callback), this_weak_ptr,
-                SdpType::kAnswer);
+                std::move(operations_chain_callback));
         this_weak_ptr->DoCreateAnswer(options, observer_wrapper);
       });
 }
@@ -3665,9 +3566,6 @@ void SdpOfferAnswerHandler::ChangeSignalingState(
                    << " New state: "
                    << PeerConnectionInterface::AsString(signaling_state);
   signaling_state_ = signaling_state;
-  if (auto* tracer = pc_->tracer()) {
-    tracer->OnSignalingStateChanged(signaling_state);
-  }
   pc_->RunWithObserver([&](auto observer) {
     RTC_DCHECK_RUN_ON(signaling_thread());
     observer->OnSignalingChange(signaling_state_);

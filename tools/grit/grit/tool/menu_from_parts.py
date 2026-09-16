@@ -4,6 +4,7 @@
 
 '''The 'grit menufromparts' tool.'''
 
+
 from grit import grd_reader
 from grit import util
 from grit import xtb_reader
@@ -15,21 +16,17 @@ import grit.extern.tclib
 
 class MenuTranslationsFromParts(interface.Tool):
   '''One-off tool to generate translated menu messages (where each menu is kept
-  in a single message) based on existing translations of the individual menu
-  items.  Was needed when changing menus from being one message per menu item
-  to being one message for the whole menu.'''
+in a single message) based on existing translations of the individual menu
+items.  Was needed when changing menus from being one message per menu item
+to being one message for the whole menu.'''
 
   def ShortDescription(self):
-    return (
-      'Create translations of whole menus from existing translations of '
-      'menu items.'
-    )
+    return ('Create translations of whole menus from existing translations of '
+            'menu items.')
 
   def Run(self, globopt, args):
     self.SetOptions(globopt)
-    assert len(args) == 2, (
-      "Need exactly two arguments, the XTB file and the output file"
-    )
+    assert len(args) == 2, "Need exactly two arguments, the XTB file and the output file"
 
     xtb_file = args[0]
     output_file = args[1]
@@ -39,7 +36,6 @@ class MenuTranslationsFromParts(interface.Tool):
     grd.RunGatherers()
 
     xtb = {}
-
     def Callback(msg_id, parts):
       msg = []
       for part in parts:
@@ -50,7 +46,6 @@ class MenuTranslationsFromParts(interface.Tool):
           msg.append(part[1])
       if len(msg):
         xtb[msg_id] = ''.join(msg)
-
     with open(xtb_file, 'rb') as f:
       xtb_reader.Parse(f, Callback)
 
@@ -66,10 +61,8 @@ class MenuTranslationsFromParts(interface.Tool):
           if isinstance(part, str):
             id = grit.extern.tclib.GenerateMessageId(part)
             if id not in xtb:
-              print(
-                "WARNING didn't find all translations for menu %s"
-                % (node.attrs['name'],)
-              )
+              print("WARNING didn't find all translations for menu %s" %
+                    (node.attrs['name'],))
               translation = []
               break
             translation.append(xtb[id])

@@ -814,8 +814,7 @@ bool ParseExtmap(absl::string_view line,
   if (!GetValueFromString(line, sub_fields[0], &value, error)) {
     return false;
   }
-  std::optional<RtpHeaderExtensionId> id = RtpHeaderExtensionId::Create(value);
-  if (!id.has_value()) {
+  if (!RtpHeaderExtensionId(value).Valid()) {
     return ParseFailed(line, "Extension ID is not in valid range.", error);
   }
 
@@ -841,7 +840,7 @@ bool ParseExtmap(absl::string_view line,
     return ParseFailed(line, "URI contains invalid characters.", error);
   }
 
-  *extmap = RtpExtension(uri, *id, encrypted);
+  *extmap = RtpExtension(uri, RtpHeaderExtensionId(value), encrypted);
   return true;
 }
 

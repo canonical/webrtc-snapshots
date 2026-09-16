@@ -11,28 +11,20 @@ import sys
 
 
 def RunRewritingTests():
-  subprocess.run(
-    [
-      "tools/clang/scripts/test_tool.py",
-      "--extract-edits-path",
-      "..",
-      "--apply-edits",
-      "rewrite_templated_container_fields",
-    ]
-  )
+  subprocess.run([
+      "tools/clang/scripts/test_tool.py", "--extract-edits-path", "..",
+      "--apply-edits", "rewrite_templated_container_fields"
+  ])
 
 
 def main():
   if not os.path.exists("ATL_OWNERS"):
     sys.stderr.write(
-      "Please run run_all_tests.py from the root dir of Chromium"
-    )
+        "Please run run_all_tests.py from the root dir of Chromium")
     return -1
 
-  if not os.path.exists(
-    "third_party/llvm-build/Release+Asserts/bin/"
-    "rewrite_templated_container_fields"
-  ):
+  if not os.path.exists("third_party/llvm-build/Release+Asserts/bin/"
+                        "rewrite_templated_container_fields"):
     sys.stderr.write("Please build rewrite_templated_container_fields first")
     return -1
 

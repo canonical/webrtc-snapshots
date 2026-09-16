@@ -53,6 +53,8 @@ def ValidUUID(uuid):
   return True
 
 
+
+
 def ShortenUUID(uuid):
   """Shorten a UUUD that use Bluetooth base UUID.
 

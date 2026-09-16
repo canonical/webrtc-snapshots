@@ -442,23 +442,18 @@ class WebRtcAudioRecord {
   }
 
   @TargetApi(Build.VERSION_CODES.M)
-  private AudioRecord createAudioRecordOnMOrHigher(
+  private static AudioRecord createAudioRecordOnMOrHigher(
       int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
     Logging.d(TAG, "createAudioRecordOnMOrHigher");
-    AudioRecord.Builder builder =
-        new AudioRecord.Builder()
-            .setAudioSource(audioSource)
-            .setAudioFormat(
-                new AudioFormat.Builder()
-                    .setEncoding(audioFormat)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(channelConfig)
-                    .build())
-            .setBufferSizeInBytes(bufferSizeInBytes);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && context != null) {
-      builder.setContext(context);
-    }
-    return builder.build();
+    return new AudioRecord.Builder()
+        .setAudioSource(audioSource)
+        .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(audioFormat)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(channelConfig)
+                            .build())
+        .setBufferSizeInBytes(bufferSizeInBytes)
+        .build();
   }
 
   private static AudioRecord createAudioRecordOnLowerThanM(

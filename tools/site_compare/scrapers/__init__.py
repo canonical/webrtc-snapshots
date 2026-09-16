@@ -11,7 +11,6 @@ import types
 
 # TODO(jhaas): unify all optional scraper parameters into kwargs
 
-
 def GetScraper(browser):
   """Given a browser and an optional version, returns the scraper module.
 
@@ -22,13 +21,11 @@ def GetScraper(browser):
     module
   """
 
-  if type(browser) == types.StringType:
-    browser = (browser, None)
+  if type(browser) == types.StringType: browser = (browser, None)
 
   package = __import__(browser[0], globals(), locals(), [''])
   module = package.GetScraper(browser[1])
-  if browser[1] is not None:
-    module.version = browser[1]
+  if browser[1] is not None: module.version = browser[1]
 
   return module
 

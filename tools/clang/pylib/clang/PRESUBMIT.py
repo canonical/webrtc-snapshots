@@ -8,9 +8,7 @@ def CheckChangeOnCommit(input_api, output_api):
 
   # Run the unit tests.
   results.extend(
-    input_api.canned_checks.RunUnitTestsInDirectory(
-      input_api, output_api, '.', [r'^.+_test\.py$']
-    )
-  )
+      input_api.canned_checks.RunUnitTestsInDirectory(input_api, output_api,
+                                                      '.', [r'^.+_test\.py$']))
 
   return results

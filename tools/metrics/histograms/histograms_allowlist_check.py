@@ -23,9 +23,8 @@ class WellKnownAllowlistPath(enum.Enum):
   """
 
   # LINT.IfChange(AndroidWebViewHistogramsAllowlistPath)
-  ANDROID_WEBVIEW = os.path.join(
-    'android_webview', 'browser', 'metrics', 'aw_histograms_allowlist.cc'
-  )
+  ANDROID_WEBVIEW = os.path.join('android_webview', 'browser', 'metrics',
+                                 'aw_histograms_allowlist.cc')
 
   # LINT.ThenChange(//android_webview/browser/metrics/aw_histograms_allowlist.cc:AndroidWebViewHistogramsAllowlistPath)
 
@@ -71,18 +70,17 @@ def check_histograms_allowlist(output_api, allowlist_path, histograms_files):
   errors = []
   for histogram in histograms_allowlist:
     if histogram not in all_histograms:
-      errors.append(
-        f'{allowlist_path} contains unknown histogram <{histogram}>'
-      )
+      errors.append(f'{allowlist_path} contains unknown histogram '
+                    f'<{histogram}>')
 
   if not errors:
     return []
 
   results = [
-    output_api.PresubmitError(
-      f'All histograms in {allowlist_path} must be valid.',
-      errors,
-    )
+      output_api.PresubmitError(
+          f'All histograms in {allowlist_path} must be valid.',
+          errors,
+      )
   ]
 
   return results

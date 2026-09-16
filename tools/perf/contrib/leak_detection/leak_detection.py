@@ -10,20 +10,16 @@ from telemetry.web_perf import timeline_based_measurement
 
 from contrib.leak_detection import page_sets
 
-
 class _LeakDetectionBase(perf_benchmark.PerfBenchmark):
-  """A base class for leak detection benchmarks."""
+  """ A base class for leak detection benchmarks. """
 
   def CreateCoreTimelineBasedMeasurementOptions(self):
     tbm_options = timeline_based_measurement.Options(
-      chrome_trace_category_filter.ChromeTraceCategoryFilter(
-        '-*,disabled-by-default-memory-infra'
-      )
-    )
+        chrome_trace_category_filter.ChromeTraceCategoryFilter(
+            '-*,disabled-by-default-memory-infra'))
     # Setting an empty memory dump config disables periodic dumps.
     tbm_options.config.chrome_trace_config.SetMemoryDumpConfig(
-      chrome_trace_config.MemoryDumpConfig()
-    )
+        chrome_trace_config.MemoryDumpConfig())
     # Set required tracing categories for leak detection
     tbm_options.AddTimelineBasedMetric('leakDetectionMetric')
     return tbm_options
@@ -32,8 +28,7 @@ class _LeakDetectionBase(perf_benchmark.PerfBenchmark):
     # TODO(crbug.com/40615991): Note this is a hack. Perf benchmarks should not
     # override the CustomizeOptions method.
     finder_options.browser_options.AppendExtraBrowserArgs(
-      '--js-flags=--expose-gc'
-    )
+        '--js-flags=--expose-gc')
     finder_options.browser_options.AppendExtraBrowserArgs('--disable-perfetto')
 
   def CustomizeBrowserOptions(self, _):

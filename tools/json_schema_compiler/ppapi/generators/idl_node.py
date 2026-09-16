@@ -37,7 +37,6 @@ class IDLAttribute(object):
   def __str__(self):
     return '%s=%s' % (self.name, self.value)
 
-
 #
 # IDLNode
 #
@@ -47,21 +46,10 @@ class IDLAttribute(object):
 # version aware.
 #
 class IDLNode(IDLRelease):
+
   # Set of object IDLNode types which have a name and belong in the namespace.
-  NamedSet = set(
-    [
-      'Enum',
-      'EnumItem',
-      'File',
-      'Function',
-      'Interface',
-      'Member',
-      'Param',
-      'Struct',
-      'Type',
-      'Typedef',
-    ]
-  )
+  NamedSet = set(['Enum', 'EnumItem', 'File', 'Function', 'Interface',
+                  'Member', 'Param', 'Struct', 'Type', 'Typedef'])
 
   def __init__(self, cls, filename, lineno, pos, children=None):
     # Initialize with no starting or ending Version
@@ -110,7 +98,8 @@ class IDLNode(IDLRelease):
   def Error(self, msg):
     """Log an error for this object."""
     self.errors += 1
-    ErrOut.LogLine(self._filename, self.lineno, 0, ' %s %s' % (str(self), msg))
+    ErrOut.LogLine(self._filename, self.lineno, 0, ' %s %s' %
+                   (str(self), msg))
     filenode = self.GetProperty('FILE')
     if filenode:
       errcnt = filenode.GetProperty('ERRORS')
@@ -120,7 +109,8 @@ class IDLNode(IDLRelease):
 
   def Warning(self, msg):
     """Log a warning for this object."""
-    WarnOut.LogLine(self._filename, self.lineno, 0, ' %s %s' % (str(self), msg))
+    WarnOut.LogLine(self._filename, self.lineno, 0, ' %s %s' %
+                    (str(self), msg))
 
   def GetName(self):
     return self.GetProperty('NAME')
@@ -159,7 +149,7 @@ class IDLNode(IDLRelease):
           continue
         out.write('%s    %s : %s\n' % (tab, p, self.GetProperty(p)))
     for child in self._children:
-      child.Dump(depth + 1, comments=comments, out=out)
+      child.Dump(depth+1, comments=comments, out=out)
 
   def IsA(self, *typelist):
     """Check if node is of a given type."""
@@ -320,10 +310,8 @@ class IDLNode(IDLRelease):
         type_release_list = sorted(type_releases)
         if my_min < type_release_list[0]:
           type_node = type_list[0]
-          self.Error(
-            'requires %s in %s which is undefined at %s.'
-            % (type_node, type_node._filename, my_min)
-          )
+          self.Error('requires %s in %s which is undefined at %s.' % (
+              type_node, type_node._filename, my_min))
 
       for rel in child_releases | type_releases:
         if rel >= my_min and rel <= my_max:
@@ -360,7 +348,7 @@ class IDLNode(IDLRelease):
 
   def DevInterfaceMatchesStable(self, release):
     """Returns true if an interface has an equivalent stable version."""
-    assert self.IsA('Interface')
+    assert(self.IsA('Interface'))
     for child in self.GetListOf('Member'):
       unique = child.GetUniqueReleases([release])
       if not unique or not child.InReleases([release]):
@@ -377,7 +365,8 @@ class IDLNode(IDLRelease):
 #
 class IDLFile(IDLNode):
   def __init__(self, name, children, errors=0):
-    attrs = [IDLAttribute('NAME', name), IDLAttribute('ERRORS', errors)]
+    attrs = [IDLAttribute('NAME', name),
+             IDLAttribute('ERRORS', errors)]
     if not children:
       children = []
     IDLNode.__init__(self, 'File', name, 1, 0, attrs + children)
@@ -450,9 +439,8 @@ def Main():
 
   if errors:
     ErrOut.Log('IDLNode failed with %d errors.' % errors)
-    return -1
+    return  -1
   return 0
-
 
 if __name__ == '__main__':
   sys.exit(Main())

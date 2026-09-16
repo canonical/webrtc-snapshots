@@ -53,7 +53,6 @@ def gen_locales(locales):  # type: (list) -> str
 
 def main():  # type: () -> None
     import doctest
-
     doctest.testmod()
 
     if len(sys.argv) < 2:

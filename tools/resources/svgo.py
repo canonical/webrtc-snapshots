@@ -11,7 +11,6 @@ def Run(os_path=None, args=None):
   _SRC_PATH = os_path.normpath(os_path.join(_HERE_PATH, '..', '..'))
 
   import sys
-
   old_sys_path = sys.path[:]
   sys.path.append(os_path.join(_SRC_PATH, 'third_party', 'node'))
 
@@ -27,5 +26,4 @@ def Run(os_path=None, args=None):
 if __name__ == '__main__':
   import os
   import sys
-
   print(Run(os_path=os.path, args=sys.argv[1:]))

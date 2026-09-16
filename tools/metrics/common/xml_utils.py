@@ -30,16 +30,17 @@ def _GetTagSubTreeLegacyMinidom(tree: DomTree, tag: str, depth: int) -> DomTree:
 
 
 @typing.overload
-def GetTagSubTree(tree: ET.Element, tag: str, depth: int) -> ET.Element: ...
+def GetTagSubTree(tree: ET.Element, tag: str, depth: int) -> ET.Element:
+  ...
 
 
 @typing.overload
-def GetTagSubTree(tree: DomTree, tag: str, depth: int) -> DomTree: ...
+def GetTagSubTree(tree: DomTree, tag: str, depth: int) -> DomTree:
+  ...
 
 
-def GetTagSubTree(
-  tree: typing.Union[DomTree, ET.Element], tag: str, depth: int
-) -> typing.Union[DomTree, ET.Element]:
+def GetTagSubTree(tree: typing.Union[DomTree, ET.Element], tag: str,
+                  depth: int) -> typing.Union[DomTree, ET.Element]:
   """Returns ElementTree sub tree with tag element as a root.
 
   Args:
@@ -81,7 +82,7 @@ def NormalizeParagraphs(text: str) -> str:
   paragraph_break = '\n\n'
   raw_paragraphs = text.split(paragraph_break)
   processed_paragraphs = [
-    NormalizeString(p) for p in raw_paragraphs if NormalizeString(p)
+      NormalizeString(p) for p in raw_paragraphs if NormalizeString(p)
   ]
   return paragraph_break.join(processed_paragraphs)
 
@@ -89,8 +90,7 @@ def NormalizeParagraphs(text: str) -> str:
 # TODO(crbug.com/531790306): Deprecated. All callers of NormalizeAllAttributeValues
 # should be migrated to ElementTree, and this legacy DOM path will be removed.
 def _NormalizeAllAttributeValuesLegacyMinidom(
-  node: minidom.Node,
-) -> minidom.Node:
+    node: minidom.Node) -> minidom.Node:
   elem = typing.cast(minidom.Element, node)
   if elem.nodeType == _ELEMENT_NODE:
     for a in elem.attributes.keys():
@@ -102,15 +102,17 @@ def _NormalizeAllAttributeValuesLegacyMinidom(
 
 
 @typing.overload
-def NormalizeAllAttributeValues(root: ET.Element) -> ET.Element: ...
+def NormalizeAllAttributeValues(root: ET.Element) -> ET.Element:
+  ...
 
 
 @typing.overload
-def NormalizeAllAttributeValues(root: minidom.Node) -> minidom.Node: ...
+def NormalizeAllAttributeValues(root: minidom.Node) -> minidom.Node:
+  ...
 
 
 def NormalizeAllAttributeValues(
-  root: typing.Union[minidom.Node, ET.Element],
+    root: typing.Union[minidom.Node, ET.Element]
 ) -> typing.Union[minidom.Node, ET.Element]:
   """Recursively normalizes all tag attribute values in the given tree.
 
@@ -161,7 +163,7 @@ def _GetTextFromChildNodesLegacyMinidom(node: DomTree) -> str:
       # store ['Some words.', ''], and in the case of the second,
       # processed_paragraphs would store ['Words.'].
       processed_paragraphs = [
-        NormalizeString(text) for text in raw_paragraphs if text
+          NormalizeString(text) for text in raw_paragraphs if text
       ]
       text_parts.append(paragraph_break.join(processed_paragraphs))
 
@@ -253,9 +255,10 @@ def GetTextFromChildNodes(node: typing.Union[DomTree, ET.Element]) -> str:
 
 # TODO(crbug.com/531790306): Deprecated. All callers of IterElementsWithTag
 # should be migrated to ElementTree, and this legacy DOM path will be removed.
-def _IterElementsWithTagLegacyMinidom(
-  root: minidom.Node, tag: str, depth: int = -1
-) -> Iterator[minidom.Element]:
+def _IterElementsWithTagLegacyMinidom(root: minidom.Node,
+                                      tag: str,
+                                      depth: int = -1
+                                      ) -> Iterator[minidom.Element]:
   """Legacy minidom DOM implementation of IterElementsWithTag."""
   elem = typing.cast(minidom.Element, root)
   if depth == 0 and elem.nodeType == _ELEMENT_NODE and elem.tagName == tag:
@@ -281,20 +284,23 @@ def _IterElementsWithTagLegacyMinidom(
 
 
 @typing.overload
-def IterElementsWithTag(
-  root: ET.Element, tag: str, depth: int = -1
-) -> Iterator[ET.Element]: ...
+def IterElementsWithTag(root: ET.Element,
+                        tag: str,
+                        depth: int = -1) -> Iterator[ET.Element]:
+  ...
 
 
 @typing.overload
-def IterElementsWithTag(
-  root: minidom.Node, tag: str, depth: int = -1
-) -> Iterator[minidom.Element]: ...
+def IterElementsWithTag(root: minidom.Node,
+                        tag: str,
+                        depth: int = -1) -> Iterator[minidom.Element]:
+  ...
 
 
 def IterElementsWithTag(
-  root: typing.Union[minidom.Node, ET.Element], tag: str, depth: int = -1
-) -> Iterator[typing.Union[minidom.Element, ET.Element]]:
+    root: typing.Union[minidom.Node, ET.Element],
+    tag: str,
+    depth: int = -1) -> Iterator[typing.Union[minidom.Element, ET.Element]]:
   """Iterates over tree and yields elements matching tag name.
 
   This generator stops going deeper in the tree when it detects

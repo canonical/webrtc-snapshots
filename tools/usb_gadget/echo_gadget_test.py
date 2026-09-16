@@ -12,6 +12,7 @@ import usb_constants
 
 
 class EchoGadgetTest(unittest.TestCase):
+
   def test_bulk_echo(self):
     g = echo_gadget.EchoGadget()
     chip = mock.Mock()

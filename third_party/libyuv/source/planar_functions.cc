@@ -80,11 +80,6 @@ void CopyPlane(const uint8_t* src_y,
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
-#if defined(HAS_COPYROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    CopyRow = CopyRow_SVE2;
-  }
-#endif
 #if defined(HAS_COPYROW_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     CopyRow = CopyRow_SME;
@@ -651,11 +646,6 @@ void SplitUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
-#if defined(HAS_SPLITUVROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    SplitUVRow = SplitUVRow_SVE2;
-  }
-#endif
 #if defined(HAS_SPLITUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     SplitUVRow = SplitUVRow_Any_LSX;
@@ -737,11 +727,6 @@ void MergeUVPlane(const uint8_t* src_u,
     if (IS_ALIGNED(width, 16)) {
       MergeUVRow = MergeUVRow_NEON;
     }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    MergeUVRow = MergeUVRow_SVE2;
   }
 #endif
 #if defined(HAS_MERGEUVROW_SME)
@@ -2310,11 +2295,6 @@ int YUY2ToI422(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    YUY2ToYRow = YUY2ToYRow_SVE2;
-  }
-#endif
 #if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUV422ROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LSX;
@@ -2412,11 +2392,6 @@ int UYVYToI422(const uint8_t* src_uyvy,
     }
   }
 #endif
-#if defined(HAS_UYVYTOYROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    UYVYToYRow = UYVYToYRow_SVE2;
-  }
-#endif
 #if defined(HAS_UYVYTOYROW_LSX) && defined(HAS_UYVYTOUV422ROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     UYVYToYRow = UYVYToYRow_Any_LSX;
@@ -2500,11 +2475,6 @@ int YUY2ToY(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    YUY2ToYRow = YUY2ToYRow_SVE2;
-  }
-#endif
 
   for (y = 0; y < height; ++y) {
     YUY2ToYRow(src_yuy2, dst_y, width);
@@ -2563,11 +2533,6 @@ int UYVYToY(const uint8_t* src_uyvy,
     if (IS_ALIGNED(width, 16)) {
       UYVYToYRow = UYVYToYRow_NEON;
     }
-  }
-#endif
-#if defined(HAS_UYVYTOYROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    UYVYToYRow = UYVYToYRow_SVE2;
   }
 #endif
 #if defined(HAS_UYVYTOYROW_LSX)
@@ -4485,11 +4450,6 @@ int InterpolatePlane(const uint8_t* src0,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    InterpolateRow = InterpolateRow_SVE2;
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     InterpolateRow = InterpolateRow_SME;
@@ -4957,11 +4917,6 @@ static int ARGBSobelize(const uint8_t* src_argb,
     if (IS_ALIGNED(width, 16)) {
       ARGBToYMatrixRow = ARGBToYMatrixRow_NEON_DotProd;
     }
-  }
-#endif
-#if defined(HAS_ARGBTOYMATRIXROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    ARGBToYMatrixRow = ARGBToYMatrixRow_SVE2;
   }
 #endif
 #if defined(HAS_ARGBTOYMATRIXROW_LSX)
@@ -5594,11 +5549,6 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    YUY2ToYRow = YUY2ToYRow_SVE2;
-  }
-#endif
 #if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUV422ROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LSX;
@@ -5708,11 +5658,6 @@ int UYVYToNV12(const uint8_t* src_uyvy,
     }
   }
 #endif
-#if defined(HAS_SPLITUVROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    SplitUVRow = SplitUVRow_SVE2;
-  }
-#endif
 #if defined(HAS_SPLITUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     SplitUVRow = SplitUVRow_Any_LSX;
@@ -5741,11 +5686,6 @@ int UYVYToNV12(const uint8_t* src_uyvy,
     if (IS_ALIGNED(width, 16)) {
       InterpolateRow = InterpolateRow_NEON;
     }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    InterpolateRow = InterpolateRow_SVE2;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_SME)
@@ -5824,11 +5764,6 @@ void HalfMergeUVPlane(const uint8_t* src_u,
 #if defined(HAS_HALFMERGEUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     HalfMergeUVRow = HalfMergeUVRow_NEON;
-  }
-#endif
-#if defined(HAS_HALFMERGEUVROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    HalfMergeUVRow = HalfMergeUVRow_SVE2;
   }
 #endif
 #if defined(HAS_HALFMERGEUVROW_SSSE3)

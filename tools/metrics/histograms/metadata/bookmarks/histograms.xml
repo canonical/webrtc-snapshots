@@ -218,7 +218,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bookmarks.BookmarkBar.Android.ShownOnStartUpReason"
-    enum="BookmarkBarShownReason" expires_after="2027-02-14">
+    enum="BookmarkBarShownReason" expires_after="2026-12-16">
   <owner>mschillaci@google.com</owner>
   <owner>eleanorlee@google.com</owner>
   <owner>clank-app-team@google.com</owner>
@@ -354,57 +354,6 @@ chromium-metrics-reviews@google.com.
     Emitted when users show/hide the bookmarks bar using the Appearance Settings
     page toggle. Emits enabled if the bar will be shown after the shortcut and
     disabled if it will be hidden.
-  </summary>
-</histogram>
-
-<histogram name="Bookmarks.BookmarkBar.TriState.Toggled{Origin}"
-    enum="BookmarkBarVisibilityState" expires_after="2027-02-15">
-  <owner>mschillaci@google.com</owner>
-  <owner>clank-app-team@google.com</owner>
-  <summary>
-    Emitted when users change the bookmarks bar visibility state setting using
-    {Origin}. Emits the new BookmarkBarVisibilityState chosen by the user.
-  </summary>
-  <token key="Origin">
-    <variant name="AppearanceSettings"
-        summary="the Appearance Settings page toggle"/>
-    <variant name="AppMenu" summary="the App (3-dot) menu"/>
-    <variant name="ContextMenu"
-        summary="the bookmark bar context menu visibility submenu"/>
-    <variant name="Keyboard" summary="the keyboard shortcut Ctrl+Shift+B"/>
-  </token>
-</histogram>
-
-<histogram name="Bookmarks.BookmarkBar.TriState.VisibilityStateChangeOrigin"
-    enum="BookmarkBarSettingChangeOrigin" expires_after="2027-02-15">
-  <owner>mschillaci@google.com</owner>
-  <owner>clank-app-team@google.com</owner>
-  <summary>
-    Emitted whenever the bookmarks bar visibility state setting is changed.
-    Emits the BookmarkBarSettingChangeOrigin (e.g. keyboard shortcut, appearance
-    settings, context menu, or app menu) that triggered the change.
-  </summary>
-</histogram>
-
-<histogram name="Bookmarks.BookmarkBar.TriState.VisibilityStateOnStartUp"
-    enum="BookmarkBarVisibilityState" expires_after="2027-02-15">
-  <owner>mschillaci@google.com</owner>
-  <owner>clank-app-team@google.com</owner>
-  <summary>
-    Records the BookmarkBarVisibilityState of the bookmarks bar on start-up.
-    This is only recorded for users who have a Desktop device, or users who have
-    explicitly set a device preference on tablet (excluding the default
-    unselected state).
-  </summary>
-</histogram>
-
-<histogram name="Bookmarks.BookmarkBar.TriState.VisibilityStateOnStartUpReason"
-    enum="BookmarkBarVisibilityStateOnStartUpReason" expires_after="2027-02-15">
-  <owner>mschillaci@google.com</owner>
-  <owner>clank-app-team@google.com</owner>
-  <summary>
-    Records the reason for the initial visibility state of the bookmarks bar on
-    start-up when using the tri-state visibility preference.
   </summary>
 </histogram>
 
@@ -717,7 +666,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bookmarks.Opened.TimeSinceLastUsed" units="days"
-    expires_after="2027-09-27">
+    expires_after="2026-09-27">
   <owner>wylieb@google.com</owner>
   <owner>chrome-collections@google.com</owner>
   <summary>
@@ -730,7 +679,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Bookmarks.ParentFolderType" enum="BookmarkFolderType"
-    expires_after="2027-02-14">
+    expires_after="2026-12-16">
   <owner>emshack@chromium.org</owner>
   <owner>top-chrome-desktop-ui@google.com</owner>
   <summary>
@@ -1140,7 +1089,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PowerBookmarks.SidePanel.BookmarksShown" units="Bookmarks"
-    expires_after="2027-02-14">
+    expires_after="2026-12-16">
   <owner>emshack@chromium.org</owner>
   <owner>chrome-desktop-sea@google.com</owner>
   <component>1457140</component>

@@ -33,8 +33,7 @@ from typing import Tuple
 from typing import TypedDict
 
 sys.path.append(
-  os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'build')
-)
+    os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'build'))
 import action_helpers
 
 # Matches lines that start with #if and have the substring TEST in the
@@ -106,7 +105,6 @@ class TestResult(TypedDict):
       ParseExpectation() for the structure.
     return_code: The return code of the test process, if not aborted.
   """
-
   cmdline: str
   stdout: IO[str]
   stderr: IO[str]
@@ -119,9 +117,8 @@ class TestResult(TypedDict):
   returncode: int
 
 
-def ValidateInput(
-  compiler, parallelism, sourcefile_path, cflags, resultfile_path
-):
+def ValidateInput(compiler, parallelism, sourcefile_path, cflags,
+                  resultfile_path):
   """Make sure the arguments being passed in are sane."""
   assert os.path.isfile(compiler)
   assert parallelism >= 1
@@ -197,13 +194,11 @@ def ExtractTestConfigs(sourcefile_path, suite_name, resultfile, resultlog):
     # flags and configuration are not just wrong. Otherwise, having a
     # misconfigured compiler, or an error in the shared portions of the .nc file
     # would cause all tests to erroneously pass.
-    test_configs = [
-      {
+    test_configs = [{
         'name': 'NCTEST_SMOKE',
         'suite_name': suite_name,
         'expectations': None,
-      }
-    ]
+    }]
 
     for line in sourcefile:
       match_result = NCTEST_CONFIG_RE.match(line)
@@ -219,9 +214,9 @@ def ExtractTestConfigs(sourcefile_path, suite_name, resultfile, resultlog):
         name = strip_result.group(1)
 
       config = {
-        'name': name,
-        'suite_name': suite_name,
-        'expectations': ParseExpectation(groups[1]),
+          'name': name,
+          'suite_name': suite_name,
+          'expectations': ParseExpectation(groups[1])
       }
 
       if config['name'].startswith('DISABLED_'):
@@ -251,41 +246,37 @@ def RunTest(compiler, tempfile_dir, cflags, config) -> TestResult:
   expectations = config['expectations']
   if expectations is not None:
     cmdline.append('-D%s' % name)
-  test_stdout = tempfile.TemporaryFile(
-    dir=tempfile_dir, mode='w+', encoding='utf-8'
-  )
-  test_stderr = tempfile.TemporaryFile(
-    dir=tempfile_dir, mode='w+', encoding='utf-8'
-  )
+  test_stdout = tempfile.TemporaryFile(dir=tempfile_dir,
+                                       mode='w+',
+                                       encoding='utf-8')
+  test_stderr = tempfile.TemporaryFile(dir=tempfile_dir,
+                                       mode='w+',
+                                       encoding='utf-8')
 
   # Note: this could use pipes, but having temp files might make for somewhat
   # better debuggability.
   try:
     started_at = time.time()
-    returncode = subprocess.run(
-      cmdline,
-      stdout=test_stdout,
-      stderr=test_stderr,
-      timeout=NCTEST_TERMINATE_TIMEOUT_SEC,
-    ).returncode
+    returncode = subprocess.run(cmdline,
+                                stdout=test_stdout,
+                                stderr=test_stderr,
+                                timeout=NCTEST_TERMINATE_TIMEOUT_SEC).returncode
     aborted_at = 0
     finished_at = time.time()
   except subprocess.CalledProcessError:
     returncode = -1
     aborted_at = time.time()
     finished_at = 0
-  return TestResult(
-    cmdline=' '.join(cmdline),
-    stdout=test_stdout,
-    stderr=test_stderr,
-    name=name,
-    suite_name=config['suite_name'],
-    started_at=started_at,
-    aborted_at=aborted_at,
-    finished_at=finished_at,
-    expectations=expectations,
-    returncode=returncode,
-  )
+  return TestResult(cmdline=' '.join(cmdline),
+                    stdout=test_stdout,
+                    stderr=test_stderr,
+                    name=name,
+                    suite_name=config['suite_name'],
+                    started_at=started_at,
+                    aborted_at=aborted_at,
+                    finished_at=finished_at,
+                    expectations=expectations,
+                    returncode=returncode)
 
 
 def PassTest(resultfile, resultlog, test):
@@ -303,15 +294,9 @@ def PassTest(resultfile, resultlog, test):
   # The 'started_at' key is only added if a test has been started.
   if 'started_at' in test:
     resultlog.write(
-      LOG_TEMPLATE
-      % (
-        test['suite_name'],
-        test['name'],
-        test['finished_at'] - test['started_at'],
-        test['started_at'],
-        test['finished_at'],
-      )
-    )
+        LOG_TEMPLATE %
+        (test['suite_name'], test['name'], test['finished_at'] -
+         test['started_at'], test['started_at'], test['finished_at']))
 
 
 def FailTest(resultfile, test, error, stdout=None, stderr=None):
@@ -353,43 +338,29 @@ TEST(%s): Started %f, Ended %f, Total %fs, Extract %fs, Compile %fs, Process %fs
   extract_secs = timings['extract_done'] - timings['started']
   compile_secs = timings['compile_done'] - timings['extract_done']
   process_secs = timings['results_processed'] - timings['compile_done']
-  resultlog.write(
-    stats_template
-    % (
-      suite_name,
-      timings['started'],
-      timings['results_processed'],
-      total_secs,
-      extract_secs,
-      compile_secs,
-      process_secs,
-    )
-  )
+  resultlog.write(stats_template %
+                  (suite_name, timings['started'], timings['results_processed'],
+                   total_secs, extract_secs, compile_secs, process_secs))
 
 
 def ExtractTestOutputAndCleanup(test: TestResult) -> Tuple[str, str]:
   """Test output is in temp files. Read those and delete them.
   Returns: A tuple (stderr, stdout).
   """
-
   def ReadStreamAndClose(stream: IO[str]) -> str:
     with stream:
       stream.seek(0)
       return stream.read()
 
-  return (
-    ReadStreamAndClose(test['stdout']),
-    ReadStreamAndClose(test['stderr']),
-  )
+  return (ReadStreamAndClose(test['stdout']),
+          ReadStreamAndClose(test['stderr']))
 
 
-def ProcessTestResult(
-  sourcefile_path: str,
-  resultfile: IO[str],
-  resultlog: IO[str],
-  test: TestResult,
-  includes: Optional[Set[str]] = None,
-) -> None:
+def ProcessTestResult(sourcefile_path: str,
+                      resultfile: IO[str],
+                      resultlog: IO[str],
+                      test: TestResult,
+                      includes: Optional[Set[str]] = None) -> None:
   """Interprets and logs the result of a test run by RunTest()
 
   Args:
@@ -411,29 +382,24 @@ def ProcessTestResult(
     # Note: including file: third_party/libc++/src/include/stdint.h
     INCLUDE_PREFIX = 'Note: including file: '
     includes.update(
-      map(
-        lambda x: os.path.relpath(x[len(INCLUDE_PREFIX) :].strip()),
-        filter(
-          lambda x: x.startswith(INCLUDE_PREFIX),
-          stdout.splitlines(),
-        ),
-      )
-    )
+        map(
+            lambda x: os.path.relpath(x[len(INCLUDE_PREFIX):].strip()),
+            filter(
+                lambda x: x.startswith(INCLUDE_PREFIX),
+                stdout.splitlines(),
+            ),
+        ))
 
   if test['aborted_at'] != 0:
     FailTest(
-      resultfile,
-      test,
-      "Compile timed out. Started %f ended %f."
-      % (test['started_at'], test['aborted_at']),
-    )
+        resultfile, test, "Compile timed out. Started %f ended %f." %
+        (test['started_at'], test['aborted_at']))
     return
 
   if test['returncode'] == 0:
     # Handle failure due to successful compile.
-    FailTest(
-      resultfile, test, 'Unexpected successful compilation.', stdout, stderr
-    )
+    FailTest(resultfile, test, 'Unexpected successful compilation.', stdout,
+             stderr)
     return
   else:
     # Check the output has the right expectations.  If there are no
@@ -444,19 +410,15 @@ def ProcessTestResult(
 
     # Otherwise test against all expectations.
     for regexp in test['expectations']:
-      if regexp.search(stdout) is not None or regexp.search(stderr) is not None:
+      if (regexp.search(stdout) is not None
+          or regexp.search(stderr) is not None):
         PassTest(resultfile, resultlog, test)
         return
     expectation_str = ', '.join(
-      ["r'%s'" % regexp.pattern for regexp in test['expectations']]
-    )
-    FailTest(
-      resultfile,
-      test,
-      'Expectations [%s] did not match output.' % expectation_str,
-      stdout,
-      stderr,
-    )
+        ["r'%s'" % regexp.pattern for regexp in test['expectations']])
+    FailTest(resultfile, test,
+             'Expectations [%s] did not match output.' % expectation_str,
+             stdout, stderr)
     return
 
 
@@ -493,9 +455,8 @@ def main():
   with io.StringIO() as resultfile, io.StringIO() as resultlog:
     resultfile.write(RESULT_FILE_HEADER % sourcefile_path)
 
-    test_configs = ExtractTestConfigs(
-      sourcefile_path, suite_name, resultfile, resultlog
-    )
+    test_configs = ExtractTestConfigs(sourcefile_path, suite_name, resultfile,
+                                      resultlog)
     timings['extract_done'] = time.time()
 
     # Run the no-compile tests, but ensure we do not run more than |parallelism|
@@ -506,14 +467,10 @@ def main():
     includes = set() if args.depfile else None
 
     with concurrent.futures.ThreadPoolExecutor(
-      max_workers=parallelism
-    ) as executor:
+        max_workers=parallelism) as executor:
       finished_tests = executor.map(
-        functools.partial(
-          RunTest, compiler, os.path.dirname(resultfile_path), cflags
-        ),
-        test_configs,
-      )
+          functools.partial(RunTest, compiler, os.path.dirname(resultfile_path),
+                            cflags), test_configs)
 
       timings['compile_done'] = time.time()
 
@@ -526,9 +483,8 @@ def main():
             sys.stdout.write(stdout)
             sys.stderr.write(stderr)
           continue
-        ProcessTestResult(
-          sourcefile_path, resultfile, resultlog, test, includes
-        )
+        ProcessTestResult(sourcefile_path, resultfile, resultlog, test,
+                          includes)
       timings['results_processed'] = time.time()
 
     WriteStats(resultlog, suite_name, timings)
@@ -544,10 +500,8 @@ def main():
         action_helpers.write_depfile(args.depfile, resultfile_path, includes)
 
     if return_code != 0:
-      print(
-        "No-compile driver failure with return_code %d. Result log:"
-        % return_code
-      )
+      print("No-compile driver failure with return_code %d. Result log:" %
+            return_code)
       print(resultlog.getvalue())
 
     sys.exit(return_code)

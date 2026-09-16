@@ -11,6 +11,4 @@ def CheckPythonTests(input_api, output_api):
             input_api,
             output_api,
             input_api.PresubmitLocalPath(),
-            files_to_check=[r'.+_(?:unit)?test\.py$'],
-        )
-    )
+            files_to_check=[r'.+_(?:unit)?test\.py$']))

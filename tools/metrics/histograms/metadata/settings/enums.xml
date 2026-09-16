@@ -91,7 +91,7 @@ chromium-metrics-reviews@google.com.
   <int value="168428260" label="PrivacyGuideFragment"/>
   <int value="201053571" label="AutofillAndPasswordsFragment"/>
   <int value="217285687" label="AppearanceSettingsFragment"/>
-  <int value="323758419" label="(Obsolete) TrackingProtectionSettings"/>
+  <int value="323758419" label="TrackingProtectionSettings"/>
   <int value="351534386" label="SiteSearchSettings"/>
   <int value="383093746" label="(Obsolete) PrivacySandboxSettingsFragment"/>
   <int value="406265787" label="LanguageSettings"/>
@@ -124,7 +124,6 @@ chromium-metrics-reviews@google.com.
   <int value="1322563897" label="(Obsolete) TopicsManageFragment"/>
   <int value="1370078648" label="AdaptiveToolbarSettingsFragment"/>
   <int value="1370406966" label="AutofillLocalCardEditor"/>
-  <int value="1398652905" label="UniversalOptOutSettings"/>
   <int value="1409846592" label="TabArchiveSettingsFragment"/>
   <int value="1421890558" label="PasswordSettings"/>
   <int value="1505293227" label="PrivacySettings"/>

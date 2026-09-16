@@ -24,7 +24,6 @@ DEFAULT_PATH = r"c:\program files\mozilla firefox\firefox.exe"
 # 3) fails badly if an existing Firefox window is open when the scrape
 # is invoked. This needs to be fortified at some point.
 
-
 def GetBrowser(path):
   """Invoke the Firefox browser and return the process and window.
 
@@ -34,16 +33,15 @@ def GetBrowser(path):
   Returns:
     A tuple of (process handle, render pane)
   """
-  if not path:
-    path = DEFAULT_PATH
+  if not path: path = DEFAULT_PATH
 
   # Invoke Firefox
   (proc, wnd) = windowing.InvokeAndWait(path)
 
   # Get the content pane
   render_pane = windowing.FindChildWindow(
-    wnd, "MozillaWindowClass/MozillaWindowClass/MozillaWindowClass"
-  )
+    wnd,
+    "MozillaWindowClass/MozillaWindowClass/MozillaWindowClass")
 
   return (proc, wnd, render_pane)
 
@@ -69,8 +67,8 @@ def InvokeBrowser(path):
 
   # Get the content pane
   render_pane = windowing.FindChildWindow(
-    wnd, "MozillaWindowClass/MozillaWindowClass/MozillaWindowClass"
-  )
+    wnd,
+    "MozillaWindowClass/MozillaWindowClass/MozillaWindowClass")
 
   return (wnd, proc, render_pane)
 
@@ -89,10 +87,8 @@ def Scrape(urls, outdir, size, pos, timeout=20, **kwargs):
   Returns:
     None if success, else an error string
   """
-  if "path" in kwargs and kwargs["path"]:
-    path = kwargs["path"]
-  else:
-    path = DEFAULT_PATH
+  if "path" in kwargs and kwargs["path"]: path = kwargs["path"]
+  else: path = DEFAULT_PATH
 
   (wnd, proc, render_pane) = InvokeBrowser(path)
 
@@ -113,10 +109,10 @@ def Scrape(urls, outdir, size, pos, timeout=20, **kwargs):
   timedout = False
 
   # Visit each URL we're given
-  if type(urls) in types.StringTypes:
-    urls = [urls]
+  if type(urls) in types.StringTypes: urls = [urls]
 
   for url in urls:
+
     # Use keyboard shortcuts
     keyboard.TypeString("{d}", True)
     keyboard.TypeString(url)
@@ -165,15 +161,12 @@ def Time(urls, size, timeout, **kwargs):
   Returns:
     A list of tuples (url, time). "time" can be "crashed" or "timeout"
   """
-  if "path" in kwargs and kwargs["path"]:
-    path = kwargs["path"]
-  else:
-    path = DEFAULT_PATH
+  if "path" in kwargs and kwargs["path"]: path = kwargs["path"]
+  else: path = DEFAULT_PATH
   proc = None
 
   # Visit each URL we're given
-  if type(urls) in types.StringTypes:
-    urls = [urls]
+  if type(urls) in types.StringTypes: urls = [urls]
 
   ret = []
   for url in urls:
@@ -183,7 +176,7 @@ def Time(urls, size, timeout, **kwargs):
         (wnd, proc, render_pane) = InvokeBrowser(path)
 
         # Resize and reposition the frame
-        windowing.MoveAndSizeWindow(wnd, (0, 0), size, render_pane)
+        windowing.MoveAndSizeWindow(wnd, (0,0), size, render_pane)
 
         time.sleep(3)
 
@@ -212,10 +205,8 @@ def Time(urls, size, timeout, **kwargs):
         mouse.ClickInWindow(wnd)
 
         count = 0
-        while (
-          len(windowing.FindChildWindows(0, "MozillaUIWindowClass"))
-          and count < 5
-        ):
+        while (len(windowing.FindChildWindows(0, "MozillaUIWindowClass"))
+          and count < 5):
           keyboard.TypeString("[w]", True)
           time.sleep(1)
           count = count + 1
@@ -229,13 +220,12 @@ def Time(urls, size, timeout, **kwargs):
       proc = None
       load_time = "crashed"
 
-    ret.append((url, load_time))
+    ret.append( (url, load_time) )
 
   if proc:
     count = 0
-    while (
-      len(windowing.FindChildWindows(0, "MozillaUIWindowClass")) and count < 5
-    ):
+    while (len(windowing.FindChildWindows(0, "MozillaUIWindowClass"))
+      and count < 5):
       keyboard.TypeString("[w]", True)
       time.sleep(1)
       count = count + 1
@@ -249,11 +239,9 @@ def main():
 
   # Scrape three sites and save the results
   Scrape(
-    ["http://www.microsoft.com", "http://www.google.com", "http://www.sun.com"],
-    path,
-    (1024, 768),
-    (0, 0),
-  )
+    ["http://www.microsoft.com", "http://www.google.com",
+     "http://www.sun.com"],
+    path, (1024, 768), (0, 0))
   return 0
 
 

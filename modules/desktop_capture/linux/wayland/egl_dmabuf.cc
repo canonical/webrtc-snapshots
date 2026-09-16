@@ -502,10 +502,9 @@ std::vector<uint64_t> EglDrmDevice::QueryDmaBufModifiers(uint32_t format) {
   // can still use modifier-less DMA-BUFs if we have required extension
   if (EglQueryDmaBufFormatsEXT == nullptr ||
       EglQueryDmaBufModifiersEXT == nullptr) {
-    if (has_image_dma_buf_import_ext_) {
-      return FilterFailedModifiers(format, {DRM_FORMAT_MOD_INVALID});
-    }
-    return {};
+    return has_image_dma_buf_import_ext_
+               ? std::vector<uint64_t>{DRM_FORMAT_MOD_INVALID}
+               : std::vector<uint64_t>{};
   }
 
   uint32_t drm_format = SpaPixelFormatToDrmFormat(format);
@@ -518,7 +517,7 @@ std::vector<uint64_t> EglDrmDevice::QueryDmaBufModifiers(uint32_t format) {
 
   if (!success || !count) {
     RTC_LOG(LS_WARNING) << "Cannot query the number of formats.";
-    return FilterFailedModifiers(format, {DRM_FORMAT_MOD_INVALID});
+    return {DRM_FORMAT_MOD_INVALID};
   }
 
   std::vector<uint32_t> formats(count);
@@ -526,13 +525,13 @@ std::vector<uint64_t> EglDrmDevice::QueryDmaBufModifiers(uint32_t format) {
                                 reinterpret_cast<EGLint*>(formats.data()),
                                 &count)) {
     RTC_LOG(LS_WARNING) << "Cannot query a list of formats.";
-    return FilterFailedModifiers(format, {DRM_FORMAT_MOD_INVALID});
+    return {DRM_FORMAT_MOD_INVALID};
   }
 
   if (std::find(formats.begin(), formats.end(), drm_format) == formats.end()) {
     RTC_LOG(LS_WARNING) << "Format " << drm_format
                         << " not supported for modifiers.";
-    return FilterFailedModifiers(format, {DRM_FORMAT_MOD_INVALID});
+    return {DRM_FORMAT_MOD_INVALID};
   }
 
   success = EglQueryDmaBufModifiersEXT(egl_.display, drm_format, 0, nullptr,
@@ -540,7 +539,7 @@ std::vector<uint64_t> EglDrmDevice::QueryDmaBufModifiers(uint32_t format) {
 
   if (!success || !count) {
     RTC_LOG(LS_WARNING) << "Cannot query the number of modifiers.";
-    return FilterFailedModifiers(format, {DRM_FORMAT_MOD_INVALID});
+    return {DRM_FORMAT_MOD_INVALID};
   }
 
   std::vector<uint64_t> modifiers(count);
@@ -552,12 +551,7 @@ std::vector<uint64_t> EglDrmDevice::QueryDmaBufModifiers(uint32_t format) {
   // Support modifier-less buffers
   modifiers.push_back(DRM_FORMAT_MOD_INVALID);
 
-  return FilterFailedModifiers(format, std::move(modifiers));
-}
-
-std::vector<uint64_t> EglDrmDevice::FilterFailedModifiers(
-    uint32_t format,
-    std::vector<uint64_t> modifiers) {
+  // Filter out failed modifiers
   MutexLock lock(&failed_modifiers_lock_);
   auto it = failed_modifiers_.find(format);
   if (it == failed_modifiers_.end()) {

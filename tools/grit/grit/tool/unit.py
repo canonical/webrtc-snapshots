@@ -4,6 +4,7 @@
 
 '''GRIT tool that runs the unit test suite for GRIT.'''
 
+
 import getopt
 import sys
 import unittest
@@ -17,7 +18,7 @@ from grit.tool import interface
 
 class UnitTestTool(interface.Tool):
   '''By using this tool (e.g. 'grit unit') you run all the unit tests for GRIT.
-  This happens in the environment that is set up by the basic GRIT runner.'''
+This happens in the environment that is set up by the basic GRIT runner.'''
 
   def ShortDescription(self):
     return 'Use this tool to run all the unit tests for GRIT.'

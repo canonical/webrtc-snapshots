@@ -9,6 +9,7 @@ import rebase_dump_accessibility_tree_tests as rebase
 
 
 class RebaseDumpAccessibilityTreeTestTests(unittest.TestCase):
+
   def test_split_test_logs(self):
     log = """
 Testing: file1.txt
@@ -24,22 +25,22 @@ file2 has different content
 
     actual = rebase._get_individual_test_logs(log)
     self.assertEqual(
-      next(actual),
-      [
-        "Testing: file1.txt",
-        "Expected output: content/test/accessibility/fake_output.txt",
-        "file1 content",
-        "<-- End-of-file -->",
-      ],
+        next(actual),
+        [
+            "Testing: file1.txt",
+            "Expected output: content/test/accessibility/fake_output.txt",
+            "file1 content",
+            "<-- End-of-file -->",
+        ],
     )
     self.assertEqual(
-      next(actual),
-      [
-        "Testing: file2.txt",
-        "Expected output: content/test/accessibility/different_output.txt",
-        "file2 has different content",
-        "<-- End-of-file -->",
-      ],
+        next(actual),
+        [
+            "Testing: file2.txt",
+            "Expected output: content/test/accessibility/different_output.txt",
+            "file2 has different content",
+            "<-- End-of-file -->",
+        ],
     )
     with self.assertRaises(StopIteration):
       next(actual)
@@ -59,13 +60,13 @@ file2 has different content
 
     actual = rebase._get_individual_test_logs(log)
     self.assertEqual(
-      next(actual),
-      [
-        "Testing: file1.txt",
-        "Expected output: content/test/accessibility/same_fake_output.txt",
-        "file1 content",
-        "<-- End-of-file -->",
-      ],
+        next(actual),
+        [
+            "Testing: file1.txt",
+            "Expected output: content/test/accessibility/same_fake_output.txt",
+            "file1 content",
+            "<-- End-of-file -->",
+        ],
     )
     with self.assertRaises(StopIteration):
       next(actual)

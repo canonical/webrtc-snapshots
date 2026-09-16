@@ -14,12 +14,10 @@ def YesNo(prompt):
   # http://code.activestate.com/recipes/134892/
   if sys.platform == 'win32':
     import msvcrt
-
     ch = msvcrt.getch()
   else:
     import termios
     import tty
-
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     ch = 'n'

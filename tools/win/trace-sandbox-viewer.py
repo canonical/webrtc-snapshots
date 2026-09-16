@@ -202,8 +202,7 @@ def main():
 
     events = read_json_events(
         args.files,
-        categories=['mojom', 'disabled-by-default-sandbox', '__metadata'],
-    )
+        categories=['mojom', 'disabled-by-default-sandbox', '__metadata'])
     interfaces = assign_interfaces_to_sandboxes(events)
 
     print(output_as_json(interfaces))

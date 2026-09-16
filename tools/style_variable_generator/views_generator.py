@@ -12,7 +12,6 @@ from style_variable_generator.model import Modes, VariableType
 
 class ViewsStyleGenerator(CSSStyleGenerator):
     '''Generator for Views Variables'''
-
     @staticmethod
     def GetName():
         return 'Views'
@@ -35,15 +34,20 @@ class ViewsStyleGenerator(CSSStyleGenerator):
 
     def GetGlobals(self):
         globals = {
-            'Modes': Modes,
-            'out_file_path': None,
-            'namespace_name': self.generator_options.get(
+            'Modes':
+            Modes,
+            'out_file_path':
+            None,
+            'namespace_name':
+            self.generator_options.get(
                 'cpp_namespace',
-                os.path.splitext(os.path.basename(self.out_file_path))[0],
-            ),
-            'header_file': None,
-            'in_files': self.GetInputFiles(),
-            'css_color_var': self.CSSColorVar,
+                os.path.splitext(os.path.basename(self.out_file_path))[0]),
+            'header_file':
+            None,
+            'in_files':
+            self.GetInputFiles(),
+            'css_color_var':
+            self.CSSColorVar,
         }
         if self.out_file_path:
             globals['out_file_path'] = self.out_file_path
@@ -75,36 +79,27 @@ class ViewsStyleGenerator(CSSStyleGenerator):
         if opacity.a != -1:
             return self._AlphaToHex(opacity)
         elif opacity.var:
-            return (
-                'GetOpacity(OpacityName::%s, is_dark_mode)'
-                % self._ToConstName(opacity.var)
-            )
+            return ('GetOpacity(OpacityName::%s, is_dark_mode)' %
+                    self._ToConstName(opacity.var))
         raise ValueError('Invalid opacity: ' + repr(opacity))
 
     def _CppColor(self, c):
         '''Returns the C++ color representation of |c|'''
-        assert isinstance(c, Color)
+        assert (isinstance(c, Color))
 
         if isinstance(c, ColorVar):
-            return (
-                'ResolveColor(ColorName::%s, is_dark_mode)'
-                % self._ToConstName(c.var)
-            )
+            return ('ResolveColor(ColorName::%s, is_dark_mode)' %
+                    self._ToConstName(c.var))
 
         if isinstance(c, ColorRGBVar):
             return (
-                'SkColorSetA(ResolveColor('
-                + 'ColorName::%s, is_dark_mode), %s)'
-                % (self._ToConstName(c.ToVar()), self._CppOpacity(c.opacity))
-            )
+                'SkColorSetA(ResolveColor(' +
+                'ColorName::%s, is_dark_mode), %s)' %
+                (self._ToConstName(c.ToVar()), self._CppOpacity(c.opacity)))
 
         if c.opacity.a != 1:
-            return 'SkColorSetARGB(%s, 0x%X, 0x%X, 0x%X)' % (
-                self._CppOpacity(c.opacity),
-                c.r,
-                c.g,
-                c.b,
-            )
+            return 'SkColorSetARGB(%s, 0x%X, 0x%X, 0x%X)' % (self._CppOpacity(
+                c.opacity), c.r, c.g, c.b)
         else:
             return 'SkColorSetRGB(0x%X, 0x%X, 0x%X)' % (c.r, c.g, c.b)
 
@@ -115,9 +110,8 @@ class ViewsCCStyleGenerator(ViewsStyleGenerator):
         return 'ViewsCC'
 
     def Render(self):
-        return self.ApplyTemplate(
-            self, 'templates/views_generator_cc.tmpl', self.GetParameters()
-        )
+        return self.ApplyTemplate(self, 'templates/views_generator_cc.tmpl',
+                                  self.GetParameters())
 
 
 class ViewsHStyleGenerator(ViewsStyleGenerator):
@@ -126,6 +120,5 @@ class ViewsHStyleGenerator(ViewsStyleGenerator):
         return 'ViewsH'
 
     def Render(self):
-        return self.ApplyTemplate(
-            self, 'templates/views_generator_h.tmpl', self.GetParameters()
-        )
+        return self.ApplyTemplate(self, 'templates/views_generator_h.tmpl',
+                                  self.GetParameters())

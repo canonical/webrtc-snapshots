@@ -675,12 +675,16 @@ def __android_create_size_info_files_handler(ctx, cmd):
                 jars.append(f)
             for jar in jars:
                 if jar.endswith(".jar"):
-                    info_path = ctx.fs.canonpath(jar + ".info")
-                    if ctx.fs.exists(info_path):
+                    if jar.endswith(".turbine.jar"):
+                        # Turbine jars are header jars used for compilation and do not have .info files.
+                        # They are lightweight enough to upload directly.
+                        inputs.append(ctx.fs.canonpath(jar))
+                    elif not jar.startswith("../"):
                         # For generated jars, we use .jar.info files to reduce file transfer size.
-                        inputs.append(info_path)
+                        info_path = jar + ".info"
+                        inputs.append(ctx.fs.canonpath(info_path))
                     else:
-                        # For prebuilts and turbine jars, no .jar.info exists, so we fall back to full .jar files.
+                        # For prebuilts, no .jar.info exists, so we fall back to full .jar files.
                         inputs.append(ctx.fs.canonpath(jar))
 
                         # There is special handling for .jar files that come from .aar files. Find and

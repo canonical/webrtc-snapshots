@@ -11,7 +11,6 @@
 #include "rtc_base/logging.h"
 
 #include <algorithm>
-#include <atomic>
 #include <cinttypes>
 #include <cstdarg>
 #include <cstdint>
@@ -65,8 +64,8 @@ constexpr LoggingSeverity kDefaultLoggingSeverity = LS_NONE;
 #endif
 
 // Note: `g_min_sev` and `g_dbg_sev` can be changed while running.
-constinit std::atomic<LoggingSeverity> g_min_sev = kDefaultLoggingSeverity;
-constinit std::atomic<LoggingSeverity> g_dbg_sev = kDefaultLoggingSeverity;
+LoggingSeverity g_min_sev = kDefaultLoggingSeverity;
+LoggingSeverity g_dbg_sev = kDefaultLoggingSeverity;
 
 // Return the filename portion of the string (that following the last slash).
 const char* FilenameFromPath(const char* file) {
@@ -116,7 +115,7 @@ bool InitializeLogging(LoggingConfig config) {
     LogMessage::SetLogQueueNames(config.log_queue_name());
     LogMessage::LogTimestamps(config.log_timestamp());
     LogMessage::SetLogToStderr(config.log_to_stderr());
-    g_dbg_sev.store(config.debug_severity(), std::memory_order_relaxed);
+    g_dbg_sev = config.debug_severity();
     LogMessage::UpdateMinLogSeverity();
   }
   return config_applied;
@@ -299,11 +298,11 @@ StringBuilder& LogMessage::stream() {
 }
 
 int LogMessage::GetMinLogSeverity() {
-  return g_min_sev.load(std::memory_order_relaxed);
+  return g_min_sev;
 }
 
 LoggingSeverity LogMessage::GetLogToDebug() {
-  return g_dbg_sev.load(std::memory_order_relaxed);
+  return g_dbg_sev;
 }
 int64_t LogMessage::LogStartTime() {
   static const int64_t g_start = SystemTimeMillis();
@@ -332,7 +331,7 @@ void LogMessage::LogTimestamps(bool on) {
 }
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
-  g_dbg_sev.store(min_sev, std::memory_order_relaxed);
+  g_dbg_sev = min_sev;
   MutexLock lock(&GetLoggingLock());
   UpdateMinLogSeverity();
 }
@@ -424,7 +423,7 @@ void LogMessage::ConfigureLogging(absl::string_view params) {
 
 void LogMessage::UpdateMinLogSeverity()
     RTC_EXCLUSIVE_LOCKS_REQUIRED(GetLoggingLock()) {
-  LoggingSeverity min_sev = g_dbg_sev.load(std::memory_order_relaxed);
+  LoggingSeverity min_sev = g_dbg_sev;
   const LoggingConfig& config = GetLoggingConfig();
   min_sev = std::min(min_sev, config.min_severity());
   for (const auto& sink : config.sinks()) {
@@ -433,7 +432,7 @@ void LogMessage::UpdateMinLogSeverity()
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     min_sev = std::min(min_sev, entry->min_severity_);
   }
-  g_min_sev.store(min_sev, std::memory_order_relaxed);
+  g_min_sev = min_sev;
 }
 
 void LogMessage::OutputToDebug(const LogLineRef& log_line) {
@@ -522,7 +521,7 @@ void LogMessage::OutputToDebug(const LogLineRef& log_line) {
 }
 
 bool LogMessage::IsNoop(LoggingSeverity severity) {
-  return severity < g_min_sev.load(std::memory_order_relaxed);
+  return severity < g_min_sev;
 }
 
 void LogMessage::FinishPrintStream() {

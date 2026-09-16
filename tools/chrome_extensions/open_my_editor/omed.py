@@ -21,22 +21,17 @@ if len(sys.argv) == 2:
 logging.basicConfig(filename=logfile, level=logging.INFO)
 logger = logging.getLogger('omed')
 
-
 def log(func):
   def wrapper(*args, **kwargs):
     logger.info(
-      '%s %s %s %s'
-      % (request.remote_addr, request.method, request.url, response.status)
-    )
+        '%s %s %s %s' %
+        (request.remote_addr, request.method, request.url, response.status))
 
     req = func(*args, **kwargs)
     return req
-
   return wrapper
 
-
 install(log)
-
 
 @get('/file')
 def open_file():
@@ -48,7 +43,6 @@ def open_file():
   sh.myeditor("-f", filepath, "-l", line)
   return
 
-
 @get('/files')
 def open_files():
   filepaths = request.query.f
@@ -57,6 +51,5 @@ def open_files():
 
   sh.myeditor("-m", filepaths)
   return
-
 
 run(port=8989, host='127.0.0.1')

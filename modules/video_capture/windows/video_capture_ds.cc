@@ -153,7 +153,7 @@ int32_t VideoCaptureDS::StartCapture(const VideoCaptureCapability& capability) {
 int32_t VideoCaptureDS::StopCapture() {
   RTC_DCHECK_RUN_ON(&api_checker_);
 
-  HRESULT hr = _mediaControl->Stop();
+  HRESULT hr = _mediaControl->StopWhenReady();
   if (FAILED(hr)) {
     RTC_LOG(LS_INFO) << "Failed to stop the capture graph. " << hr;
     return -1;

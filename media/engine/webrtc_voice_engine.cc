@@ -604,16 +604,13 @@ WebRtcVoiceEngine::CreateSendChannel(
 }
 
 std::unique_ptr<VoiceMediaReceiveChannelInterface>
-WebRtcVoiceEngine::CreateReceiveChannel(
-    const Environment& env,
-    Call* call,
-    const MediaConfig& config,
-    const AudioOptions& options,
-    const CryptoOptions& crypto_options,
-    absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) {
-  return std::make_unique<WebRtcVoiceReceiveChannel>(
-      env, this, config, options, crypto_options, call,
-      std::move(on_first_packet));
+WebRtcVoiceEngine::CreateReceiveChannel(const Environment& env,
+                                        Call* call,
+                                        const MediaConfig& config,
+                                        const AudioOptions& options,
+                                        const CryptoOptions& crypto_options) {
+  return std::make_unique<WebRtcVoiceReceiveChannel>(env, this, config, options,
+                                                     crypto_options, call);
 }
 
 void WebRtcVoiceEngine::ApplyGlobalOptions(const AudioOptions& options) {
@@ -2176,8 +2173,7 @@ WebRtcVoiceReceiveChannel::WebRtcVoiceReceiveChannel(
     const MediaConfig& config,
     const AudioOptions& options,
     const CryptoOptions& crypto_options,
-    Call* absl_nonnull call,
-    absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet)
+    Call* absl_nonnull call)
     : MediaChannelUtil(call->network_thread(), config.enable_dscp),
       env_(env),
       worker_thread_(call->worker_thread()),
@@ -2188,8 +2184,7 @@ WebRtcVoiceReceiveChannel::WebRtcVoiceReceiveChannel(
       options_(options),
       call_(call),
       audio_config_(config.audio),
-      crypto_options_(crypto_options),
-      on_first_packet_(std::move(on_first_packet)) {
+      crypto_options_(crypto_options) {
   RTC_LOG(LS_VERBOSE) << "WebRtcVoiceReceiveChannel::WebRtcVoiceReceiveChannel";
   RTC_DCHECK(call);
   if (options.audio_jitter_buffer_max_packets.has_value()) {
@@ -2448,13 +2443,6 @@ bool WebRtcVoiceReceiveChannel::AddRecvStream(const StreamParams& sp) {
       options_.audio_jitter_buffer_min_delay_ms.value_or(0),
       unsignaled_frame_decryptor_, crypto_options_,
       unsignaled_frame_transformer_);
-
-  config.on_first_packet = [this](uint32_t ssrc) {
-    RTC_DCHECK_RUN_ON(worker_thread_);
-    if (on_first_packet_) {
-      on_first_packet_(ssrc);
-    }
-  };
 
   recv_streams_.insert(std::make_pair(
       ssrc, new WebRtcAudioReceiveStream(std::move(config), call_)));

@@ -1,4 +1,3 @@
-# pylint: disable=too-many-lines
 # Copyright 2019 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -32,6 +31,7 @@ from tracing.value import histogram
 from tracing.value import histogram_set
 from tracing_build import render_histograms_viewer
 
+
 # For testing the TBMv2 workflow we use sampleMetric defined in
 # third_party/catapult/tracing/tracing/metrics/sample_metric.html.
 # This metric ignores the trace data and outputs a histogram with
@@ -58,23 +58,19 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
 
   def CreateHtmlTraceArtifact(self):
     """Create an empty file as a fake html trace."""
-    with tempfile.NamedTemporaryFile(dir=self.intermediate_dir,
-                                     delete=False) as artifact_file:
+    with tempfile.NamedTemporaryFile(
+        dir=self.intermediate_dir, delete=False) as artifact_file:
       pass
-    return (
-        compute_metrics.HTML_TRACE_NAME,
-        testing.Artifact(artifact_file.name),
-    )
+    return (compute_metrics.HTML_TRACE_NAME,
+            testing.Artifact(artifact_file.name))
 
   def CreateProtoTraceArtifact(self):
     """Create an empty file as a fake proto trace."""
-    with tempfile.NamedTemporaryFile(dir=self.intermediate_dir,
-                                     delete=False) as artifact_file:
+    with tempfile.NamedTemporaryFile(
+        dir=self.intermediate_dir, delete=False) as artifact_file:
       pass
-    return (
-        compute_metrics.CONCATENATED_PROTO_NAME,
-        testing.Artifact(artifact_file.name),
-    )
+    return (compute_metrics.CONCATENATED_PROTO_NAME,
+            testing.Artifact(artifact_file.name))
 
   def CreateDiagnosticsArtifact(self, **diagnostics):
     """Create an artifact with diagnostics."""
@@ -102,25 +98,18 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
 
   def testJson3Output(self):
     self.SerializeIntermediateResults(
-        testing.TestResult(
-            'benchmark/story',
-            run_duration='1.1s',
-            tags=['shard:7'],
-            start_time='2009-02-13T23:31:30.987000Z',
-        ),
+        testing.TestResult('benchmark/story',
+                           run_duration='1.1s',
+                           tags=['shard:7'],
+                           start_time='2009-02-13T23:31:30.987000Z'),
         testing.TestResult('benchmark/story',
                            run_duration='1.2s',
                            tags=['shard:7']),
     )
 
     processor.main([
-        '--is-unittest',
-        '--output-format',
-        'json-test-results',
-        '--output-dir',
-        self.output_dir,
-        '--intermediate-dir',
-        self.intermediate_dir,
+        '--is-unittest', '--output-format', 'json-test-results', '--output-dir',
+        self.output_dir, '--intermediate-dir', self.intermediate_dir
     ])
 
     with open(os.path.join(self.output_dir, json3_output.OUTPUT_FILENAME)) as f:
@@ -147,25 +136,20 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
 
   def testJson3OutputWithArtifacts(self):
     self.SerializeIntermediateResults(
-        testing.TestResult(
-            'benchmark/story',
-            output_artifacts={
-                'logs':
-                testing.Artifact('/logs.txt', fetch_url='gs://logs.txt'),
-                'screenshot':
-                testing.Artifact(os.path.join(self.output_dir,
-                                              'screenshot.png')),
-            },
-        ), )
+        testing.TestResult('benchmark/story',
+                           output_artifacts={
+                               'logs':
+                               testing.Artifact('/logs.txt',
+                                                fetch_url='gs://logs.txt'),
+                               'screenshot':
+                               testing.Artifact(
+                                   os.path.join(self.output_dir,
+                                                'screenshot.png')),
+                           }), )
 
     processor.main([
-        '--is-unittest',
-        '--output-format',
-        'json-test-results',
-        '--output-dir',
-        self.output_dir,
-        '--intermediate-dir',
-        self.intermediate_dir,
+        '--is-unittest', '--output-format', 'json-test-results', '--output-dir',
+        self.output_dir, '--intermediate-dir', self.intermediate_dir
     ])
 
     with open(os.path.join(self.output_dir, json3_output.OUTPUT_FILENAME)) as f:
@@ -191,30 +175,19 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
            for i in range(num)})
 
     self.SerializeIntermediateResults(
-        testing.TestResult(
-            'benchmark/story1',
-            status='PASS',
-            output_artifacts=[SomeMeasurements(3)],
-        ),
-        testing.TestResult(
-            'benchmark/story2',
-            status='PASS',
-            output_artifacts=[SomeMeasurements(7)],
-        ),
+        testing.TestResult('benchmark/story1',
+                           status='PASS',
+                           output_artifacts=[SomeMeasurements(3)]),
+        testing.TestResult('benchmark/story2',
+                           status='PASS',
+                           output_artifacts=[SomeMeasurements(7)]),
     )
 
     exit_code = processor.main([
-        '--is-unittest',
-        '--output-format',
-        'json-test-results',
-        '--output-format',
-        'histograms',
-        '--output-dir',
-        self.output_dir,
-        '--intermediate-dir',
-        self.intermediate_dir,
-        '--max-values-per-test-case',
-        '5',
+        '--is-unittest', '--output-format', 'json-test-results',
+        '--output-format', 'histograms', '--output-dir', self.output_dir,
+        '--intermediate-dir', self.intermediate_dir,
+        '--max-values-per-test-case', '5'
     ])
     self.assertEqual(exit_code, 1)
 
@@ -234,8 +207,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                 self.CreateDiagnosticsArtifact(
                     benchmarks=['benchmark'],
                     osNames=['linux'],
-                    documentationUrls=[['documentation', 'url']],
-                ),
+                    documentationUrls=[['documentation', 'url']])
             ],
             tags=['tbmv2:sampleMetric'],
             start_time='2009-02-13T23:31:30.987000Z',
@@ -271,10 +243,8 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                      generic_set.GenericSet(['benchmark']))
     self.assertEqual(hist.diagnostics['osNames'],
                      generic_set.GenericSet(['linux']))
-    self.assertEqual(
-        hist.diagnostics['documentationUrls'],
-        generic_set.GenericSet([['documentation', 'url']]),
-    )
+    self.assertEqual(hist.diagnostics['documentationUrls'],
+                     generic_set.GenericSet([['documentation', 'url']]))
     self.assertEqual(hist.diagnostics['labels'],
                      generic_set.GenericSet(['label']))
     self.assertEqual(hist.diagnostics['benchmarkStart'],
@@ -282,8 +252,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
     self.assertEqual(
         hist.diagnostics['traceUrls'],
         generic_set.GenericSet(
-            ['https://storage.cloud.google.com/bucket/trace.html']),
-    )
+            ['https://storage.cloud.google.com/bucket/trace.html']))
 
   def testHistogramsOutputResetResults(self):
     self.SerializeIntermediateResults(
@@ -494,8 +463,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                 self.CreateDiagnosticsArtifact(
                     benchmarks=['benchmark'],
                     osNames=['linux'],
-                    documentationUrls=[['documentation', 'url']],
-                ),
+                    documentationUrls=[['documentation', 'url']]),
             ],
             tags=['tbmv2:sampleMetric'],
             start_time='2009-02-13T23:31:30.987000Z',
@@ -526,10 +494,8 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                      generic_set.GenericSet(['benchmark']))
     self.assertEqual(hist.diagnostics['osNames'],
                      generic_set.GenericSet(['linux']))
-    self.assertEqual(
-        hist.diagnostics['documentationUrls'],
-        generic_set.GenericSet([['documentation', 'url']]),
-    )
+    self.assertEqual(hist.diagnostics['documentationUrls'],
+                     generic_set.GenericSet([['documentation', 'url']]))
     self.assertEqual(hist.diagnostics['labels'],
                      generic_set.GenericSet(['label']))
     self.assertEqual(hist.diagnostics['benchmarkStart'],
@@ -638,8 +604,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                 self.CreateDiagnosticsArtifact(
                     benchmarks=['benchmark'],
                     osNames=['linux'],
-                    documentationUrls=[['documentation', 'url']],
-                ),
+                    documentationUrls=[['documentation', 'url']]),
             ],
             tags=['tbmv2:sampleMetric'],
             start_time='2009-02-13T23:31:30.987000Z',
@@ -756,13 +721,8 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
     )
 
     exit_code = processor.main([
-        '--is-unittest',
-        '--output-format',
-        'json-test-results',
-        '--output-dir',
-        self.output_dir,
-        '--intermediate-dir',
-        self.intermediate_dir,
+        '--is-unittest', '--output-format', 'json-test-results', '--output-dir',
+        self.output_dir, '--intermediate-dir', self.intermediate_dir
     ])
 
     self.assertEqual(exit_code, 1)
@@ -774,13 +734,8 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
     )
 
     exit_code = processor.main([
-        '--is-unittest',
-        '--output-format',
-        'json-test-results',
-        '--output-dir',
-        self.output_dir,
-        '--intermediate-dir',
-        self.intermediate_dir,
+        '--is-unittest', '--output-format', 'json-test-results', '--output-dir',
+        self.output_dir, '--intermediate-dir', self.intermediate_dir
     ])
 
     self.assertEqual(exit_code, 111)
@@ -792,13 +747,8 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
     )
 
     exit_code = processor.main([
-        '--is-unittest',
-        '--output-format',
-        'json-test-results',
-        '--output-dir',
-        self.output_dir,
-        '--intermediate-dir',
-        self.intermediate_dir,
+        '--is-unittest', '--output-format', 'json-test-results', '--output-dir',
+        self.output_dir, '--intermediate-dir', self.intermediate_dir
     ])
 
     self.assertEqual(exit_code, 0)
@@ -812,8 +762,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                 self.CreateDiagnosticsArtifact(
                     benchmarks=['benchmark'],
                     osNames=['linux'],
-                    documentationUrls=[['documentation', 'url']],
-                ),
+                    documentationUrls=[['documentation', 'url']])
             ],
             tags=['tbmv3:dummy_metric'],
             start_time='2009-02-13T23:31:30.987000Z',
@@ -847,10 +796,8 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                      generic_set.GenericSet(['benchmark']))
     self.assertEqual(hist.diagnostics['osNames'],
                      generic_set.GenericSet(['linux']))
-    self.assertEqual(
-        hist.diagnostics['documentationUrls'],
-        generic_set.GenericSet([['documentation', 'url']]),
-    )
+    self.assertEqual(hist.diagnostics['documentationUrls'],
+                     generic_set.GenericSet([['documentation', 'url']]))
     self.assertEqual(hist.diagnostics['labels'],
                      generic_set.GenericSet(['label']))
     self.assertEqual(hist.diagnostics['benchmarkStart'],
@@ -865,8 +812,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                 self.CreateDiagnosticsArtifact(
                     benchmarks=['benchmark'],
                     osNames=['linux'],
-                    documentationUrls=[['documentation', 'url']],
-                ),
+                    documentationUrls=[['documentation', 'url']])
             ],
             tags=['tbmv3:dummy_metric'],
             start_time='2009-02-13T23:31:30.987000Z',
@@ -969,8 +915,7 @@ class ResultsProcessorIntegrationTests(unittest.TestCase):
                 self.CreateDiagnosticsArtifact(
                     benchmarks=['benchmark'],
                     osNames=['linux'],
-                    documentationUrls=[['documentation', 'url']],
-                ),
+                    documentationUrls=[['documentation', 'url']])
             ],
             tags=['tbmv3:dummy_metric', 'tbmv3:test_chrome_metric'],
             start_time='2009-02-13T23:31:30.987000Z',

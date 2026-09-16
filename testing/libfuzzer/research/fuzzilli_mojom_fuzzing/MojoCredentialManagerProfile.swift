@@ -234,9 +234,7 @@ let mojoCredentialManagerProfile = Profile(
     ] + commonMojoCodeGenerators,
     additionalProgramTemplates: WeightedList([]),
     disabledCodeGenerators: mojoDisabledGenerators,
-    disabledMutators: [
-        "ExplorationMutator", "ProbingMutator", "PropertyAccessorMutator"
-    ],
+    disabledMutators: v8Profile.disabledMutators,
     additionalBuiltins: mojoBuiltins.merging(commonMojoBuiltins) { (existing, _) in existing },
     additionalObjectGroups: [
         .credentialManager,

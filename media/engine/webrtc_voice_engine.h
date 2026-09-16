@@ -108,8 +108,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
       Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const CryptoOptions& crypto_options,
-      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) override;
+      const CryptoOptions& crypto_options) override;
 
   const std::vector<Codec>& LegacySendCodecs() const override;
   const std::vector<Codec>& LegacyRecvCodecs() const override;
@@ -318,14 +317,12 @@ class WebRtcVoiceReceiveChannel final
     : public MediaChannelUtil,
       public VoiceMediaReceiveChannelInterface {
  public:
-  WebRtcVoiceReceiveChannel(
-      const Environment& env,
-      WebRtcVoiceEngine* absl_nonnull engine,
-      const MediaConfig& config,
-      const AudioOptions& options,
-      const CryptoOptions& crypto_options,
-      Call* absl_nonnull call,
-      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet);
+  WebRtcVoiceReceiveChannel(const Environment& env,
+                            WebRtcVoiceEngine* absl_nonnull engine,
+                            const MediaConfig& config,
+                            const AudioOptions& options,
+                            const CryptoOptions& crypto_options,
+                            Call* absl_nonnull call);
 
   WebRtcVoiceReceiveChannel() = delete;
   WebRtcVoiceReceiveChannel(const WebRtcVoiceReceiveChannel&) = delete;
@@ -476,11 +473,6 @@ class WebRtcVoiceReceiveChannel final
   scoped_refptr<FrameDecryptorInterface> unsignaled_frame_decryptor_
       RTC_GUARDED_BY(worker_thread_);
   scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
-      RTC_GUARDED_BY(worker_thread_);
-
-  // Channel-level callback invoked when a receive stream on this channel
-  // receives its first packet.
-  absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet_
       RTC_GUARDED_BY(worker_thread_);
 };
 

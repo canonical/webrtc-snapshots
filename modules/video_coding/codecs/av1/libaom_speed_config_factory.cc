@@ -11,9 +11,11 @@
 #include <algorithm>
 #include <optional>
 
+#include "api/field_trials_view.h"
+#include "api/units/time_delta.h"
 #include "api/video_codecs/encoder_speed_controller.h"
 #include "api/video_codecs/video_codec.h"
-#include "modules/video_coding/utility/frame_sampler.h"
+#include "rtc_base/experiments/psnr_experiment.h"
 
 namespace webrtc {
 
@@ -87,7 +89,8 @@ LibaomSpeedConfigFactory::LibaomSpeedConfigFactory(
 EncoderSpeedController::Config LibaomSpeedConfigFactory::GetSpeedConfig(
     int width,
     int height,
-    int num_temporal_layers) {
+    int num_temporal_layers,
+    const FieldTrialsView& field_trials) {
   EncoderSpeedController::Config config;
   int num_levels = 0;
   switch (complexity_) {
@@ -136,11 +139,20 @@ EncoderSpeedController::Config LibaomSpeedConfigFactory::GetSpeedConfig(
     config.start_speed_index = std::max(available_speed_levels - 1, 0);
   }
 
-  config.psnr_probing_settings = {
-      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
-          kRegularBaseLayerSampling,
-      .sampling_interval = FrameSampler::kDefaultPsnrFrameSamplingInterval,
-      .average_base_layer_ratio = 1.0 / num_temporal_layers};
+  PsnrExperiment psnr_experiment(field_trials);
+  if (psnr_experiment.IsEnabled()) {
+    config.psnr_probing_settings = {
+        .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+            kRegularBaseLayerSampling,
+        .sampling_interval = psnr_experiment.SamplingInterval(),
+        .average_base_layer_ratio = 1.0 / num_temporal_layers};
+  } else {
+    config.psnr_probing_settings = {
+        .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+            kOnlyWhenProbing,
+        .sampling_interval = TimeDelta::Seconds(1),
+        .average_base_layer_ratio = 1.0 / num_temporal_layers};
+  }
 
   return config;
 }

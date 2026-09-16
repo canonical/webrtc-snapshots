@@ -10,7 +10,6 @@ details on the presubmit API built into gcl.
 
 import os
 
-
 def RunUnittests(input_api, output_api):
   # The presubmit tests are all run together with the module scheme set to
   # "flat" at the recipe level. But these presubmit tests run through
@@ -20,16 +19,11 @@ def RunUnittests(input_api, output_api):
   # is unexpectedly not empty.
   os.environ['RESULTDB_MODULE_SCHEME'] = 'flat'
   presubmit_path = input_api.PresubmitLocalPath()
-  return input_api.canned_checks.RunUnitTests(
-    input_api,
-    output_api,
-    [
+  return input_api.canned_checks.RunUnitTests(input_api, output_api, [
       input_api.os_path.join('grit', 'test_suite_all.py'),
-      input_api.os_path.join(
-        input_api.PresubmitLocalPath(), 'preprocess_if_expr_test.py'
-      ),
-    ],
-  )
+      input_api.os_path.join(input_api.PresubmitLocalPath(),
+                             'preprocess_if_expr_test.py')
+  ])
 
 
 def CheckChangeOnUpload(input_api, output_api):

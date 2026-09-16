@@ -73,30 +73,24 @@ class BaseGeneratorTest(unittest.TestCase):
         # Add google_grey_900's dark mode as if in a separate file. This counts
         # as a redefinition/conflict and causes an error.
         self.assertRaises(
-            ValueError,
-            self.generator.AddJSONToModel,
-            '''
+            ValueError, self.generator.AddJSONToModel, '''
 {
   colors: {
     google_grey_900: { dark: "rgb(255, 255, 255)", }
   }
 }
-        ''',
-        )
+        ''')
 
     def testBadNames(self):
         # Add a bad color name.
         self.assertRaises(
-            ValueError,
-            self.generator.AddJSONToModel,
-            '''
+            ValueError, self.generator.AddJSONToModel, '''
 {
   colors: {
     Google+grey: { dark: "rgb(255, 255, 255)", }
   }
 }
-        ''',
-        )
+        ''')
 
     def testSimpleOpacity(self):
         # Reference a missing opacity.
@@ -111,9 +105,8 @@ class BaseGeneratorTest(unittest.TestCase):
 }
         ''')
 
-        self.assertEqual(
-            self.ResolveRGBA('google_grey_900'), 'rgba(255, 255, 255, 0.5)'
-        )
+        self.assertEqual(self.ResolveRGBA('google_grey_900'),
+                         'rgba(255, 255, 255, 0.5)')
 
         self.generator.model.Validate()
 
@@ -131,11 +124,11 @@ class BaseGeneratorTest(unittest.TestCase):
   },
 }
         ''')
-        self.assertEqual(
-            self.ResolveRGBA('google_grey_900'), 'rgba(255, 255, 255, 0.5)'
-        )
+        self.assertEqual(self.ResolveRGBA('google_grey_900'),
+                         'rgba(255, 255, 255, 0.5)')
         self.assertEqual(self.ResolveOpacity('disabled_opacity'), 0.5)
-        self.assertEqual(self.ResolveOpacity('disabled_opacity', Modes.DARK), 1)
+        self.assertEqual(self.ResolveOpacity('disabled_opacity', Modes.DARK),
+                         1)
 
     def testMissingOpacity(self):
         # Reference a missing opacity.
@@ -189,12 +182,10 @@ class BaseGeneratorTest(unittest.TestCase):
   }
 }
         ''')
-        self.assertEqual(
-            self.ResolveRGBA('expect_color_white'), 'rgba(255, 255, 255, 1)'
-        )
-        self.assertEqual(
-            self.ResolveRGBA('expect_color_lighter'), 'rgba(53, 54, 57, 0.624)'
-        )
+        self.assertEqual(self.ResolveRGBA('expect_color_white'),
+                         'rgba(255, 255, 255, 1)')
+        self.assertEqual(self.ResolveRGBA('expect_color_lighter'),
+                         'rgba(53, 54, 57, 0.624)')
 
     def testBlendVariableReference(self):
         self.generator.AddJSONToModel('''
@@ -205,9 +196,8 @@ class BaseGeneratorTest(unittest.TestCase):
   }
 }
         ''')
-        self.assertEqual(
-            self.ResolveRGBA('bg_color_elevation_3'), 'rgba(50, 51, 54, 1)'
-        )
+        self.assertEqual(self.ResolveRGBA('bg_color_elevation_3'),
+                         'rgba(50, 51, 54, 1)')
 
     def testBlendMoreVariableReferences(self):
         self.generator.AddJSONToModel('''
@@ -241,14 +231,10 @@ class BaseGeneratorTest(unittest.TestCase):
   }
 }
         ''')
-        self.assertEqual(
-            self.ResolveRGBA('color_prominent_dull', Modes.LIGHT),
-            'rgba(44, 126, 234, 1)',
-        )
-        self.assertEqual(
-            self.ResolveRGBA('color_prominent_dull', Modes.DARK),
-            'rgba(127, 166, 228, 1)',
-        )
+        self.assertEqual(self.ResolveRGBA('color_prominent_dull', Modes.LIGHT),
+                         'rgba(44, 126, 234, 1)')
+        self.assertEqual(self.ResolveRGBA('color_prominent_dull', Modes.DARK),
+                         'rgba(127, 166, 228, 1)')
 
     def testBlendNested(self):
         self.generator.AddJSONToModel('''
@@ -258,9 +244,8 @@ class BaseGeneratorTest(unittest.TestCase):
   }
 }
         ''')
-        self.assertEqual(
-            self.ResolveRGBA('expect_color_black'), 'rgba(0, 0, 0, 1)'
-        )
+        self.assertEqual(self.ResolveRGBA('expect_color_black'),
+                         'rgba(0, 0, 0, 1)')
 
     def testMissingBlendColor(self):
         self.generator.AddJSONToModel('''
@@ -281,33 +266,25 @@ class BaseGeneratorTest(unittest.TestCase):
   },
 }
         ''')
-        self.assertEqual(
-            self.ResolveRGBA('alert', Modes.LIGHT), 'rgba(255, 255, 255, 1)'
-        )
-        self.assertEqual(
-            self.ResolveRGBA('alert', Modes.DARK), 'rgba(0, 0, 0, 1)'
-        )
-        self.assertEqual(
-            self.ResolveRGBA('alert_inverted', Modes.LIGHT), 'rgba(0, 0, 0, 1)'
-        )
-        self.assertEqual(
-            self.ResolveRGBA('alert_inverted', Modes.DARK),
-            'rgba(255, 255, 255, 1)',
-        )
+        self.assertEqual(self.ResolveRGBA('alert', Modes.LIGHT),
+                         'rgba(255, 255, 255, 1)')
+        self.assertEqual(self.ResolveRGBA('alert', Modes.DARK),
+                         'rgba(0, 0, 0, 1)')
+        self.assertEqual(self.ResolveRGBA('alert_inverted', Modes.LIGHT),
+                         'rgba(0, 0, 0, 1)')
+        self.assertEqual(self.ResolveRGBA('alert_inverted', Modes.DARK),
+                         'rgba(255, 255, 255, 1)')
 
     def testInvertedWithSingleMode(self):
         # Add an inverted color without a dark mode.
         self.assertRaises(
-            ValueError,
-            self.generator.AddJSONToModel,
-            '''
+            ValueError, self.generator.AddJSONToModel, '''
 {
   colors: {
     alert: { light: "$white", generate_inverted: true },
   },
 }
-        ''',
-        )
+        ''')
 
     def testIllegalSuffix(self):
         self.generator.AddJSONToModel('''
@@ -334,9 +311,8 @@ class BaseGeneratorTest(unittest.TestCase):
 }
         ''')
         self.assertEqual(self.ResolveRGBA('alert_dark'), 'rgba(0, 0, 0, 1)')
-        self.assertEqual(
-            self.ResolveRGBA('alert_light'), 'rgba(255, 255, 255, 1)'
-        )
+        self.assertEqual(self.ResolveRGBA('alert_light'),
+                         'rgba(255, 255, 255, 1)')
         self.assertEqual(self.ResolveRGBA('alert_debug'), 'rgba(0, 0, 0, 1)')
         self.assertEqual(self.ResolveRGBA('alert'), 'rgba(255, 255, 255, 1)')
 
@@ -348,9 +324,8 @@ class BaseGeneratorTest(unittest.TestCase):
           },
         }
         ''')
-        self.assertEqual(
-            self.generator.model.legacy_mappings['legacy'], '$white'
-        )
+        self.assertEqual(self.generator.model.legacy_mappings['legacy'],
+                         '$white')
         self.generator.model.Validate()
 
 

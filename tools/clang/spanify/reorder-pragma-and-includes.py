@@ -14,6 +14,7 @@ import os
 
 
 class ReorderTarget:
+
     def __find_line_numbers(self):
         # Do we have any `#include`s above
         # * `#pragma allow_unsafe_buffers` or
@@ -105,7 +106,7 @@ def reorder_pragma_and_includes(path):
     #     we traverse the file.
     # 2.  `target.lines_to_reorder` is a nonempty dict.
     with open(path, 'w') as f:
-        for line_number, line in enumerate(target.lines):
+        for (line_number, line) in enumerate(target.lines):
             # Write out all lines except for the overly-high-up `#include`s
             # until we pass the the `UNSAFE_BUFFERS_BUILD` macro and the HEADER
             # guards (if present).
@@ -130,9 +131,8 @@ def reorder_pragma_and_includes(path):
 
 def main():
     modified_files = [
-        f
-        for f in os.popen("git diff --name-only HEAD~..HEAD").read().split("\n")
-        if f
+        f for f in os.popen("git diff --name-only HEAD~..HEAD").read().split(
+            "\n") if f
     ]
 
     for file in modified_files:

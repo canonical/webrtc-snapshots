@@ -45,10 +45,6 @@ class LocalEmulatorEnvironment(local_device_environment.LocalDeviceEnvironment):
                 hasattr(args, 'system_packages_to_remove')
                 and args.system_packages_to_remove
             )
-            or (
-                hasattr(args, 'deploy_mock_openxr_runtime')
-                and args.deploy_mock_openxr_runtime
-            )
         )
 
         self._emulator_instances = []

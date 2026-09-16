@@ -1101,10 +1101,8 @@ void PeerConnectionIntegrationWrapper::OnIceCandidate(
       EXPECT_CALL(*remote_async_dns_resolver_, result())
           .WillOnce(ReturnRef(remote_async_dns_resolver_result_));
       EXPECT_CALL(remote_async_dns_resolver_result_, GetResolvedAddress(_, _))
-          .WillOnce([this](int /*family*/, SocketAddress* addr) {
-            *addr = remote_async_dns_resolved_addr_;
-            return true;
-          });
+          .WillOnce(DoAll(SetArgPointee<1>(remote_async_dns_resolved_addr_),
+                          Return(true)));
     }
   }
 

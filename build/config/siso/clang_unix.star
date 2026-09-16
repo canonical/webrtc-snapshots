@@ -393,7 +393,6 @@ def __rules(ctx):
                 "*.stamp",
             ],
             "remote": remote_link,
-            "remote_command": platform.remote_python_bin,
             "platform_ref": "large",
             "timeout": remote_link_timeout,
         },

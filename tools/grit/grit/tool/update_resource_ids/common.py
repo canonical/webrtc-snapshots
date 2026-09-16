@@ -13,6 +13,7 @@ def StripPlural(s):
 
 
 class Color:
+
   def _MakeColor(code):
     t = '\033[' + code + 'm%s\033[0m'
     return lambda s: t % s

@@ -4,10 +4,9 @@
 
 import cgi
 
-
 class NoneHighlighter(object):
-  """Highlighter that just wraps code in a <pre>."""
-
+  """Highlighter that just wraps code in a <pre>.
+  """
   def GetCSS(self, style):
     return ''
 

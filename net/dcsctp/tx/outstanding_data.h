@@ -236,21 +236,11 @@ class OutstandingData {
     // clears all nack counters.
     void MarkAsRetransmitted();
 
-    void MarkAsToBeRetransmitted() {
-      lifecycle_ = Lifecycle::kToBeRetransmitted;
-      ack_state_ = AckState::kNacked;
-    }
-
-    void MarkAsNacked() { ack_state_ = AckState::kNacked; }
-
+    // Marks this item as abandoned.
     void Abandon();
 
     bool is_outstanding() const {
       return ack_state_ != AckState::kAcked && lifecycle_ == Lifecycle::kActive;
-    }
-    bool is_unacked() const {
-      return ack_state_ == AckState::kUnacked &&
-             lifecycle_ == Lifecycle::kActive;
     }
     bool is_acked() const { return ack_state_ == AckState::kAcked; }
     bool is_nacked() const { return ack_state_ == AckState::kNacked; }

@@ -12,6 +12,7 @@
 #define VIDEO_RTP_VIDEO_STREAM_RECEIVER2_H_
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -21,7 +22,6 @@
 #include <vector>
 
 #include "absl/base/nullability.h"
-#include "absl/functional/any_invocable.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/environment/environment.h"
 #include "api/frame_transformer_interface.h"
@@ -116,27 +116,13 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       // requests are sent via the internal RtpRtcp module.
       OnCompleteFrameCallback* complete_frame_callback,
       scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-      scoped_refptr<FrameTransformerInterface> frame_transformer,
-      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet);
+      scoped_refptr<FrameTransformerInterface> frame_transformer);
   ~RtpVideoStreamReceiver2() override;
-
-  struct ReceiveCodec {
-    uint8_t payload_type = 0;
-    VideoCodecType video_codec = kVideoCodecGeneric;
-    CodecParameterMap codec_params;
-    bool raw_payload = false;
-  };
 
   void AddReceiveCodec(uint8_t payload_type,
                        VideoCodecType video_codec,
                        const CodecParameterMap& codec_params,
                        bool raw_payload);
-
-  // Configures receive codecs in-place by updating registered payload types.
-  // Payload types no longer present in `codecs` are removed. Retained payload
-  // types and packet buffers are preserved without clearing state or dropping
-  // in-flight packets.
-  void SetReceiveCodecs(const std::vector<ReceiveCodec>& codecs);
 
   // Clears state for all receive codecs added via `AddReceiveCodec`.
   void RemoveReceiveCodecs();
@@ -454,15 +440,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   std::map<uint8_t, CodecParameterMap> pt_codec_params_
       RTC_GUARDED_BY(worker_queue_);
 
-  struct CodecTypeAndRaw {
-    VideoCodecType video_codec = kVideoCodecGeneric;
-    bool raw_payload = false;
-
-    bool operator==(const CodecTypeAndRaw& other) const = default;
-  };
-
-  // Maps payload type to the VideoCodecType and raw state.
-  std::map<uint8_t, CodecTypeAndRaw> pt_codec_ RTC_GUARDED_BY(worker_queue_);
+  // Maps payload type to the VideoCodecType.
+  std::map<uint8_t, VideoCodecType> pt_codec_ RTC_GUARDED_BY(worker_queue_);
 
   int16_t last_payload_type_ RTC_GUARDED_BY(worker_queue_) = -1;
 
@@ -511,9 +490,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   // TODO: bugs.webrtc.org/358039777 - Move this to after the frame assembler.
   std::array<FrameInstrumentationDataReader, kMaxSpatialLayers>
       last_corruption_detection_state_by_layer_;
-
-  absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet_
-      RTC_GUARDED_BY(worker_queue_);
 };
 
 }  // namespace webrtc

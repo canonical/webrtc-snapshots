@@ -2,7 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""A composite USB gadget is built from multiple USB features."""
+"""A composite USB gadget is built from multiple USB features.
+"""
 
 import gadget
 import usb_constants
@@ -27,11 +28,11 @@ class CompositeGadget(gadget.Gadget):
     self._hs_interface_feature_map = {}
 
     fs_config_desc = usb_descriptors.ConfigurationDescriptor(
-      bmAttributes=0x80, MaxPower=50
-    )
+        bmAttributes=0x80,
+        MaxPower=50)
     hs_config_desc = usb_descriptors.ConfigurationDescriptor(
-      bmAttributes=0x80, MaxPower=50
-    )
+        bmAttributes=0x80,
+        MaxPower=50)
     for feature in features:
       for fs_interface in feature.GetFullSpeedInterfaces():
         fs_config_desc.AddInterface(fs_interface)
@@ -41,8 +42,7 @@ class CompositeGadget(gadget.Gadget):
         self._hs_interface_feature_map[hs_interface.bInterfaceNumber] = feature
 
     super(CompositeGadget, self).__init__(
-      device_desc, fs_config_desc, hs_config_desc
-    )
+        device_desc, fs_config_desc, hs_config_desc)
     self._features = features
 
   def Connected(self, chip, speed):
@@ -81,34 +81,29 @@ class CompositeGadget(gadget.Gadget):
 
   def StandardControlRead(self, recipient, request, value, index, length):
     response = super(CompositeGadget, self).StandardControlRead(
-      recipient, request, value, index, length
-    )
+        recipient, request, value, index, length)
     if response is not None:
       return response
 
     feature = self._GetFeatureForIndex(recipient, index)
     if feature:
       return feature.StandardControlRead(
-        recipient, request, value, index, length
-      )
+          recipient, request, value, index, length)
 
   def StandardControlWrite(self, recipient, request, value, index, data):
     response = super(CompositeGadget, self).StandardControlWrite(
-      recipient, request, value, index, data
-    )
+        recipient, request, value, index, data)
     if response is not None:
       return response
 
     feature = self._GetFeatureForIndex(recipient, index)
     if feature:
       return feature.StandardControlWrite(
-        recipient, request, value, index, data
-      )
+          recipient, request, value, index, data)
 
   def ClassControlRead(self, recipient, request, value, index, length):
     response = super(CompositeGadget, self).ClassControlRead(
-      recipient, request, value, index, length
-    )
+        recipient, request, value, index, length)
     if response is not None:
       return response
 
@@ -118,8 +113,7 @@ class CompositeGadget(gadget.Gadget):
 
   def ClassControlWrite(self, recipient, request, value, index, data):
     response = super(CompositeGadget, self).ClassControlWrite(
-      recipient, request, value, index, data
-    )
+        recipient, request, value, index, data)
     if response is not None:
       return response
 
@@ -129,8 +123,7 @@ class CompositeGadget(gadget.Gadget):
 
   def VendorControlRead(self, recipient, request, value, index, length):
     response = super(CompositeGadget, self).VendorControlRead(
-      recipient, request, value, index, length
-    )
+        recipient, request, value, index, length)
     if response is not None:
       return response
 
@@ -140,8 +133,7 @@ class CompositeGadget(gadget.Gadget):
 
   def VendorControlWrite(self, recipient, request, value, index, data):
     response = super(CompositeGadget, self).VendorControlWrite(
-      recipient, request, value, index, data
-    )
+        recipient, request, value, index, data)
     if response is not None:
       return response
 

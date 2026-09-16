@@ -12,8 +12,6 @@
 // Everything declared/defined in this header is only required when WebRTC is
 // build with H264 support, please do not move anything out of the
 // #ifdef unless needed and tested.
-#include "api/units/time_delta.h"
-#include "modules/video_coding/utility/frame_sampler.h"
 #ifdef WEBRTC_USE_H264
 
 #include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
@@ -53,6 +51,7 @@
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/psnr_experiment.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
@@ -223,7 +222,8 @@ H264EncoderImpl::H264EncoderImpl(const Environment& env,
       encoded_image_callback_(nullptr),
       has_reported_init_(false),
       has_reported_error_(false),
-      psnr_frame_sampler_(FrameSampler::kDefaultPsnrFrameSamplingInterval) {
+      psnr_experiment_(env.field_trials()),
+      psnr_frame_sampler_(psnr_experiment_.SamplingInterval()) {
   downscaled_buffers_.reserve(kMaxSimulcastStreams - 1);
   encoded_images_.reserve(kMaxSimulcastStreams);
   encoders_.reserve(kMaxSimulcastStreams);
@@ -505,7 +505,8 @@ int32_t H264EncoderImpl::Encode(
   RTC_DCHECK_EQ(configurations_[0].height, frame_buffer->height());
 
 #ifdef WEBRTC_ENCODER_PSNR_STATS
-  bool calculate_psnr = psnr_frame_sampler_.ShouldBeSampled(input_frame);
+  bool calculate_psnr = psnr_experiment_.IsEnabled() &&
+                        psnr_frame_sampler_.ShouldBeSampled(input_frame);
 #endif
 
   int num_layers_to_send = 0;

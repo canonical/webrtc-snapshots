@@ -107,7 +107,6 @@ class DecodeSynchronizer {
                        FrameReleaseCallback cb) override;
     void CancelOutstanding() override;
     void Stop() override;
-    bool stopped() const override;
 
    private:
     DecodeSynchronizer* sync_;

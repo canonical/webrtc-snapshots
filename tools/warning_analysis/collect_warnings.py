@@ -10,7 +10,6 @@ import json
 import os
 import re
 import sys
-
 """
 This script parses all the log files in a directory, looking for instances
 of a particular warning. It collects all the ones it finds, and writes the
@@ -40,55 +39,45 @@ def parse_args(args):
     print-links:  If present, try to provide a direct link to the first warning
                   in each file on chromium codesearch.
     """
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-    )
-    parser.add_argument(
-        "-l",
-        "--log-dir",
-        required=True,
-        type=str,
-        help="Path to the directory containing the build logs, "
-        "or to a single build log.",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        type=str,
-        help="Where the collected warning information should "
-        "go. This should be either the string 'stdout', a dash "
-        "(also meaning stdout), or a path to a file.\n"
-        "ex. -o out.txt, -o stdout, -o -",
-    )
-    parser.add_argument(
-        "-w",
-        "--warning",
-        type=str,
-        default=None,
-        help="String to match in the warning line. "
-        "All lines containing the string and beginning with "
-        "'warning: ' will be collected. "
-        "If omitted or empty, matches all warnings.\n"
-        "ex. -w \"unused variable\", "
-        "-w [-Wthread-safety-reference-return]",
-    )
+    parser = argparse.ArgumentParser(description=__doc__,)
+    parser.add_argument("-l",
+                        "--log-dir",
+                        required=True,
+                        type=str,
+                        help="Path to the directory containing the build logs, "
+                        "or to a single build log.")
+    parser.add_argument("-o",
+                        "--output",
+                        required=True,
+                        type=str,
+                        help="Where the collected warning information should "
+                        "go. This should be either the string 'stdout', a dash "
+                        "(also meaning stdout), or a path to a file.\n"
+                        "ex. -o out.txt, -o stdout, -o -")
+    parser.add_argument("-w",
+                        "--warning",
+                        type=str,
+                        default=None,
+                        help="String to match in the warning line. "
+                        "All lines containing the string and beginning with "
+                        "'warning: ' will be collected. "
+                        "If omitted or empty, matches all warnings.\n"
+                        "ex. -w \"unused variable\", "
+                        "-w [-Wthread-safety-reference-return]")
     parser.add_argument(
         "-s",
         "--summarize",
         action="store_true",
         help="If present, output a (somewhat) human-readable text file "
         "cataloguing the warnings. Otherwise, output a json file "
-        "with more detailed information about each instance.",
-    )
+        "with more detailed information about each instance.")
     parser.add_argument(
         "-k",
         "--print_links",
         action="store_true",
         help="If present, attempt to provide direct links to codesearch for "
         "the first warning in each file. Files which don't directly correspond "
-        "to anything, such as generated files, print the filename instead.",
-    )
+        "to anything, such as generated files, print the filename instead.")
 
     parsed_args = vars(parser.parse_args(args))
 
@@ -113,8 +102,7 @@ def make_codesearch_link(file, line):
 # |--> path/to/file:123:45|, for Rust
 # Captures file path, line number, and column number.
 _TARGET_RE = re.compile(
-    r'^\s*(?:-->\s*)?([^:(]+)(?:[:(])([0-9]+)(?::|, ?)([0-9]+)\)?:?'
-)
+    r'^\s*(?:-->\s*)?([^:(]+)(?:[:(])([0-9]+)(?::|, ?)([0-9]+)\)?:?')
 
 
 def extract_warning_location(line):
@@ -129,9 +117,8 @@ def extract_warning_location(line):
     return os.path.normpath(path), int(line), int(col)
 
 
-def collect_warning(
-    summarize, print_links, log_name, log_file, collection, warning_info
-):
+def collect_warning(summarize, print_links, log_name, log_file, collection,
+                    warning_info):
     """
     Add information about a warning into our collection, avoiding
     duplicates and merging as necessary.
@@ -164,25 +151,15 @@ def collect_warning(
 
     log_name = os.path.basename(log_name)
     if print_links:
-        logged_info = (
-            line_num,
-            col_num,
-            make_codesearch_link(path, line_num),
-            next_line.split("|")[1].strip(),
-            [log_name],
-        )
+        logged_info = (line_num, col_num, make_codesearch_link(path, line_num),
+                       next_line.split("|")[1].strip(), [log_name])
     else:
-        logged_info = (
-            line_num,
-            col_num,
-            next_line.split("|")[1].strip(),
-            [log_name],
-        )
+        logged_info = (line_num, col_num, next_line.split("|")[1].strip(),
+                       [log_name])
 
     # Should be either a singleton or empty
     existing_info = [
-        x
-        for x in collection[path]
+        x for x in collection[path]
         if x[0] == logged_info[0] and x[1] == logged_info[1]
     ]
 
@@ -198,9 +175,8 @@ def collect_warning(
     return
 
 
-def read_file(
-    filename, warning_text, summarize, print_links, collection, failures
-):
+def read_file(filename, warning_text, summarize, print_links, collection,
+              failures):
     """
     Go through a single build log, collecting all the warnings that occurred and
     storing them in `collection`. Also keep track of any lines we tried to get
@@ -210,9 +186,8 @@ def read_file(
         for line in file:
             line_str = line.rstrip()
             # Only check lines that contain "warning:", except summary lines.
-            if "warning:" not in line_str or re.search(
-                r'\d+\s+warnings?\s+emitted', line_str
-            ):
+            if ("warning:" not in line_str or
+                    re.search(r'\d+\s+warnings?\s+emitted', line_str)):
                 continue
 
             if warning_text not in line_str:
@@ -229,9 +204,8 @@ def read_file(
                 failures.append("{}: {}".format(builder_name, line))
                 continue
 
-            collect_warning(
-                summarize, print_links, filename, file, collection, warning_info
-            )
+            collect_warning(summarize, print_links, filename, file, collection,
+                            warning_info)
 
 
 def log_output(summarize, print_links, collection, output):
@@ -241,7 +215,7 @@ def log_output(summarize, print_links, collection, output):
     Otherwise, dump to json.
     """
 
-    output_to_stdout = output == "-" or output.lower() == "stdout"
+    output_to_stdout = (output == "-" or output.lower() == "stdout")
 
     if output_to_stdout:
         output_file = sys.stdout
@@ -264,15 +238,12 @@ def log_output(summarize, print_links, collection, output):
         if print_links:
             key = make_codesearch_link(key, values[0][0])
             padding = "\n    "
-        output_file.write(
-            "{}{}({} hits): {}\n".format(
-                key, padding, str(len(values)), str(values)
-            )
-        )
+        output_file.write("{}{}({} hits): {}\n".format(key, padding,
+                                                       str(len(values)),
+                                                       str(values)))
 
-    output_file.write(
-        "\nTotal Files: {}, Total Hits: {}".format(len(keys), hits)
-    )
+    output_file.write("\nTotal Files: {}, Total Hits: {}".format(
+        len(keys), hits))
 
     if not output_to_stdout:
         output_file.close()
@@ -283,7 +254,7 @@ def main(args):
     try:
         log_files = [
             os.path.join(parsed_args["log_dir"], f)
-            for f in sorted(os.listdir(parsed_args["log_dir"]))
+            for f in os.listdir(parsed_args["log_dir"])
         ]
     except NotADirectoryError:
         # Assume the argument was the (one) file to read.
@@ -294,30 +265,19 @@ def main(args):
     warning_text = parsed_args["warning"] or ""
 
     for file in log_files:
-        read_file(
-            file,
-            warning_text,
-            parsed_args["summarize"],
-            parsed_args["print_links"],
-            collection,
-            failures,
-        )
+        read_file(file, warning_text, parsed_args["summarize"],
+                  parsed_args["print_links"], collection, failures)
 
     items = collection.copy().items()
     for path, locs in items:
         collection[path] = sorted(locs)
 
-    log_output(
-        parsed_args["summarize"],
-        parsed_args["print_links"],
-        collection,
-        parsed_args["output"],
-    )
+    log_output(parsed_args["summarize"], parsed_args["print_links"], collection,
+               parsed_args["output"])
 
     if failures:
         sys.stderr.write(
-            "\nFound lines with the target substring but an unexpected format:"
-        )
+            "\nFound lines with the target substring but an unexpected format:")
         for line in failures:
             sys.stderr.write("\n" + line)
 

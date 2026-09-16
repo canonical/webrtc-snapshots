@@ -5,9 +5,9 @@
 
 '''Unit tests for grit.format.resource_map'''
 
+
 import os
 import sys
-
 if __name__ == '__main__':
   sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
@@ -19,8 +19,7 @@ from grit.format import resource_map
 
 class FormatResourceMapUnittest(unittest.TestCase):
   def testFormatResourceMap(self):
-    grd = util.ParseGrdForUnittest(
-      '''
+    grd = util.ParseGrdForUnittest('''
         <outputs>
           <output type="rc_header" filename="the_rc_header.h" />
           <output type="resource_map_header"
@@ -48,27 +47,17 @@ class FormatResourceMapUnittest(unittest.TestCase):
             <include type="foo" file="opq" name="IDS_FOURTHPRESENT"
                      skip_in_resource_map="true" />
          </includes>
-       </release>''',
-      run_gatherers=True,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')
-      )
-    )
+       </release>''', run_gatherers=True)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "ui/base/webui/resource_path.h"
-extern const webui::ResourcePath kTheRcHeader[5];''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')
-      )
-    )
+extern const webui::ResourcePath kTheRcHeader[5];''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[5] = {
@@ -77,18 +66,12 @@ const webui::ResourcePath kTheRcHeader[5] = {
   {"IDS_WITHRESOURCEPATH", IDS_WITHRESOURCEPATH},
   {"IDS_LANGUAGESPECIFIC", IDS_LANGUAGESPECIFIC},
   {"IDS_THIRDPRESENT", IDS_THIRDPRESENT},
-};''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_file_map_source')(
-          grd, 'en', None, '.'
-        )
-      )
-    )
+};''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_file_map_source')(grd, 'en', None,
+                                                              '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[5] = {
@@ -97,15 +80,12 @@ const webui::ResourcePath kTheRcHeader[5] = {
   {"new_path/rst_resource", IDS_WITHRESOURCEPATH},
   {"ghi", IDS_LANGUAGESPECIFIC},
   {"mno", IDS_THIRDPRESENT},
-};''',
-      output,
-    )
+};''', output)
 
   def testFormatResourceMapWithGeneratedFile(self):
     os.environ["root_gen_dir"] = "gen"
 
-    grd = util.ParseGrdForUnittest(
-      '''\
+    grd = util.ParseGrdForUnittest('''\
         <outputs>
           <output type="rc_header" filename="the_rc_header.h" />
           <output type="resource_map_header"
@@ -119,22 +99,16 @@ const webui::ResourcePath kTheRcHeader[5] = {
                      use_base_dir="false"
                      compress="gzip" />
          </includes>
-        </release>''',
-      run_gatherers=True,
-    )
+        </release>''', run_gatherers=True)
 
     with self.assertRaises(AssertionError) as assertion_error:
       formatter = resource_map.GetFormatter('resource_file_map_source')
       util.StripBlankLinesAndComments(''.join(formatter(grd, 'en', None, '.')))
-    self.assertTrue(
-      str(assertion_error.exception).startswith(
-        'resource_path attribute missing for IDR_FOO_BAR_BAZ_JS'
-      )
-    )
+    self.assertTrue(str(assertion_error.exception). \
+        startswith('resource_path attribute missing for IDR_FOO_BAR_BAZ_JS'))
 
   def testFormatWithAddFilepathToResourceMapEnvVariable(self):
-    grd = util.ParseGrdForUnittest(
-      '''\
+    grd = util.ParseGrdForUnittest('''\
         <outputs>
           <output type="rc_header" filename="the_rc_header.h" />
           <output type="resource_map_header"
@@ -153,50 +127,36 @@ const webui::ResourcePath kTheRcHeader[5] = {
                      use_base_dir="false" />
          </includes>
         </release>''',
-      run_gatherers=True,
-    )
+                                   run_gatherers=True)
     grd.base_dir = '.'
     os.environ["root_gen_dir"] = "gen"
 
     os.environ["add_filepath_to_resource_map"] = "true"
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_file_map_source')(
-          grd, 'en', None, '.'
-        )
-      )
-    )
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_file_map_source')(grd, 'en', None,
+                                                              '.')))
     self.assertMultiLineEqual(
-      output,
-      '''#include "resource_map_header.h"
+        output, '''#include "resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[2] = {
   {"d/e/f/baz.js", IDR_D_E_F_BAZ_JS, "a/b/c/baz.js"},
   {"j/k/l/baz.js", IDR_G_H_I_BAZ_JS, "gen/g/h/i/baz.js"},
-};''',
-    )
+};''')
 
     os.environ["add_filepath_to_resource_map"] = "false"
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_file_map_source')(
-          grd, 'en', None, '.'
-        )
-      )
-    )
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_file_map_source')(grd, 'en', None,
+                                                              '.')))
     self.assertMultiLineEqual(
-      output,
-      '''#include "resource_map_header.h"
+        output, '''#include "resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[2] = {
   {"d/e/f/baz.js", IDR_D_E_F_BAZ_JS},
   {"j/k/l/baz.js", IDR_G_H_I_BAZ_JS},
-};''',
-    )
+};''')
 
   def testFormatResourceMapWithOutputAllEqualsFalseForStructures(self):
-    grd = util.ParseGrdForUnittest(
-      '''
+    grd = util.ParseGrdForUnittest('''
         <outputs>
           <output type="rc_header" filename="the_rc_header.h" />
           <output type="resource_map_header"
@@ -235,27 +195,17 @@ const webui::ResourcePath kTheRcHeader[2] = {
                          file="xyz.png" />
             </if>
          </structures>
-        </release>''',
-      run_gatherers=True,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')
-      )
-    )
+        </release>''', run_gatherers=True)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "ui/base/webui/resource_path.h"
-extern const webui::ResourcePath kTheRcHeader[4];''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')
-      )
-    )
+extern const webui::ResourcePath kTheRcHeader[4];''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[4] = {
@@ -263,16 +213,11 @@ const webui::ResourcePath kTheRcHeader[4] = {
   {"IDR_BLOB", IDR_BLOB},
   {"IDR_METEOR", IDR_METEOR},
   {"IDR_LAST", IDR_LAST},
-};''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')
-      )
-    )
+};''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[4] = {
@@ -280,13 +225,10 @@ const webui::ResourcePath kTheRcHeader[4] = {
   {"IDR_BLOB", IDR_BLOB},
   {"IDR_METEOR", IDR_METEOR},
   {"IDR_LAST", IDR_LAST},
-};''',
-      output,
-    )
+};''', output)
 
   def testFormatResourceMapWithOutputAllEqualsFalseForIncludes(self):
-    grd = util.ParseGrdForUnittest(
-      '''
+    grd = util.ParseGrdForUnittest('''
         <outputs>
           <output type="rc_header" filename="the_rc_header.h" />
           <output type="resource_map_header"
@@ -321,27 +263,17 @@ const webui::ResourcePath kTheRcHeader[4] = {
               <include type="foo" file="xyz" name="IDS_LAST" />
             </if>
          </includes>
-        </release>''',
-      run_gatherers=True,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')
-      )
-    )
+        </release>''', run_gatherers=True)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "ui/base/webui/resource_path.h"
-extern const webui::ResourcePath kTheRcHeader[6];''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')
-      )
-    )
+extern const webui::ResourcePath kTheRcHeader[6];''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[6] = {
@@ -351,18 +283,12 @@ const webui::ResourcePath kTheRcHeader[6] = {
   {"IDS_BLOB", IDS_BLOB},
   {"IDS_METEOR", IDS_METEOR},
   {"IDS_LAST", IDS_LAST},
-};''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_file_map_source')(
-          grd, 'en', None, '.'
-        )
-      )
-    )
+};''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_file_map_source')(grd, 'en', None,
+                                                              '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_resource_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[6] = {
@@ -372,13 +298,10 @@ const webui::ResourcePath kTheRcHeader[6] = {
   {"blob", IDS_BLOB},
   {"meteor", IDS_METEOR},
   {"xyz", IDS_LAST},
-};''',
-      output,
-    )
+};''', output)
 
   def testFormatStringResourceMap(self):
-    grd = util.ParseGrdForUnittest(
-      '''
+    grd = util.ParseGrdForUnittest('''
         <outputs>
           <output type="rc_header" filename="the_rc_header.h" />
           <output type="resource_map_header" filename="the_rc_map_header.h" />
@@ -402,36 +325,24 @@ const webui::ResourcePath kTheRcHeader[6] = {
               </message>
             </if>
           </messages>
-        </release>''',
-      run_gatherers=True,
-    )
+        </release>''', run_gatherers=True)
     grd.InitializeIds()
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')
-      )
-    )
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_header')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "ui/base/webui/resource_path.h"
-extern const webui::ResourcePath kTheRcHeader[2];''',
-      output,
-    )
-    output = util.StripBlankLinesAndComments(
-      ''.join(
-        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')
-      )
-    )
+extern const webui::ResourcePath kTheRcHeader[2];''', output)
+    output = util.StripBlankLinesAndComments(''.join(
+        resource_map.GetFormatter('resource_map_source')(grd, 'en', None, '.')))
     self.assertEqual(
-      '''\
+        '''\
 #include "the_rc_map_header.h"
 #include "the_rc_header.h"
 const webui::ResourcePath kTheRcHeader[2] = {
   {"IDS_PRODUCT_NAME", IDS_PRODUCT_NAME},
   {"IDS_DEFAULT_TAB_TITLE_TITLE_CASE", IDS_DEFAULT_TAB_TITLE_TITLE_CASE},
-};''',
-      output,
-    )
+};''', output)
 
 
 if __name__ == '__main__':

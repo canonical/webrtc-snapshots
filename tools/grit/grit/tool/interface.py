@@ -2,7 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-'''Base class and interface for tools.'''
+'''Base class and interface for tools.
+'''
 
 
 class Tool:
@@ -54,6 +55,7 @@ class Tool:
       self.o.output_stream.write(text)
 
   def ExtraVerboseOut(self, text):
-    '''Writes out 'text' if the extra-verbose option is on.'''
+    '''Writes out 'text' if the extra-verbose option is on.
+    '''
     if self.o.extra_verbose:
       self.o.output_stream.write(text)

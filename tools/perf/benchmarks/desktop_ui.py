@@ -13,16 +13,15 @@ import page_sets
 
 
 @benchmark.Info(
-  emails=['yuhengh@chromium.org', 'tluk@chromium.org'],
-  component='UI>Browser',
-  documentation_url=(
-    'https://chromium.googlesource.com/chromium/src/+/main/docs/speed/'
-    'benchmark/harnesses/desktop_ui.md'
-  ),
+    emails=[
+        'yuhengh@chromium.org', 'tluk@chromium.org'
+    ],
+    component='UI>Browser',
+    documentation_url=
+    'https://chromium.googlesource.com/chromium/src/+/main/docs/speed/benchmark/harnesses/desktop_ui.md'
 )
 class DesktopUI(perf_benchmark.PerfBenchmark):
   """Desktop UI Benchmark."""
-
   PLATFORM = 'desktop'
   SUPPORTED_PLATFORM_TAGS = [platforms.DESKTOP]
   SUPPORTED_PLATFORMS = [story.expectations.ALL_DESKTOP]
@@ -32,8 +31,7 @@ class DesktopUI(perf_benchmark.PerfBenchmark):
 
   def CreateCoreTimelineBasedMeasurementOptions(self):
     category_filter = chrome_trace_category_filter.ChromeTraceCategoryFilter(
-      filter_string='uma,disabled-by-default-histogram_samples'
-    )
+        filter_string='uma,disabled-by-default-histogram_samples')
     options = timeline_based_measurement.Options(category_filter)
     # Add more buffer since we are opening a lot of tabs.
     options.config.chrome_trace_config.SetTraceBufferSizeInKb(600 * 1024)
@@ -46,8 +44,7 @@ class DesktopUI(perf_benchmark.PerfBenchmark):
     # UIDevtools is used for driving native UI.
     options.AppendExtraBrowserArgs('--enable-ui-devtools=0')
     options.AppendExtraBrowserArgs(
-      '--enable-features=ui-debug-tools-enable-synthetic-events'
-    )
+        '--enable-features=ui-debug-tools-enable-synthetic-events')
 
   @classmethod
   def Name(cls):

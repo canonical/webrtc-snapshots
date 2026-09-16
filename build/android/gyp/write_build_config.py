@@ -558,7 +558,7 @@ def _DoPlatformChecks(params):
         )
 
 
-def _SuffixAssets(config, target_config, suffix_string=None):
+def _SuffixAssets(config, target_config):
     """Adds a suffix to asset paths to avoid collisions."""
 
     def helper(suffix_names, suffix, assets):
@@ -571,15 +571,9 @@ def _SuffixAssets(config, target_config, suffix_string=None):
         return new_assets
 
     all_assets = target_config['assets'] + target_config['uncompressed_assets']
-    # target_config may already have suffixed its assets. Strip its suffix to find
-    # the base asset names that need to be suffixed in the current target.
-    target_suffix = target_config.get(
-        'apk_assets_suffix', f"+{target_config['package_name']}+"
-    )
-    suffix_string = suffix_string or target_config['package_name']
-    suffix = f'+{suffix_string}+'
+    suffix = '+' + target_config['package_name'] + '+'
     suffix_names = {
-        x.split(':', 1)[1].replace(target_suffix, '')
+        x.split(':', 1)[1].replace(suffix, '')
         for x in all_assets
         if 'pinlist.meta' not in x
     }
@@ -1009,11 +1003,7 @@ def main():
                 target_config = main_config
             else:
                 target_config = params_json_util.get_build_config(path)
-            _SuffixAssets(
-                main_config,
-                target_config,
-                params.get('suffix_apk_assets_string'),
-            )
+            _SuffixAssets(main_config, target_config)
 
     if params.get('enable_bytecode_checks'):
         jar_to_target = {}

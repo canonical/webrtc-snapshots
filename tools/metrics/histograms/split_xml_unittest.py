@@ -12,13 +12,12 @@ import chromium_src.tools.metrics.histograms.split_xml as split_xml
 
 
 class SplitXmlTest(unittest.TestCase):
-  @parameterized.expand(
-    [
+
+  @parameterized.expand([
       ('Camel case', 'MyHistogram.ThisHistogram', 'My'),
       ('All upper case', 'UMA', 'UMA'),
       ('In the predefined map', 'SafeBrowsing.TestHist', 'SafeBrowsing'),
-    ]
-  )
+  ])
   def testGetCamelCaseName(self, _, name, expected_name):
     doc = minidom.Document()
     node = doc.createElement('histogram')
@@ -26,14 +25,12 @@ class SplitXmlTest(unittest.TestCase):
     result = split_xml._GetCamelCaseName(node)
     self.assertEqual(expected_name, result)
 
-  @parameterized.expand(
-    [
+  @parameterized.expand([
       ('Camel case', 'MyHistogram', 'my_histogram'),
       ('All upper case', 'UMA', 'uma'),
       ('mixed case', 'MYHistogram', 'my_histogram'),
-      ('usual case followed by all upper case', 'MyHISTOGRAM', 'my_histogram'),
-    ]
-  )
+      ('usual case followed by all upper case', 'MyHISTOGRAM', 'my_histogram')
+  ])
   def testCamelCaseToSnakeCase(self, _, name, expected_name):
     result = split_xml._CamelCaseToSnakeCase(name)
     self.assertEqual(expected_name, result)

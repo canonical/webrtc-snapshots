@@ -11,6 +11,7 @@ from telemetry import story
 
 @benchmark.Info(emails=['chrometto-team@google.com'])
 class ContribPowerIpc(PowerPerfBenchmarkBase):
+
   SUPPORTED_PLATFORMS = [story.expectations.ALL_ANDROID]
   SUPPORTED_PLATFORM_TAGS = [platforms.ANDROID]
 

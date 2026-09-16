@@ -24,9 +24,5 @@
 dependencies {
 {{ expand_deps(main, 'implementation') }}
 {{ expand_deps(test, 'testImplementation') }}
-{% if android_test is defined %}
-{% for t in android_test %}
-{{ expand_deps(t, 'androidTestImplementation') }}
-{% endfor %}
-{% endif %}
+{{ expand_deps(android_test, 'androidTestImplementation') }}
 }

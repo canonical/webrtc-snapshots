@@ -20,8 +20,6 @@ def CheckChangeOnCommit(input_api, output_api):
 def _CommonChecks(input_api, output_api):
   result = []
   result.extend(
-    input_api.canned_checks.RunUnitTests(
-      input_api, output_api, ['./checkxmlstyle_test.py']
-    )
-  )
+      input_api.canned_checks.RunUnitTests(input_api, output_api,
+                                           ['./checkxmlstyle_test.py']))
   return result

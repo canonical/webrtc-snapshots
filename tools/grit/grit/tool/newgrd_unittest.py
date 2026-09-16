@@ -5,9 +5,9 @@
 
 '''Unit tests for the 'grit newgrd' tool.'''
 
+
 import os
 import sys
-
 if __name__ == '__main__':
   sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
@@ -22,6 +22,7 @@ class DummyOpts:
 
 
 class NewgrdUnittest(unittest.TestCase):
+
   def testNewFile(self):
     """Create a new file."""
     tool = newgrd.NewGrd()

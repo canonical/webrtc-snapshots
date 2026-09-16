@@ -1,7 +1,6 @@
 # Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-"""Runs JUnit tests on a local machine."""
 
 import dataclasses
 import json
@@ -86,8 +85,8 @@ class LocalMachineJunitTestRun(test_run.TestRun):
         return ret
 
     def _CreatePropertiesJar(self, temp_dir):
-        # Create properties file for Robolectric test runners so they can find
-        # the binary resources.
+        # Create properties file for Robolectric test runners so they can find the
+        # binary resources.
         properties_jar_path = os.path.join(temp_dir, 'properties.jar')
         resource_apk = self._test_instance.resource_apk
         with zipfile.ZipFile(properties_jar_path, 'w') as z:
@@ -96,8 +95,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
                     'com/android/tools/test_config.properties',
                     'android_resource_apk=%s\n' % resource_apk,
                 )
-            # These values must be kept in sync with
-            # BaseRobolectricTestRunner.java.
+            # These values must be kept in sync with BaseRobolectricTestRunner.java.
             min_sdk = '29'
             max_sdk = '36'
 
@@ -110,14 +108,13 @@ class LocalMachineJunitTestRun(test_run.TestRun):
                 'sdk = %s' % sdk_string,
                 (
                     'shadows = org.chromium.testing.local.'
-                    'CustomShadowApplicationPackageManager,'
-                    'org.chromium.testing.local.ShadowTextView'
+                    'CustomShadowApplicationPackageManager'
                 ),
             ]
 
             if not resource_apk:
-                # Setting manifest = --none improves performance by avoiding
-                # Robolectric having to scan for and parse a dummy manifest.
+                # Setting manifest = --none improves performance by avoiding Robolectric
+                # having to scan for and parse a dummy manifest.
                 props.append('manifest = --none')
 
             z.writestr('robolectric.properties', '\n'.join(props))
@@ -133,8 +130,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
             '--add-opens=java.base/java.lang=ALL-UNNAMED',
             '--add-opens=java.base/java.util=ALL-UNNAMED',
             '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED',
-            # Disable warning about mockito/bytebuddy dynamically adding an
-            # agent.
+            # Disable warning about mockito/bytebuddy dynamically adding an agent.
             '-XX:+EnableDynamicAgentLoading',
             '-Drobolectric.dependency.dir=%s'
             % self._test_instance.robolectric_runtime_deps_dir,
@@ -143,7 +139,6 @@ class LocalMachineJunitTestRun(test_run.TestRun):
             '-Drobolectric.offline=true',
             '-Drobolectric.resourcesMode=binary',
             '-Drobolectric.logging=stdout',
-            '-Drobolectric.enforceViewMethodsCalledOnMainThread=true',
             '-Djava.library.path=%s' % self._test_instance.native_libs_dir,
         ]
         if self._test_instance.run_disabled:
@@ -182,8 +177,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
                     'jacocoagent.jar',
                 )
 
-                # inclnolocationclasses is false to prevent no class def found
-                # error.
+                # inclnolocationclasses is false to prevent no class def found error.
                 jacoco_args = (
                     '-javaagent:{}=destfile={},inclnolocationclasses=false'
                 )
@@ -263,7 +257,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
             ]
         cmd += self._GetFilterArgs()
         subprocess.run(cmd, check=True)
-        with open(json_config_path, encoding='utf-8') as f:
+        with open(json_config_path) as f:
             return json.load(f)
 
     def _MakeJob(
@@ -275,7 +269,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
         job_json_config['configs'] = {
             test_group.config: test_group.methods_by_class
         }
-        with open(job_json_config_path, 'w', encoding='utf-8') as f:
+        with open(job_json_config_path, 'w') as f:
             json.dump(job_json_config, f)
 
         cmd = [self._wrapper_path]
@@ -332,7 +326,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
 
     def _RunTestsInternal(self, temp_dir, results, raw_logs_fh):
         if self._test_instance.json_config:
-            with open(self._test_instance.json_config, encoding='utf-8') as f:
+            with open(self._test_instance.json_config) as f:
                 json_config = json.load(f)
         else:
             try:
@@ -373,8 +367,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
             )
         else:
             logging.warning(
-                'Running tests with %d shard(s) using %s'
-                ' concurrent process(es).',
+                'Running tests with %d shard(s) using %s concurrent process(es).',
                 len(shard_list),
                 num_workers,
             )
@@ -405,8 +398,8 @@ class LocalMachineJunitTestRun(test_run.TestRun):
                     num_omitted_lines += 1
 
             # Collect log data between a test starting and the test failing.
-            # There can be info after a test fails and before the next test
-            # starts that we discard.
+            # There can be info after a test fails and before the next test starts
+            # that we discard.
             test_start_match = _TEST_START_RE.match(line)
             if test_start_match:
                 current_test = test_start_match.group(1)
@@ -431,7 +424,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
         failed_jobs = []
         try:
             for job in jobs:
-                with open(job.json_results_path, 'r', encoding='utf-8') as f:
+                with open(job.json_results_path, 'r') as f:
                     parsed_results = json_results.ParseResultsFromJson(
                         json.loads(f.read())
                     )
@@ -485,8 +478,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
         # Check that all tests actually ran that we expected to run.
         if num_actual != num_expected:
             sb = [
-                f'Expected {num_expected} tests, but got only '
-                f'{num_actual} results.',
+                f'Expected {num_expected} tests, but got only {num_actual} results.',
                 'Missing results for:',
             ]
             actual_test_names = {r.GetName() for r in test_run_results.GetAll()}
@@ -536,8 +528,8 @@ def GroupTests(json_config, max_per_job):
         size = 0
         group = {}
         for class_name, methods in methods_by_class.items():
-            # There is some per-class overhead, so do not splits tests from one
-            # class across multiple shards (unless configs differ).
+            # There is some per-class overhead, so do not splits tests from one class
+            # across multiple shards (unless configs differ).
             group[class_name] = methods
             size += len(methods)
             if size >= max_per_job:
@@ -656,9 +648,7 @@ def RunCommandsAndSerializeOutput(jobs, num_workers, quiet=False):
         yield ('=' * 80) + '\n'
         for i, dump in sorted(timeout_dumps.items()):
             job = jobs[i]
-            yield (
-                f'Shard {job.shard_id} timed out after {job.timeout} seconds.\n'
-            )
+            yield f'Shard {job.shard_id} timed out after {job.timeout} seconds.\n'
             yield 'Thread dump:\n'
             yield dump
             yield '\n'

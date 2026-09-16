@@ -50,6 +50,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
 #include "rtc_base/experiments/encoder_speed_experiment.h"
+#include "rtc_base/experiments/psnr_experiment.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "third_party/libaom/source/libaom/aom/aom_codec.h"
@@ -219,6 +220,8 @@ class LibaomAv1Encoder final : public VideoEncoder {
   const LibaomAv1EncoderInfoSettings encoder_info_override_;
 
   // Determine whether the frame should be sampled for PSNR.
+  // TODO(webrtc:388070060): Remove after rollout.
+  const PsnrExperiment psnr_experiment_;
   FrameSampler psnr_frame_sampler_;
   const bool drop_repeat_frames_on_enhancement_layers_;
   std::map<int, uint32_t> last_encoded_timestamp_by_sid_;
@@ -270,7 +273,8 @@ LibaomAv1Encoder::LibaomAv1Encoder(const Environment& env,
       timestamp_(0),
       env_(env),
       encoder_info_override_(env_.field_trials()),
-      psnr_frame_sampler_(FrameSampler::kDefaultPsnrFrameSamplingInterval),
+      psnr_experiment_(env.field_trials()),
+      psnr_frame_sampler_(psnr_experiment_.SamplingInterval()),
       drop_repeat_frames_on_enhancement_layers_(env.field_trials().IsEnabled(
           "WebRTC-LibaomAv1Encoder-DropRepeatFramesOnEnhancementLayers")),
       encoder_speed_experiment_(env.field_trials()),
@@ -442,16 +446,17 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
             speed_config_factory.GetSpeedConfig(
                 encoder_settings_.spatialLayers[si].width,
                 encoder_settings_.spatialLayers[si].height,
-                svc_controller_->StreamConfig().num_temporal_layers);
+                svc_controller_->StreamConfig().num_temporal_layers,
+                env_.field_trials());
 
         speed_controllers_.push_back(
             EncoderSpeedController::Create(speed_config, GetFrameInterval(si)));
       }
     } else {
       EncoderSpeedController::Config speed_config =
-          speed_config_factory.GetSpeedConfig(encoder_settings_.width,
-                                              encoder_settings_.height,
-                                              /*num_temporal_layers=*/1);
+          speed_config_factory.GetSpeedConfig(
+              encoder_settings_.width, encoder_settings_.height,
+              /*num_temporal_layers=*/1, env_.field_trials());
       speed_controllers_.push_back(EncoderSpeedController::Create(
           speed_config, GetFrameInterval(/*spatial_index=*/0)));
     }
@@ -1025,7 +1030,8 @@ int32_t LibaomAv1Encoder::Encode(
     } else {
       // No speed controller used.
 
-      if (kEnablePsnrStats && psnr_frame_sampler_.ShouldBeSampled(frame)) {
+      if (kEnablePsnrStats && psnr_experiment_.IsEnabled() &&
+          psnr_frame_sampler_.ShouldBeSampled(frame)) {
         flags |= AOM_EFLAG_CALCULATE_PSNR;
       }
 

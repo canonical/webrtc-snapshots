@@ -19,7 +19,6 @@ def RunUnittests(input_api, output_api):
       'consider-using-in',
       'consider-using-with',
       'deprecated-module',
-      'duplicate-code',
       'line-too-long',
       'missing-module-docstring',
       'protected-access',

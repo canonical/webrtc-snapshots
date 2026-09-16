@@ -11,7 +11,6 @@ from typing import List, Optional
 @dataclasses.dataclass
 class DirMetadata:
   '''A synthetic representation of a DIR_METADATA file.'''
-
   component: Optional[str] = None
   team: Optional[str] = None
   os: Optional[str] = None
@@ -23,7 +22,6 @@ class DirMetadata:
 @dataclasses.dataclass
 class Owners:
   '''A synthetic representation of an OWNERS file.'''
-
   owners_file: str  # Path to OWNERS file
   file_inherited: Optional[str] = None  # Referenced OWNERS file
   owners: List[str] = dataclasses.field(default_factory=list)  # owners' emails
@@ -41,11 +39,9 @@ class GitData:
 
   # key: ldap / value: # of cls
   authors: collections.Counter = dataclasses.field(
-    default_factory=collections.Counter
-  )
+      default_factory=collections.Counter)
   reviewers: collections.Counter = dataclasses.field(
-    default_factory=collections.Counter
-  )
+      default_factory=collections.Counter)
 
   latest_cl_date: Optional[int] = None
   git_head: Optional[str] = None
@@ -61,7 +57,6 @@ class GitData:
 @dataclasses.dataclass(frozen=True)
 class RequestedPath:
   '''Path to be searched for.'''
-
   path: str
   feature: str
 
@@ -69,7 +64,6 @@ class RequestedPath:
 @dataclasses.dataclass(frozen=True)
 class PathData:
   '''Path to be searched for.'''
-
   owner: Owners
   git_data: GitData
   dir_metadata: DirMetadata

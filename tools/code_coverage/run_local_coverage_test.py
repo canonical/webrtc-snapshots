@@ -52,8 +52,7 @@ class RunLocalCoverageTest(unittest.TestCase):
     """Verifies sys.exit(1) when downloading LLVM tools fails."""
     self.tool_patcher.stop()
     self.mock_check.side_effect = rlc.subprocess.CalledProcessError(
-      1, 'update.py'
-    )
+        1, 'update.py')
     with mock.patch.object(pathlib.Path, 'exists', return_value=False):
       err_buf = io.StringIO()
       with contextlib.redirect_stderr(err_buf):
@@ -90,9 +89,8 @@ class RunLocalCoverageTest(unittest.TestCase):
     with mock.patch.object(pathlib.Path, 'glob', return_value=[]):
       err_buf = io.StringIO()
       with contextlib.redirect_stderr(err_buf):
-        res = rlc.merge_profiles(
-          pathlib.Path('dir'), pathlib.Path('out.profdata')
-        )
+        res = rlc.merge_profiles(pathlib.Path('dir'),
+                                 pathlib.Path('out.profdata'))
       self.assertFalse(res)
       self.assertIn('No profraw files found', err_buf.getvalue())
 
@@ -101,9 +99,8 @@ class RunLocalCoverageTest(unittest.TestCase):
     fake_files = [pathlib.Path('a.profraw')]
     self.mock_run.return_value = mock.MagicMock(returncode=1)
     with mock.patch.object(pathlib.Path, 'glob', return_value=fake_files):
-      res = rlc.merge_profiles(
-        pathlib.Path('dir'), pathlib.Path('out.profdata')
-      )
+      res = rlc.merge_profiles(pathlib.Path('dir'),
+                               pathlib.Path('out.profdata'))
       self.assertFalse(res)
 
   def test_merge_profiles_success(self) -> None:
@@ -111,9 +108,8 @@ class RunLocalCoverageTest(unittest.TestCase):
     fake_files = [pathlib.Path('a.profraw')]
     self.mock_run.return_value = mock.MagicMock(returncode=0)
     with mock.patch.object(pathlib.Path, 'glob', return_value=fake_files):
-      res = rlc.merge_profiles(
-        pathlib.Path('dir'), pathlib.Path('out.profdata')
-      )
+      res = rlc.merge_profiles(pathlib.Path('dir'),
+                               pathlib.Path('out.profdata'))
       self.assertTrue(res)
 
   def test_export_coverage_failure(self) -> None:
@@ -122,9 +118,8 @@ class RunLocalCoverageTest(unittest.TestCase):
     self.mock_run.return_value = mock_proc
     err_buf = io.StringIO()
     with contextlib.redirect_stderr(err_buf):
-      out = rlc.export_coverage(
-        pathlib.Path('bin'), pathlib.Path('prof.data'), None
-      )
+      out = rlc.export_coverage(pathlib.Path('bin'), pathlib.Path('prof.data'),
+                                None)
     self.assertIsNone(out)
     self.assertIn('llvm-cov failed', err_buf.getvalue())
 
@@ -132,9 +127,8 @@ class RunLocalCoverageTest(unittest.TestCase):
     """Verifies stdout is returned when llvm-cov succeeds."""
     mock_proc = mock.MagicMock(returncode=0, stdout='Coverage: 100%')
     self.mock_run.return_value = mock_proc
-    out = rlc.export_coverage(
-      pathlib.Path('bin'), pathlib.Path('prof.data'), 'foo.cc'
-    )
+    out = rlc.export_coverage(pathlib.Path('bin'), pathlib.Path('prof.data'),
+                              'foo.cc')
     self.assertEqual(out, 'Coverage: 100%')
     args, _ = self.mock_run.call_args
     self.assertIn('foo.cc', args[0])
@@ -148,8 +142,7 @@ class RunLocalCoverageTest(unittest.TestCase):
     res = rlc.compile_binary(bin_path)
     self.assertTrue(res)
     self.mock_run.assert_called_once_with(
-      ['autoninja', '-C', 'out/Coverage', 'net_unittests'], check=False
-    )
+        ['autoninja', '-C', 'out/Coverage', 'net_unittests'], check=False)
 
   def test_compile_binary_failure(self) -> None:
     """Verifies compile_binary returns False on autoninja failure."""
@@ -164,16 +157,15 @@ class RunLocalCoverageTest(unittest.TestCase):
     out_buf = io.StringIO()
     err_buf = io.StringIO()
     with (
-      mock.patch.object(pathlib.Path, 'mkdir'),
-      mock.patch('run_local_coverage.compile_binary', return_value=True),
-      mock.patch('run_local_coverage.run_test_binary', return_value=1),
-      mock.patch('run_local_coverage.merge_profiles', return_value=True),
-      mock.patch(
-        'run_local_coverage.export_coverage', return_value='REPORT 100%'
-      ),
-      mock.patch.object(sys, 'argv', test_args),
-      contextlib.redirect_stdout(out_buf),
-      contextlib.redirect_stderr(err_buf),
+        mock.patch.object(pathlib.Path, 'mkdir'),
+        mock.patch('run_local_coverage.compile_binary', return_value=True),
+        mock.patch('run_local_coverage.run_test_binary', return_value=1),
+        mock.patch('run_local_coverage.merge_profiles', return_value=True),
+        mock.patch('run_local_coverage.export_coverage',
+                   return_value='REPORT 100%'),
+        mock.patch.object(sys, 'argv', test_args),
+        contextlib.redirect_stdout(out_buf),
+        contextlib.redirect_stderr(err_buf),
     ):
       rlc.main()
     self.assertIn('REPORT 100%', out_buf.getvalue())
@@ -184,10 +176,10 @@ class RunLocalCoverageTest(unittest.TestCase):
     test_args = ['rlc.py', '--binary', 'net_unittests']
     err_buf = io.StringIO()
     with (
-      mock.patch('run_local_coverage.compile_binary', return_value=False),
-      mock.patch.object(sys, 'argv', test_args),
-      contextlib.redirect_stderr(err_buf),
-      self.assertRaises(SystemExit) as cm,
+        mock.patch('run_local_coverage.compile_binary', return_value=False),
+        mock.patch.object(sys, 'argv', test_args),
+        contextlib.redirect_stderr(err_buf),
+        self.assertRaises(SystemExit) as cm,
     ):
       rlc.main()
     self.assertEqual(cm.exception.code, 1)
@@ -197,12 +189,12 @@ class RunLocalCoverageTest(unittest.TestCase):
     """Verifies passing --no-compile skips compile_binary."""
     test_args = ['rlc.py', '--binary', 'net_unittests', '--no-compile']
     with (
-      mock.patch.object(pathlib.Path, 'mkdir'),
-      mock.patch('run_local_coverage.compile_binary') as mock_compile,
-      mock.patch('run_local_coverage.run_test_binary', return_value=0),
-      mock.patch('run_local_coverage.merge_profiles', return_value=True),
-      mock.patch('run_local_coverage.export_coverage', return_value='OK'),
-      mock.patch.object(sys, 'argv', test_args),
+        mock.patch.object(pathlib.Path, 'mkdir'),
+        mock.patch('run_local_coverage.compile_binary') as mock_compile,
+        mock.patch('run_local_coverage.run_test_binary', return_value=0),
+        mock.patch('run_local_coverage.merge_profiles', return_value=True),
+        mock.patch('run_local_coverage.export_coverage', return_value='OK'),
+        mock.patch.object(sys, 'argv', test_args),
     ):
       rlc.main()
     mock_compile.assert_not_called()
@@ -211,12 +203,12 @@ class RunLocalCoverageTest(unittest.TestCase):
     """Verifies sys.exit(1) when profile merge step fails in main."""
     test_args = ['rlc.py', '--binary', 'net_unittests']
     with (
-      mock.patch.object(pathlib.Path, 'mkdir'),
-      mock.patch('run_local_coverage.compile_binary', return_value=True),
-      mock.patch('run_local_coverage.run_test_binary', return_value=0),
-      mock.patch('run_local_coverage.merge_profiles', return_value=False),
-      mock.patch.object(sys, 'argv', test_args),
-      self.assertRaises(SystemExit) as cm,
+        mock.patch.object(pathlib.Path, 'mkdir'),
+        mock.patch('run_local_coverage.compile_binary', return_value=True),
+        mock.patch('run_local_coverage.run_test_binary', return_value=0),
+        mock.patch('run_local_coverage.merge_profiles', return_value=False),
+        mock.patch.object(sys, 'argv', test_args),
+        self.assertRaises(SystemExit) as cm,
     ):
       rlc.main()
     self.assertEqual(cm.exception.code, 1)

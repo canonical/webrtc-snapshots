@@ -5,14 +5,12 @@
 
 import unittest
 
-from ninja_parser import (
-  ParseOneFileForTest,
-  _ParseNinjaPathList,
-  _GetOutputObject,
-)
+from ninja_parser import (ParseOneFileForTest, _ParseNinjaPathList,
+                          _GetOutputObject)
 
 
 class NinjaParserTest(unittest.TestCase):
+
   def _ParseOneFile(self, line, lib, expected_inputs, expected_dep_map):
     """Exercises ninja_parser's ParseOneFile method.
 
@@ -95,6 +93,7 @@ class NinjaParserTest(unittest.TestCase):
 
 
 class NinjaParserHelpersTest(unittest.TestCase):
+
   def test_ParseNinjaPathList(self):
     outputs = r'aaa\ bbb.o ccc.o'
     split_outputs = list(_ParseNinjaPathList(outputs))

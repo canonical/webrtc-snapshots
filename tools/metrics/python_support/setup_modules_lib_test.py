@@ -45,6 +45,7 @@ def _get_python_files() -> List[Tuple[str, str]]:
 
 
 class TestImports(unittest.TestCase):
+
   @parameterized.expand(_get_python_files)
   def test_compiles(self, _, file_path):
     file_path = Path(file_path)

@@ -531,7 +531,9 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_cc_test("rtp_rtcp_modules_tests") {
+  rtc_library("rtp_rtcp_modules_tests") {
+    testonly = true
+
     sources = [ "test/testFec/test_fec.cc" ]
     deps = [
       ":rtp_rtcp",

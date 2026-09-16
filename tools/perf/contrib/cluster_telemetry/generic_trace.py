@@ -5,7 +5,6 @@
 from collections import defaultdict
 
 from core import path_util
-
 path_util.AddTracingToPath()
 from core import perf_benchmark
 
@@ -20,6 +19,7 @@ from tracing.trace_data import trace_data as trace_data_module
 
 
 class _GenericTraceMeasurement(legacy_page_test.LegacyPageTest):
+
   def __init__(self, options):
     super(_GenericTraceMeasurement, self).__init__()
     self._trace_categories = ','.join(options.trace_categories)
@@ -30,8 +30,7 @@ class _GenericTraceMeasurement(legacy_page_test.LegacyPageTest):
     config = timeline.tracing_config.TracingConfig()
     config.enable_chrome_trace = True
     config.chrome_trace_config.category_filter.AddFilterString(
-      self._trace_categories
-    )
+        self._trace_categories)
     tab.browser.platform.tracing_controller.StartTracing(config)
 
   def ValidateAndMeasurePage(self, page, tab, results):
@@ -73,22 +72,17 @@ class _GenericTraceMeasurement(legacy_page_test.LegacyPageTest):
 class _GenericTraceBenchmark(perf_benchmark.PerfBenchmark):
   @classmethod
   def AddBenchmarkCommandLineArgs(cls, parser):
+    parser.add_argument('--trace-categories',
+                        default=[],
+                        action='append',
+                        help='Trace categories to enable')
     parser.add_argument(
-      '--trace-categories',
-      default=[],
-      action='append',
-      help='Trace categories to enable',
-    )
-    parser.add_argument(
-      '--trace-names',
-      default=[],
-      action='append',
-      help=(
-        'Names of trace event to collect '
-        'If not specified, all trace events in the enabled '
-        'categories will be collected'
-      ),
-    )
+        '--trace-names',
+        default=[],
+        action='append',
+        help=('Names of trace event to collect '
+              'If not specified, all trace events in the enabled '
+              'categories will be collected'))
 
   @classmethod
   def ProcessCommandLineArgs(cls, parser, args):
@@ -99,10 +93,8 @@ class _GenericTraceBenchmark(perf_benchmark.PerfBenchmark):
     return _GenericTraceMeasurement(options)
 
 
-@benchmark.Info(
-  emails=['wangxianzhu@chromium.org'],
-  documentation_url='https://bit.ly/2DIOVy3',
-)
+@benchmark.Info(emails=['wangxianzhu@chromium.org'],
+                documentation_url='https://bit.ly/2DIOVy3')
 # For local verification.
 class GenericTraceTop25(_GenericTraceBenchmark):
   page_set = page_sets.StaticTop25PageSet
@@ -112,10 +104,8 @@ class GenericTraceTop25(_GenericTraceBenchmark):
     return 'generic_trace.top25'
 
 
-@benchmark.Info(
-  emails=['wangxianzhu@chromium.org'],
-  documentation_url='https://bit.ly/2DIOVy3',
-)
+@benchmark.Info(emails=['wangxianzhu@chromium.org'],
+                documentation_url='https://bit.ly/2DIOVy3')
 class GenericTraceClusterTelemetry(_GenericTraceBenchmark):
   @classmethod
   def Name(cls):
@@ -133,5 +123,4 @@ class GenericTraceClusterTelemetry(_GenericTraceBenchmark):
 
   def CreateStorySet(self, options):
     return ct_page_set.CTPageSet(
-      options.urls_list, options.user_agent, options.archive_data_file
-    )
+        options.urls_list, options.user_agent, options.archive_data_file)

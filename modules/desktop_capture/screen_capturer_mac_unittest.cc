@@ -103,14 +103,8 @@ TEST_F(ScreenCapturerMacTest, Capture) {
   EXPECT_CALL(callback_,
               OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
       .Times(2)
-      .WillOnce([this](DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame>* frame) {
-        CaptureDoneCallback1(result, frame);
-      })
-      .WillOnce([this](DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame>* frame) {
-        CaptureDoneCallback2(result, frame);
-      });
+      .WillOnce(Invoke(this, &ScreenCapturerMacTest::CaptureDoneCallback1))
+      .WillOnce(Invoke(this, &ScreenCapturerMacTest::CaptureDoneCallback2));
 
   SCOPED_TRACE("");
   capturer_->Start(&callback_);
@@ -158,6 +152,7 @@ TEST_F(ScreenCapturerSckTest, Capture) {
 
   EXPECT_CALL(callback_,
               OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+      .Times(1)
       .WillOnce([this, &done](auto res, auto frame) {
         CaptureDoneCallback2(res, frame);
         done = true;

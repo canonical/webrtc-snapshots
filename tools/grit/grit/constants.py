@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-'''Constant definitions for GRIT.'''
+'''Constant definitions for GRIT.
+'''
+
 
 # This is the Icelandic noun meaning "grit" and is used to check that our
 # input files are in the correct encoding.  The middle character gets encoded
@@ -30,4 +32,4 @@ GENDER_NEUTER = 'NEUTER'
 
 DEFAULT_GENDER = GENDER_OTHER
 TRANSLATED_GENDERS = (GENDER_MASCULINE, GENDER_FEMININE, GENDER_NEUTER)
-ALL_GENDERS = (DEFAULT_GENDER,) + TRANSLATED_GENDERS
+ALL_GENDERS = (DEFAULT_GENDER, ) + TRANSLATED_GENDERS

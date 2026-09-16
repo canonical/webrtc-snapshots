@@ -33,6 +33,7 @@
 
 using ::testing::_;
 using ::testing::AtLeast;
+using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 

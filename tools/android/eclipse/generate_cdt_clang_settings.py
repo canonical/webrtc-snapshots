@@ -18,7 +18,6 @@ import os
 import subprocess
 import sys
 
-
 def GetClangIncludeDirectories(compiler_path):
   """Gets the system include directories as determined by the clang compiler.
 
@@ -29,12 +28,8 @@ def GetClangIncludeDirectories(compiler_path):
   includes_set = set()
 
   command = [compiler_path, '-E', '-xc++', '-v', '-']
-  proc = subprocess.Popen(
-    args=command,
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-  )
+  proc = subprocess.Popen(args=command, stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   output = proc.communicate()[1]
   # Extract the list of include dirs from the output, which has this format:
   #   ...
@@ -66,9 +61,8 @@ def GetClangDefines(compiler_path):
 
   all_defines = {}
   command = [compiler_path, '-E', '-dM', '-']
-  proc = subprocess.Popen(
-    args=command, stdin=subprocess.PIPE, stdout=subprocess.PIPE
-  )
+  proc = subprocess.Popen(args=command, stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE)
 
   # Extract the list of defines from the output, which has this format:
   # #define __SIZEOF_INT__ 4
@@ -92,18 +86,14 @@ def GetClangDefines(compiler_path):
 def WriteIncludePaths(out, eclipse_langs, include_dirs):
   """Write the includes section of a CDT settings export file."""
 
-  out.write(
-    '  <section name="org.eclipse.cdt.internal.ui.wizards.'
-    'settingswizards.IncludePaths">\n'
-  )
+  out.write('  <section name="org.eclipse.cdt.internal.ui.wizards.' \
+            'settingswizards.IncludePaths">\n')
   out.write('    <language name="holder for library settings"></language>\n')
   for lang in eclipse_langs:
     out.write('    <language name="%s">\n' % lang)
     for include_dir in include_dirs:
-      out.write(
-        '      <includepath workspace_path="false">%s</includepath>\n'
-        % include_dir
-      )
+      out.write('      <includepath workspace_path="false">%s</includepath>\n' %
+                include_dir)
     out.write('    </language>\n')
   out.write('  </section>\n')
 
@@ -111,18 +101,14 @@ def WriteIncludePaths(out, eclipse_langs, include_dirs):
 def WriteMacros(out, eclipse_langs, defines):
   """Write the macros section of a CDT settings export file."""
 
-  out.write(
-    '  <section name="org.eclipse.cdt.internal.ui.wizards.'
-    'settingswizards.Macros">\n'
-  )
+  out.write('  <section name="org.eclipse.cdt.internal.ui.wizards.' \
+            'settingswizards.Macros">\n')
   out.write('    <language name="holder for library settings"></language>\n')
   for lang in eclipse_langs:
     out.write('    <language name="%s">\n' % lang)
     for key in sorted(defines.iterkeys()):
-      out.write(
-        '      <macro><name>%s</name><value>%s</value></macro>\n'
-        % (escape(key), escape(defines[key]))
-      )
+      out.write('      <macro><name>%s</name><value>%s</value></macro>\n' %
+                (escape(key), escape(defines[key])))
     out.write('    </language>\n')
   out.write('  </section>\n')
 
@@ -133,8 +119,7 @@ def main(argv):
     return
 
   compiler_path = os.path.abspath(
-    'third_party/llvm-build/Release+Asserts/bin/clang'
-  )
+      'third_party/llvm-build/Release+Asserts/bin/clang')
   if not os.path.exists(compiler_path):
     print('Please run this script from the Chromium src/ directory.')
     return
@@ -154,21 +139,14 @@ def main(argv):
     os.makedirs(destination_dir)
 
   with open(destination_file, 'w') as out:
-    eclipse_langs = [
-      'C++ Source File',
-      'C Source File',
-      'Assembly Source File',
-      'GNU C++',
-      'GNU C',
-      'Assembly',
-    ]
+    eclipse_langs = ['C++ Source File', 'C Source File', 'Assembly Source File',
+                     'GNU C++', 'GNU C', 'Assembly']
 
     out.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     out.write('<cdtprojectproperties>\n')
     WriteIncludePaths(out, eclipse_langs, include_dirs)
     WriteMacros(out, eclipse_langs, defines)
     out.write('</cdtprojectproperties>\n')
-
 
 if __name__ == '__main__':
   sys.exit(main(sys.argv))

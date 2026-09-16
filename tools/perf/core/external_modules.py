@@ -54,7 +54,6 @@ except ImportError:
 def RequireModules():
   if numpy is None or pandas is None:
     sys.exit(
-      'ERROR: Some required python modules are not available.\n\n'
-      'Make sure to run this script using vpython or ensure that '
-      'module dependencies listed in src/.vpython are satisfied.'
-    )
+        'ERROR: Some required python modules are not available.\n\n'
+        'Make sure to run this script using vpython or ensure that '
+        'module dependencies listed in src/.vpython are satisfied.')

@@ -38,12 +38,12 @@ from ts_definition_generator import TsDefinitionGenerator
 # Names of supported code generators, as specified on the command-line.
 # First is default.
 GENERATORS = [
-  'cpp',
-  'cpp-bundle-registration',
-  'cpp-bundle-schema',
-  'externs',
-  'ts_definitions',
-  'interface',
+    'cpp',
+    'cpp-bundle-registration',
+    'cpp-bundle-schema',
+    'externs',
+    'ts_definitions',
+    'interface',
 ]
 
 
@@ -57,11 +57,8 @@ def DeleteNodes(item, delete_key=None, matcher=None):
 
   def ShouldDelete(thing):
     return json_parse.IsDict(thing) and (
-      delete_key is not None
-      and delete_key in thing
-      or matcher is not None
-      and matcher(thing)
-    )
+        delete_key is not None and delete_key in thing
+        or matcher is not None and matcher(thing))
 
   if json_parse.IsDict(item):
     toDelete = []
@@ -74,23 +71,22 @@ def DeleteNodes(item, delete_key=None, matcher=None):
       del item[key]
   elif type(item) == list:
     item[:] = [
-      DeleteNodes(thing, delete_key, matcher)
-      for thing in item
-      if not ShouldDelete(thing)
+        DeleteNodes(thing, delete_key, matcher) for thing in item
+        if not ShouldDelete(thing)
     ]
 
   return item
 
 
 def GenerateSchema(
-  generator_name,
-  file_paths,
-  root,
-  destdir,
-  cpp_namespace_pattern,
-  bundle_name,
-  impl_dir,
-  include_rules,
+    generator_name,
+    file_paths,
+    root,
+    destdir,
+    cpp_namespace_pattern,
+    bundle_name,
+    impl_dir,
+    include_rules,
 ):
   # Merge the source files into a single list of schemas.
   api_defs = []
@@ -118,10 +114,10 @@ def GenerateSchema(
   for target_namespace, file_path in zip(api_defs, file_paths):
     relpath = os.path.relpath(os.path.normpath(file_path), root)
     namespace = api_model.AddNamespace(
-      target_namespace,
-      relpath,
-      include_compiler_options=True,
-      environment=CppNamespaceEnvironment(cpp_namespace_pattern),
+        target_namespace,
+        relpath,
+        include_compiler_options=True,
+        environment=CppNamespaceEnvironment(cpp_namespace_pattern),
     )
 
     if default_namespace is None:
@@ -137,56 +133,52 @@ def GenerateSchema(
 
   # Construct the type generator with all the namespaces in this model.
   schema_dir = os.path.dirname(os.path.relpath(file_paths[0], root))
-  namespace_resolver = NamespaceResolver(
-    root, schema_dir, include_rules, cpp_namespace_pattern
-  )
-  type_generator = CppTypeGenerator(
-    api_model, namespace_resolver, default_namespace
-  )
+  namespace_resolver = NamespaceResolver(root, schema_dir, include_rules,
+                                         cpp_namespace_pattern)
+  type_generator = CppTypeGenerator(api_model, namespace_resolver,
+                                    default_namespace)
   if generator_name in ('cpp-bundle-registration', 'cpp-bundle-schema'):
     cpp_bundle_generator = CppBundleGenerator(
-      root,
-      api_model,
-      api_defs,
-      type_generator,
-      cpp_namespace_pattern,
-      bundle_name,
-      src_path,
-      impl_dir,
+        root,
+        api_model,
+        api_defs,
+        type_generator,
+        cpp_namespace_pattern,
+        bundle_name,
+        src_path,
+        impl_dir,
     )
     if generator_name == 'cpp-bundle-registration':
       generators = [
-        (
-          'generated_api_registration.cc',
-          cpp_bundle_generator.api_cc_generator,
-        ),
-        (
-          'generated_api_registration.h',
-          cpp_bundle_generator.api_h_generator,
-        ),
+          (
+              'generated_api_registration.cc',
+              cpp_bundle_generator.api_cc_generator,
+          ),
+          (
+              'generated_api_registration.h',
+              cpp_bundle_generator.api_h_generator,
+          ),
       ]
     elif generator_name == 'cpp-bundle-schema':
       generators = [
-        ('generated_schemas.cc', cpp_bundle_generator.schemas_cc_generator),
-        ('generated_schemas.h', cpp_bundle_generator.schemas_h_generator),
+          ('generated_schemas.cc', cpp_bundle_generator.schemas_cc_generator),
+          ('generated_schemas.h', cpp_bundle_generator.schemas_h_generator),
       ]
   elif generator_name == 'cpp':
     cpp_generator = CppGenerator(type_generator)
     generators = [
-      ('%s.h' % filename_base, cpp_generator.h_generator),
-      ('%s.cc' % filename_base, cpp_generator.cc_generator),
+        ('%s.h' % filename_base, cpp_generator.h_generator),
+        ('%s.cc' % filename_base, cpp_generator.cc_generator),
     ]
   elif generator_name == 'externs':
     generators = [('%s_externs.js' % namespace.unix_name, JsExternsGenerator())]
   elif generator_name == 'ts_definitions':
     generators = [('%s.d.ts' % namespace.unix_name, TsDefinitionGenerator())]
   elif generator_name == 'interface':
-    generators = [
-      (
+    generators = [(
         '%s_interface.js' % namespace.unix_name,
         JsInterfaceGenerator(),
-      )
-    ]
+    )]
   else:
     raise Exception('Unrecognised generator %s' % generator_name)
 
@@ -216,61 +208,55 @@ def GenerateSchema(
 
 if __name__ == '__main__':
   parser = optparse.OptionParser(
-    description='Generates a C++ model of an API from JSON schema',
-    usage='usage: %prog [option]... schema',
+      description='Generates a C++ model of an API from JSON schema',
+      usage='usage: %prog [option]... schema',
   )
   parser.add_option(
-    '-r',
-    '--root',
-    default='.',
-    help=(
-      'logical include root directory. Path to schema files from specified'
-      ' dir will be the include path.'
-    ),
+      '-r',
+      '--root',
+      default='.',
+      help=(
+          'logical include root directory. Path to schema files from specified'
+          ' dir will be the include path.'),
+  )
+  parser.add_option('-d',
+                    '--destdir',
+                    help='root directory to output generated files.')
+  parser.add_option(
+      '-n',
+      '--namespace',
+      default='generated_api_schemas',
+      help='C++ namespace for generated files. e.g extensions::api.',
   )
   parser.add_option(
-    '-d', '--destdir', help='root directory to output generated files.'
+      '-b',
+      '--bundle-name',
+      default='',
+      help=('A string to prepend to generated bundle class names, so that '
+            'multiple bundle rules can be used without conflicting. '
+            'Only used with one of the cpp-bundle generators.'),
   )
   parser.add_option(
-    '-n',
-    '--namespace',
-    default='generated_api_schemas',
-    help='C++ namespace for generated files. e.g extensions::api.',
+      '-g',
+      '--generator',
+      default=GENERATORS[0],
+      choices=GENERATORS,
+      help=(
+          'The generator to use to build the output code. Supported values are'
+          ' %s') % GENERATORS,
   )
   parser.add_option(
-    '-b',
-    '--bundle-name',
-    default='',
-    help=(
-      'A string to prepend to generated bundle class names, so that '
-      'multiple bundle rules can be used without conflicting. '
-      'Only used with one of the cpp-bundle generators.'
-    ),
+      '-i',
+      '--impl-dir',
+      dest='impl_dir',
+      help='The root path of all API implementations',
   )
   parser.add_option(
-    '-g',
-    '--generator',
-    default=GENERATORS[0],
-    choices=GENERATORS,
-    help=(
-      'The generator to use to build the output code. Supported values are %s'
-    )
-    % GENERATORS,
-  )
-  parser.add_option(
-    '-i',
-    '--impl-dir',
-    dest='impl_dir',
-    help='The root path of all API implementations',
-  )
-  parser.add_option(
-    '-I',
-    '--include-rules',
-    help=(
-      'A list of paths to include when searching for referenced objects,'
-      " with the namespace separated by a ':'. Example: "
-      '/foo/bar:Foo::Bar::%(namespace)s'
-    ),
+      '-I',
+      '--include-rules',
+      help=('A list of paths to include when searching for referenced objects,'
+            " with the namespace separated by a ':'. Example: "
+            '/foo/bar:Foo::Bar::%(namespace)s'),
   )
 
   (opts, file_paths) = parser.parse_args()
@@ -279,38 +265,33 @@ if __name__ == '__main__':
     sys.exit(0)  # This is OK as a no-op
 
   # Unless in bundle mode, only one file should be specified.
-  if (
-    opts.generator not in ('cpp-bundle-registration', 'cpp-bundle-schema')
-    and len(file_paths) > 1
-  ):
+  if (opts.generator not in ('cpp-bundle-registration', 'cpp-bundle-schema')
+      and len(file_paths) > 1):
     # TODO(sashab): Could also just use file_paths[0] here and not complain.
     raise Exception(
-      'Unless in bundle mode, only one file can be specified at a time.'
-    )
+        'Unless in bundle mode, only one file can be specified at a time.')
 
   def split_path_and_namespace(path_and_namespace):
     if ':' not in path_and_namespace:
       raise ValueError(
-        'Invalid include rule "%s". Rules must be of the form path:namespace'
-        % path_and_namespace
-      )
+          'Invalid include rule "%s". Rules must be of the form path:namespace'
+          % path_and_namespace)
     return path_and_namespace.split(':', 1)
 
   include_rules = []
   if opts.include_rules:
     include_rules = list(
-      map(split_path_and_namespace, shlex.split(opts.include_rules))
-    )
+        map(split_path_and_namespace, shlex.split(opts.include_rules)))
 
   result = GenerateSchema(
-    opts.generator,
-    file_paths,
-    opts.root,
-    opts.destdir,
-    opts.namespace,
-    opts.bundle_name,
-    opts.impl_dir,
-    include_rules,
+      opts.generator,
+      file_paths,
+      opts.root,
+      opts.destdir,
+      opts.namespace,
+      opts.bundle_name,
+      opts.impl_dir,
+      include_rules,
   )
   if not opts.destdir:
     print(result)

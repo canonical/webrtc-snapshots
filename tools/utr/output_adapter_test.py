@@ -14,6 +14,7 @@ import output_adapter
 
 
 class PassthroughAdapterTests(unittest.TestCase):
+
   def setUp(self):
     patch_terminal_size = mock.patch('os.get_terminal_size')
     mock_terminal_size = patch_terminal_size.start()
@@ -39,6 +40,7 @@ fake std_out text"""
 
 
 class LegacyOutputAdapterTests(unittest.TestCase):
+
   def setUp(self):
     patch_terminal_size = mock.patch('os.get_terminal_size')
     mock_terminal_size = patch_terminal_size.start()
@@ -72,16 +74,12 @@ fake std_out text
 @@@STEP_CLOSED@@@"""
         for line in fake_output.split('\n'):
           adapter.ProcessLine(line)
-        self.assertEqual(
-          root_log.output, ['INFO:default_logger:\n[cyan]Running: fake_step[/]']
-        )
-        self.assertEqual(
-          info_log.output,
-          [
+        self.assertEqual(root_log.output,
+                         ['INFO:default_logger:\n[cyan]Running: fake_step[/]'])
+        self.assertEqual(info_log.output, [
             'INFO:basic_logger:fake std_out text',
-            'INFO:basic_logger:utr-specific log line',
-          ],
-        )
+            'INFO:basic_logger:utr-specific log line'
+        ])
 
   def testStepNameProcessor(self):
     adapter = output_adapter.LegacyOutputAdapter()
@@ -99,12 +97,10 @@ fake std_out text
         for line in fake_output.split('\n'):
           adapter.ProcessLine(line)
         self.assertEqual(
-          root_log.output,
-          ['DEBUG:default_logger:\n[cyan]Running: isolate tests[/]'],
-        )
-        self.assertEqual(
-          info_log.output, ['DEBUG:basic_logger:fake std_out text']
-        )
+            root_log.output,
+            ['DEBUG:default_logger:\n[cyan]Running: isolate tests[/]'])
+        self.assertEqual(info_log.output,
+                         ['DEBUG:basic_logger:fake std_out text'])
 
   def testTaskTrigger(self):
     adapter = output_adapter.LegacyOutputAdapter()
@@ -121,15 +117,10 @@ fake std_out text
       for line in fake_output.split('\n'):
         adapter.ProcessLine(line)
       self.assertEqual(
-        info_log.output,
-        [
-          (
-            'INFO:basic_logger:Triggered fake_test (2): '
-            'https://chromium-swarm.appspot.com/task?id=1234567890123456'
-          ),
-          'INFO:basic_logger:fake std_out text',
-        ],
-      )
+          info_log.output,
+          [('INFO:basic_logger:Triggered fake_test (2): '
+            'https://chromium-swarm.appspot.com/task?id=1234567890123456'),
+           'INFO:basic_logger:fake std_out text'])
       self.assertIn('fake_test', adapter._step_to_processors)
       self.assertIn('fake_test', adapter._step_to_log_level)
 
@@ -161,17 +152,12 @@ fake std_out text
 @@@STEP_CLOSED@@@"""
         for line in fake_output.split('\n'):
           adapter.ProcessLine(line)
-        self.assertEqual(
-          root_log.output,
-          [
+        self.assertEqual(root_log.output, [
             'INFO:default_logger:\n[cyan]Running: collect tasks.wait for tasks[/]'
-          ],
-        )
+        ])
         # The ninja statuses are sent to another logger to remove new lines
         log_prefix = 'INFO:single_line_logger:\x1b[2K\r'
-        self.assertEqual(
-          collect_steps_log.output,
-          [
+        self.assertEqual(collect_steps_log.output, [
             log_prefix + 'Still waiting on: 2 shard(s).',
             log_prefix + 'Still waiting on: 2 shard(s)..',
             log_prefix + 'Still waiting on: 1 shard(s)...',
@@ -179,9 +165,8 @@ fake std_out text
             log_prefix + 'Still waiting on: 1 shard(s).....',
             log_prefix + 'Still waiting on: 1 shard(s).',
             log_prefix + 'Still waiting on: 1 shard(s)..',
-            log_prefix + 'Still waiting on: 0 shard(s)...',
-          ],
-        )
+            log_prefix + 'Still waiting on: 0 shard(s)...'
+        ])
 
   def testResultOutput(self):
     adapter = output_adapter.LegacyOutputAdapter()
@@ -206,13 +191,10 @@ fake std_out text
 @@@STEP_CLOSED@@@"""
       for line in fake_output.split('\n'):
         adapter.ProcessLine(line)
-      self.assertEqual(
-        info_log.output,
-        [
+      self.assertEqual(info_log.output, [
           'DEBUG:basic_logger:Test results for fake_test shard #0: '
           'https://fake-url.com'
-        ],
-      )
+      ])
 
   def testInfoStepLevelOutput(self):
     adapter = output_adapter.LegacyOutputAdapter()
@@ -229,15 +211,11 @@ fake info level std_out text
 @@@STEP_CLOSED@@@"""
         for line in fake_output.split('\n'):
           adapter.ProcessLine(line)
-        self.assertEqual(
-          root_log.output,
-          [
+        self.assertEqual(root_log.output, [
             'INFO:default_logger:\n[cyan]Running: generate_build_files[/]',
-          ],
-        )
-        self.assertEqual(
-          info_log.output, ['INFO:basic_logger:fake info level std_out text']
-        )
+        ])
+        self.assertEqual(info_log.output,
+                         ['INFO:basic_logger:fake info level std_out text'])
 
   def testCompileStepOutput(self):
     adapter = output_adapter.LegacyOutputAdapter()
@@ -259,31 +237,22 @@ RBE Stats: down 0 B, up 0 B,
 @@@STEP_CLOSED@@@"""
           for line in fake_output.split('\n'):
             adapter.ProcessLine(line)
-          self.assertEqual(
-            root_log.output,
-            [
+          self.assertEqual(root_log.output, [
               'INFO:default_logger:\n[cyan]Running: compile[/]',
-            ],
-          )
-          self.assertEqual(
-            info_log.output,
-            [
+          ])
+          self.assertEqual(info_log.output, [
               'INFO:basic_logger:Proxy started successfully.',
               'INFO:basic_logger:ninja: Entering directory fake/out',
               'INFO:basic_logger:',
-              'INFO:basic_logger:RBE Stats: down 0 B, up 0 B,',
-            ],
-          )
+              'INFO:basic_logger:RBE Stats: down 0 B, up 0 B,'
+          ])
           # The ninja statuses are sent to another logger to remove new lines
-          self.assertEqual(
-            compile_steps_log.output,
-            [
+          self.assertEqual(compile_steps_log.output, [
               'INFO:single_line_logger:\x1b[2K',
               'INFO:single_line_logger:\r[1/2] ACTION fake_action',
               'INFO:single_line_logger:\x1b[2K',
-              'INFO:single_line_logger:\r[2/2] ACTION fake_action',
-            ],
-          )
+              'INFO:single_line_logger:\r[2/2] ACTION fake_action'
+          ])
 
   def testDownloadOutputs(self):
     if sys.version_info[:2] < (3, 10):
@@ -315,15 +284,12 @@ file2 ...exists
           adapter.ProcessLine(line)
         # Should just print the step name but none of the step's stdout.
         nest_name = 'download compilation outputs'
-        self.assertEqual(
-          root_log.output,
-          [
+        self.assertEqual(root_log.output, [
             f'INFO:default_logger:\n[cyan]Running: {nest_name}[/]',
             f'INFO:default_logger:\n[cyan]Running: {nest_name}.read sql_unittests.'
             'runtime_deps[/]',
             f'INFO:default_logger:\n[cyan]Running: {nest_name}.fetch sql_unittests[/]',
-          ],
-        )
+        ])
 
   def testEnsureFailurePrinted(self):
     adapter = output_adapter.LegacyOutputAdapter()
@@ -343,16 +309,12 @@ fake std_out text
         for line in fake_output.split('\n'):
           adapter.ProcessLine(line)
         adapter.EnsureFailurePrinted()
-        self.assertEqual(
-          root_log.output,
-          [
+        self.assertEqual(root_log.output, [
             'INFO:default_logger:\n[cyan]Running: download compilation outputs[/]'
-          ],
-        )
+        ])
         self.assertEqual(
-          info_log.output,
-          ['INFO:basic_logger:fake std_out text\nutr-specific log line'],
-        )
+            info_log.output,
+            ['INFO:basic_logger:fake std_out text\nutr-specific log line'])
 
 
 if __name__ == '__main__':

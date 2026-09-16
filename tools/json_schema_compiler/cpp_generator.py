@@ -7,6 +7,7 @@ from h_generator import HGenerator
 
 
 class CppGenerator(object):
+
   def __init__(self, type_generator):
     self.h_generator = HGenerator(type_generator)
     self.cc_generator = CCGenerator(type_generator)

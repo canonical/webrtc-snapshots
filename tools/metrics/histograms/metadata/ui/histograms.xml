@@ -666,28 +666,6 @@ chromium-metrics-reviews@google.com.
   <token key="Version" variants="NewWindowMetricVersion"/>
 </histogram>
 
-<histogram
-    name="InitialWebUI.ReloadButton.Dropped{PaintType}FromNavigationStart"
-    units="ms" expires_after="2027-01-10">
-  <owner>leimy@chromium.org</owner>
-  <owner>chrome-webium-product-eng@google.com</owner>
-  <summary>
-    Records the time from navigation start to {PaintType} for the Reload Button
-    when the InitialWebUIWindowMetricsManager was null and the metric was
-    dropped.
-
-    Note: This is measured from NavigationStart rather than FromConstructor
-    because the browser window creation timestamp is unavailable when the
-    metrics manager is null (e.g. for background prewarmed WebContents whose
-    paint occurs before a window constructor runs, or fast in-process loads
-    before the window reference is resolved).
-  </summary>
-  <token key="PaintType">
-    <variant name="FirstContentfulPaint"/>
-    <variant name="FirstPaint"/>
-  </token>
-</histogram>
-
 <histogram name="InitialWebUI.ReloadButton.InputCount"
     enum="ReloadButtonInputType" expires_after="2027-01-17">
   <owner>mych@chromium.org</owner>
@@ -806,7 +784,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{Scenario}.BrowserWindow.FirstPaint{StartupTemperature}"
-    units="ms" expires_after="2027-02-14">
+    units="ms" expires_after="2026-12-16">
   <owner>mych@chromium.org</owner>
   <owner>chrome-webium-product-eng@google.com</owner>
   <summary>
@@ -824,7 +802,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{Scenario}.BrowserWindow.ShowRequestedToFirstPaint{StartupTemperature}"
-    units="ms" expires_after="2027-02-14">
+    units="ms" expires_after="2026-12-16">
   <owner>mych@chromium.org</owner>
   <owner>chrome-webium-product-eng@google.com</owner>
   <summary>
@@ -871,7 +849,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{Scenario}.ReloadButton.RendererProcessCreated{StartupTemperature}"
-    units="ms" expires_after="2027-02-14">
+    units="ms" expires_after="2026-12-16">
   <owner>elkurin@chromium.org</owner>
   <owner>chrome-webium-product-eng@google.com</owner>
   <summary>
@@ -892,7 +870,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="InitialWebUI.Startup{Scenario}.ReloadButton.RendererProcessLaunched{StartupTemperature}"
-    units="ms" expires_after="2027-02-14">
+    units="ms" expires_after="2026-12-16">
   <owner>elkurin@chromium.org</owner>
   <owner>chrome-webium-product-eng@google.com</owner>
   <summary>
@@ -998,6 +976,25 @@ chromium-metrics-reviews@google.com.
 
     This is only recorded for desktop platforms when the InitialWebUIMetrics is
     enabled.
+  </summary>
+</histogram>
+
+<histogram name="ListMenuUtils.SetupCallbacksRecursively.Duration"
+    units="microseconds" expires_after="2026-10-01">
+  <owner>jhimawan@google.com</owner>
+  <owner>clank-app-team@google.com</owner>
+  <summary>
+    Timing histogram for ListMenuUtils#SetupCallbacksRecursively method.
+  </summary>
+</histogram>
+
+<histogram name="MenuModelBridge.AddExtensionItems.Duration"
+    units="microseconds" expires_after="2026-10-01">
+  <owner>jhimawan@google.com</owner>
+  <owner>clank-app-team@google.com</owner>
+  <summary>
+    Timing histogram for MenuModelBridge#AddExtensionItems method. This is
+    recorded only for clients with high-resolution clocks.
   </summary>
 </histogram>
 
@@ -1319,7 +1316,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.ColorsStylesheetServingDuration" units="ms"
-    expires_after="2027-02-14">
+    expires_after="2026-12-13">
   <owner>skau@chromium.org</owner>
   <owner>tluk@chromium.org</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1355,7 +1352,7 @@ features through Chrome Labs. -->
 </histogram>
 
 <histogram name="WebUI.ShownUrl" enum="WebUIUrlHashes"
-    expires_after="2027-02-14">
+    expires_after="2026-12-16">
   <owner>kerenzhu@chromium.org</owner>
   <owner>dpapad@chromium.org</owner>
   <owner>chrome-webui@google.com</owner>

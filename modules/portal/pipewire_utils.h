@@ -16,7 +16,6 @@
 #include <sys/mman.h>
 
 #include <cerrno>
-#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -103,17 +102,12 @@ static bool SyncDmaBuf(int fd, uint64_t start_or_end) {
 
 class ScopedBuf {
  public:
-  enum class AccessMode { kReadOnly, kReadWrite };
-  enum class BufferType { kMemFd, kDmaBuf };
-
   ScopedBuf() {}
-  ScopedBuf(const ScopedBuf&) = delete;
-  ScopedBuf& operator=(const ScopedBuf&) = delete;
-  ScopedBuf(ScopedBuf&&) = delete;
-  ScopedBuf& operator=(ScopedBuf&&) = delete;
+  ScopedBuf(uint8_t* map, int map_size, int fd, bool is_dma_buf = false)
+      : map_(map), map_size_(map_size), fd_(fd), is_dma_buf_(is_dma_buf) {}
   ~ScopedBuf() {
     if (map_ != MAP_FAILED) {
-      if (buffer_type_ == BufferType::kDmaBuf) {
+      if (is_dma_buf_) {
         SyncDmaBuf(fd_, DMA_BUF_SYNC_END);
       }
       munmap(map_, map_size_);
@@ -122,19 +116,24 @@ class ScopedBuf {
 
   explicit operator bool() { return map_ != MAP_FAILED; }
 
-  void initialize(int fd,
-                  size_t maxsize,
-                  off_t mapoffset,
-                  BufferType buffer_type,
-                  AccessMode mode = AccessMode::kReadOnly);
+  void initialize(uint8_t* map, int map_size, int fd, bool is_dma_buf = false) {
+    map_ = map;
+    map_size_ = map_size;
+    is_dma_buf_ = is_dma_buf;
+    fd_ = fd;
+
+    if (is_dma_buf_) {
+      SyncDmaBuf(fd_, DMA_BUF_SYNC_START);
+    }
+  }
 
   uint8_t* get() { return map_; }
 
  protected:
   uint8_t* map_ = static_cast<uint8_t*>(MAP_FAILED);
-  size_t map_size_ = 0;
-  int fd_ = -1;
-  BufferType buffer_type_ = BufferType::kMemFd;
+  int map_size_;
+  int fd_;
+  bool is_dma_buf_;
 };
 
 }  // namespace webrtc

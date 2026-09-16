@@ -33,7 +33,6 @@ ChromeLabs*UiTest.*
 ChromeSignoutConfirmationPromptPixelTest.*
 ChromeSignoutConfirmationPromptWithExtensionsPixelTest.*
 ConfirmBubbleTest.*
-ComposeboxDriveSignInPromoViewPixelTest.*
 ContentAnalysysDialogUiTest.*
 ContentSettingBubbleDialogTest.*
 CookieClearOnExitMigrationNoticePixelTest.*

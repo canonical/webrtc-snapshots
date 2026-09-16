@@ -5,6 +5,7 @@
 
 """Unittest for android_xml.py."""
 
+
 import io
 import os
 import sys
@@ -24,6 +25,7 @@ from grit.tool import build
 
 
 class AndroidXmlUnittest(unittest.TestCase):
+
   def testMessages(self):
     root = util.ParseGrdForUnittest(r"""
         <messages>
@@ -63,8 +65,7 @@ a sledge hammer.
 
     buf = StringIO()
     build.RcBuilder.ProcessNode(
-      root, DummyOutput('android', 'en', constants.DEFAULT_GENDER), buf
-    )
+        root, DummyOutput('android', 'en', constants.DEFAULT_GENDER), buf)
     output = buf.getvalue()
     expected = r"""
 <?xml version="1.0" encoding="utf-8"?>
@@ -93,6 +94,7 @@ a sledge hammer."</string>
 """
     self.assertEqual(output.strip(), expected.strip())
 
+
   def testConflictingPlurals(self):
     root = util.ParseGrdForUnittest(r"""
         <messages>
@@ -107,8 +109,7 @@ a sledge hammer."</string>
 
     buf = StringIO()
     build.RcBuilder.ProcessNode(
-      root, DummyOutput('android', 'en', constants.DEFAULT_GENDER), buf
-    )
+        root, DummyOutput('android', 'en', constants.DEFAULT_GENDER), buf)
     output = buf.getvalue()
     expected = r"""
 <?xml version="1.0" encoding="utf-8"?>
@@ -120,6 +121,7 @@ a sledge hammer."</string>
 </resources>
 """
     self.assertEqual(output.strip(), expected.strip())
+
 
   def testTaggedOnly(self):
     root = util.ParseGrdForUnittest(r"""
@@ -139,6 +141,7 @@ a sledge hammer."</string>
     self.assertTrue(android_xml.ShouldOutputNode(msg_hello, tagged_only=False))
     self.assertTrue(android_xml.ShouldOutputNode(msg_world, tagged_only=False))
 
+
   def testFormat(self):
     xml = '''<?xml version="1.0" encoding="UTF-8"?>
       <grit latest_public_release="2" source_lang_id="en-US" current_release="3" base_dir=".">
@@ -157,11 +160,9 @@ a sledge hammer."</string>
           </messages>
         </release>
       </grit>'''
-    grd = grd_reader.Parse(
-      io.StringIO(xml),
-      util.PathFromRoot('grit/testdata'),
-      translate_genders=True,
-    )
+    grd = grd_reader.Parse(io.StringIO(xml),
+                           util.PathFromRoot('grit/testdata'),
+                           translate_genders=True)
     grd.SetOutputLanguage('en')
     grd.RunGatherers()
     grd.InitializeIds()
@@ -217,23 +218,20 @@ a sledge hammer."</string>
 
     self.assertEqual(format('en', constants.GENDER_OTHER), expected_en_other)
     self.assertEqual(format('en', constants.GENDER_NEUTER), expected_en_neuter)
-    self.assertEqual(
-      format('en', constants.GENDER_FEMININE), expected_en_feminine
-    )
-    self.assertEqual(
-      format('en', constants.GENDER_MASCULINE), expected_en_masculine
-    )
+    self.assertEqual(format('en', constants.GENDER_FEMININE),
+                     expected_en_feminine)
+    self.assertEqual(format('en', constants.GENDER_MASCULINE),
+                     expected_en_masculine)
     self.assertEqual(format('fr', constants.GENDER_OTHER), expected_fr_other)
     self.assertEqual(format('fr', constants.GENDER_NEUTER), expected_fr_neuter)
-    self.assertEqual(
-      format('fr', constants.GENDER_FEMININE), expected_fr_feminine
-    )
-    self.assertEqual(
-      format('fr', constants.GENDER_MASCULINE), expected_fr_masculine
-    )
+    self.assertEqual(format('fr', constants.GENDER_FEMININE),
+                     expected_fr_feminine)
+    self.assertEqual(format('fr', constants.GENDER_MASCULINE),
+                     expected_fr_masculine)
 
 
 class DummyOutput:
+
   def __init__(self, type, language, gender):
     self.type = type
     self.language = language
@@ -250,7 +248,6 @@ class DummyOutput:
 
   def GetGender(self):
     return self.gender
-
 
 if __name__ == '__main__':
   unittest.main()

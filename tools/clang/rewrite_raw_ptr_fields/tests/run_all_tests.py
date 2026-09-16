@@ -11,13 +11,10 @@ import sys
 
 
 def RunRewritingTests():
-  subprocess.run(
-    [
-      "tools/clang/scripts/test_tool.py",
-      "--apply-edits",
-      "rewrite_raw_ptr_fields",
-    ]
-  )
+  subprocess.run([
+      "tools/clang/scripts/test_tool.py", "--apply-edits",
+      "rewrite_raw_ptr_fields"
+  ])
 
 
 def RunGeneratingTest(test_path):
@@ -26,13 +23,10 @@ def RunGeneratingTest(test_path):
 
   shutil.copyfile(test_path, tmp_test_path)
   try:
-    subprocess.run(
-      [
+    subprocess.run([
         "tools/clang/scripts/test_tool.py",
-        "--test-filter=%s" % test_filter,
-        "rewrite_raw_ptr_fields",
-      ]
-    )
+        "--test-filter=%s" % test_filter, "rewrite_raw_ptr_fields"
+    ])
   finally:
     os.remove(tmp_test_path)
 
@@ -46,13 +40,11 @@ def RunGeneratingTests():
 def main():
   if not os.path.exists("ATL_OWNERS"):
     sys.stderr.write(
-      "Please run run_all_tests.py from the root dir of Chromium"
-    )
+        "Please run run_all_tests.py from the root dir of Chromium")
     return -1
 
   if not os.path.exists(
-    "third_party/llvm-build/Release+Asserts/bin/rewrite_raw_ptr_fields"
-  ):
+      "third_party/llvm-build/Release+Asserts/bin/rewrite_raw_ptr_fields"):
     sys.stderr.write("Please build rewrite_raw_ptr_fields first")
     return -1
 

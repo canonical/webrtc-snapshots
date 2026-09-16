@@ -20,14 +20,11 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "absl/functional/any_invocable.h"
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_headers.h"
-#include "api/rtp_packet_infos.h"
 #include "api/scoped_refptr.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -206,9 +203,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     Config& operator=(const Config&) = delete;
     Config(Config&&);
     Config(Transport* rtcp_send_transport,
-           VideoDecoderFactory* decoder_factory = nullptr,
-           absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
-               on_frame_delivered_callback = nullptr);
+           VideoDecoderFactory* decoder_factory = nullptr);
     Config& operator=(Config&&);
     ~Config();
 
@@ -304,15 +299,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     CryptoOptions crypto_options;
 
     scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
-
-    // Callback invoked on the first received packet for this stream. Note that
-    // this is a move-only callback and is not copied when calling Copy().
-    absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet;
-
-    // Callback invoked when a frame has been delivered. Note that this is a
-    // move-only callback and is not copied when calling Copy().
-    absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
-        on_frame_delivered_callback;
   };
 
   // TODO(pbos): Add info on currently-received codec to Stats.
@@ -365,8 +351,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
 
   virtual void SetAssociatedPayloadTypes(
       std::map<int, int> associated_payload_types) = 0;
-
-  virtual void SetDecoders(std::vector<Decoder> decoders) = 0;
 
   virtual void SetRawPayloadTypes(std::set<int> raw_payload_types) = 0;
 
