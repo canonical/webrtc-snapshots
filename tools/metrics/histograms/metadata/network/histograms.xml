@@ -523,7 +523,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Network.Ash.Cellular.ESim.PolicyInstall.{UserErrorHandling}.{Method}"
-    enum="ESimOperationResult" expires_after="2026-12-01">
+    enum="ESimOperationResult" expires_after="2027-02-14">
   <owner>chadduffin@chromium.org</owner>
   <owner>cros-device-enablement@google.com</owner>
   <summary>
@@ -980,7 +980,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Network.Ash.{NetworkType}.ConnectionResult.NonUserInitiated"
-    enum="ShillConnectResult" expires_after="2026-12-01">
+    enum="ShillConnectResult" expires_after="2027-02-14">
   <owner>jiajunz@google.com</owner>
   <owner>cros-device-enablement@google.com</owner>
   <summary>
@@ -992,7 +992,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Network.Ash.{NetworkType}.ConnectionResult.UserInitiated"
-    enum="UserInitiatedNetworkConnectResult" expires_after="2026-12-01">
+    enum="UserInitiatedNetworkConnectResult" expires_after="2027-02-14">
   <owner>hsuregan@chromium.org</owner>
   <owner>cros-device-enablement@google.com</owner>
   <summary>
@@ -5138,7 +5138,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NetworkService.ConnectionAllowlist.Type"
-    enum="ConnectionAllowlistType" expires_after="2026-12-16">
+    enum="ConnectionAllowlistType" expires_after="2027-02-14">
   <owner>averge@chromium.org</owner>
   <owner>mkwst@chromium.org</owner>
   <owner>shivanisha@chromium.org</owner>
@@ -5307,6 +5307,22 @@ chromium-metrics-reviews@google.com.
     Note: The metrics is reported from all clients. Some of clients may not have
     high resolution timer that can send metrics with microseconds precision.
   </summary>
+</histogram>
+
+<histogram
+    name="NetworkService.PrefetchMatchingURLLoaderFactory.QueueTime.CreateLoaderAndStart.{FrameType}"
+    units="ms" expires_after="2027-08-11">
+  <owner>nafisabedin@google.com</owner>
+  <owner>clank-performance-team@google.com</owner>
+  <summary>
+    Measures the amount of time the task to run CreateLoaderAndStart was queued
+    for a {FrameType} before running. Logged every time CreateLoaderAndStart is
+    run in PrefetchMatchingURLLoaderFactory with a valid queue time.
+  </summary>
+  <token key="FrameType">
+    <variant name="MainFrame" summary="main frame"/>
+    <variant name="Subframe" summary="subframe"/>
+  </token>
 </histogram>
 
 <histogram

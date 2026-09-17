@@ -21,48 +21,63 @@
 from __future__ import print_function
 
 import argparse
+import codecs
 import collections
-import fileinput
 import os
 import re
 import sys
 
 # fix-it:"../../base/threading/sequenced_worker_pool.h":{341:3-341:11}:""
 # Note that the file path is relative to the build directory.
-_FIXIT_RE = re.compile(r'^fix-it:"(?P<file>.+?)":'
-                       r'{(?P<start_line>\d+?):(?P<start_col>\d+?)-'
-                       r'(?P<end_line>\d+?):(?P<end_col>\d+?)}:'
-                       r'"(?P<text>.*?)"$')
+_FIXIT_RE = re.compile(
+  rb'^fix-it:"(?P<file>.+?)":'
+  rb'{(?P<start_line>\d+?):(?P<start_col>\d+?)-'
+  rb'(?P<end_line>\d+?):(?P<end_col>\d+?)}:'
+  rb'"(?P<text>.*?)"$'
+)
 
 FixIt = collections.namedtuple(
-    'FixIt', ('start_line', 'start_col', 'end_line', 'end_col', 'text'))
+  'FixIt', ('start_line', 'start_col', 'end_line', 'end_col', 'text')
+)
 
 
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      '-p',
-      required=True,
-      help='path to the build directory to complete relative paths in fixits')
+    '-p',
+    required=True,
+    help='path to the build directory to complete relative paths in fixits',
+  )
   args = parser.parse_args()
 
   fixits = collections.defaultdict(list)
-  for line in fileinput.input(['-']):
-    if not line.startswith('fix-it:'):
+  for line in sys.stdin.buffer:
+    if not line.startswith(b'fix-it:'):
       continue
     m = _FIXIT_RE.match(line)
     if not m:
       continue
+    # Machine-parseable fixits escape certain characters:
+    # https://github.com/llvm/llvm-project/blob/4d676e56f0ee819a20a021434a53060a43c33120/clang/lib/Frontend/TextDiagnostic.cpp#L1629
+    text, _ = codecs.escape_decode(m.group('text'))
     # The negative line numbers are a hack to sort fixits in line order but
     # reverse column order. Applying the fixits in reverse order makes things
     # simpler, since column offsets won't have to be adjusted as the text is
     # changed.
-    fixits[m.group('file')].append(FixIt(
-        int(m.group('start_line')), -int(m.group('start_col')), int(m.group(
-            'end_line')), -int(m.group('end_col')), m.group('text')))
+    filename = m.group('file').decode('utf-8')
+    fixits[filename].append(
+      FixIt(
+        int(m.group('start_line')),
+        -int(m.group('start_col')),
+        int(m.group('end_line')),
+        -int(m.group('end_col')),
+        text,
+      )
+    )
   for k, v in fixits.items():
     v.sort()
-    with open(os.path.join(args.p, k), mode='r+', encoding='utf-8') as f:
+    # Offsets in fixit hints are in bytes, so use binary mode.
+    with open(os.path.join(args.p, k), mode='rb+') as f:
       lines = f.readlines()
       last_fixit = None
       line_offset = 0
@@ -74,14 +89,19 @@ def main():
         # The line/column numbers emitted in fixit hints start at 1, so offset
         # is appropriately. Also apply unary `-` to all column numbers to
         # reverse the hack above.
-        prefix = lines[fixit.start_line + line_offset - 1][:-fixit.start_col -
-                                                           1]
-        suffix = lines[fixit.end_line + line_offset - 1][-fixit.end_col - 1:]
+        prefix = lines[fixit.start_line + line_offset - 1][
+          : -fixit.start_col - 1
+        ]
+        suffix = lines[fixit.end_line + line_offset - 1][-fixit.end_col - 1 :]
 
         lines[fixit.start_line + line_offset - 1] = prefix + fixit.text + suffix
 
-        del lines[fixit.start_line + line_offset + 1 - 1:fixit.end_line +
-                  line_offset + 1 - 1]
+        del lines[
+          fixit.start_line + line_offset + 1 - 1 : fixit.end_line
+          + line_offset
+          + 1
+          - 1
+        ]
         line_offset -= fixit.end_line - fixit.start_line
 
       f.seek(0)

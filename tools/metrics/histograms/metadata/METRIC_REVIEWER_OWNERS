@@ -87,6 +87,8 @@ ckitagawa@chromium.org
 joenotcharles@google.com
 gjc@google.com
 koretadaniel@chromium.org
+# cbor
+zgroza@chromium.org
 # chromeos_hps
 chadduffin@chromium.org
 crisrael@google.com
@@ -431,7 +433,6 @@ gavinwill@chromium.org
 spvm@chromium.org
 # search
 ender@google.com
-gangwu@chromium.org
 # security
 cthomp@chromium.org
 dullweber@chromium.org

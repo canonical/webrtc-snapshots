@@ -513,7 +513,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.FetchEvent.{Resource}.FetchResponseFrom"
-    enum="ServiceWorkerFetchResponseFrom" expires_after="2026-12-13">
+    enum="ServiceWorkerFetchResponseFrom" expires_after="2027-02-14">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -1507,7 +1507,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.ResourceChecksumMatch" enum="Boolean"
-    expires_after="2026-12-16">
+    expires_after="2027-02-14">
   <owner>elkurin@chromium.org</owner>
   <owner>chrome-storage-team-tokyo@google.com</owner>
   <summary>
@@ -1520,7 +1520,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.RouterEvaluator.Error"
-    enum="ServiceWorkerRouterEvaluatorErrorEnums" expires_after="2026-12-16">
+    enum="ServiceWorkerRouterEvaluatorErrorEnums" expires_after="2027-02-14">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2233,7 +2233,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.SyntheticResponse.WriteFallbackBodyResult"
-    enum="MojoResult" expires_after="2026-12-16">
+    enum="MojoResult" expires_after="2027-02-14">
   <owner>sisidovski@google.com</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2291,22 +2291,6 @@ chromium-metrics-reviews@google.com.
     This information is used to understand if we need to continue this
     workaround or not.
   </summary>
-</histogram>
-
-<histogram name="ServiceWorker.{operation}Time" units="ms"
-    expires_after="2023-10-01">
-  <owner>cduvall@chromium.org</owner>
-  <owner>chrome-worker@google.com</owner>
-  <summary>
-    The time taken to query the content settings in the browser process for the
-    {operation} operation. This is recorded each time a sync call is made.
-  </summary>
-  <token key="operation">
-    <variant name="AllowCacheStorage"/>
-    <variant name="AllowIndexedDB"/>
-    <variant name="AllowWebLocks"/>
-    <variant name="RequestFileSystemAccess"/>
-  </token>
 </histogram>
 
 <histogram name="ServiceWorkerCache.Cache.Browser.Match.Initialized" units="ms"
