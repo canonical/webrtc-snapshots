@@ -79,6 +79,7 @@
       'android_arm64-builder-perf-pgo': 'official_remoteexec_minimal_symbols_android_arm64_pgo',
       'android_arm64_high_end-builder-perf': 'official_remoteexec_minimal_symbols_android_arm64_high_end',
       'android_arm64_high_end-builder-perf-pgo': 'official_remoteexec_minimal_symbols_android_arm64_high_end_pgo',
+      'android_arm64_high_end-builder-perf-pgo-heapdump': 'official_remoteexec_minimal_symbols_android_arm64_high_end_pgo_heapdump',
       'chromecast-linux-builder-perf': 'cast_binary_size_remoteexec',
       'linux-arm-builder-perf': 'official_linux_perf_arm64',
       'linux-builder-perf': 'official_linux_perf',
@@ -114,6 +115,7 @@
       'android_arm64-builder-perf-pgo': 'official_remoteexec_minimal_symbols_android_arm64_pgo',
       'android_arm64_high_end-builder-perf': 'official_remoteexec_minimal_symbols_android_arm64_high_end',
       'android_arm64_high_end-builder-perf-pgo': 'official_remoteexec_minimal_symbols_android_arm64_high_end_pgo',
+      'android_arm64_high_end-builder-perf-pgo-heapdump': 'official_remoteexec_minimal_symbols_android_arm64_high_end_pgo_heapdump',
       'chromecast-linux-builder-perf': 'cast_binary_size_remoteexec',
       'linux-arm-builder-perf': 'official_linux_perf_arm64',
       'linux-builder-perf': 'official_linux_perf',
@@ -130,7 +132,6 @@
 
     'client.devtools-frontend.integration': {
       'DevTools Linux': 'release_trybot_blink_do_typecheck_siso',
-      'DevTools Linux Fastbuild': 'release_trybot_blink_siso',
     },
 
     'client.openscreen.chromium': {
@@ -172,8 +173,6 @@
     'internal.optimization_guide': {
       # Linux and win64 CI bots use official builds to catch official-specific ODML bugs. These
       # take significantly longer to compile, and thus are only for these two builders.
-      'ai_wpt-mac-arm64': 'optimization_guide_mac_arm64_rel',
-      'ai_wpt-mac-x64': 'optimization_guide_rel',
       'model_validation-linux': 'optimization_guide_rel',
       'model_validation-mac-arm64': 'optimization_guide_mac_arm64_rel',
       'model_validation-mac-x64': 'optimization_guide_rel',
@@ -243,7 +242,6 @@
     'tryserver.devtools-frontend': {
       # Align devtools blink builders with chromium linux-rel
       'devtools_frontend_linux_blink_light_rel': 'release_trybot_blink_do_typecheck_siso',
-      'devtools_frontend_linux_blink_light_rel_fastbuild': 'release_trybot_blink_siso',
       'devtools_frontend_linux_blink_rel': 'release_trybot_blink_do_typecheck_siso',
     },
 
@@ -255,8 +253,6 @@
     },
 
     'tryserver.internal.optimization_guide': {
-      'ai_wpt-mac-arm64': 'optimization_guide_mac_arm64_rel',
-      'ai_wpt-mac-x64': 'optimization_guide_rel',
       'model_validation-linux': 'optimization_guide_rel',
       'model_validation-mac-arm64': 'optimization_guide_mac_arm64_rel',
       'model_validation-mac-x64': 'optimization_guide_rel',
@@ -546,6 +542,10 @@
 
     'official_remoteexec_minimal_symbols_android_arm64_high_end_pgo': [
       'official', 'remoteexec', 'minimal_symbols', 'android', 'arm64', 'no_default_afdo',
+    ],
+
+    'official_remoteexec_minimal_symbols_android_arm64_high_end_pgo_heapdump': [
+      'official', 'remoteexec', 'minimal_symbols', 'android', 'arm64', 'no_default_afdo', 'no_partition_alloc_as_malloc',
     ],
 
     'official_remoteexec_minimal_symbols_android_arm64_pgo': [
@@ -951,6 +951,11 @@
 
     'no_default_afdo': {
       'gn_args': 'clang_use_default_sample_profile=false',
+    },
+
+    'no_partition_alloc_as_malloc': {
+      'mixins': ['no_brp'],
+      'gn_args': 'use_partition_alloc_as_malloc=false',
     },
 
     'no_proguard_obfuscation': {

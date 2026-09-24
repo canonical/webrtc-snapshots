@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import unittest
-import unittest.mock
-import xml.dom.minidom
+from unittest import mock
+import xml.etree.ElementTree as ET
 
 import setup_modules  # pylint: disable=unused-import
 
@@ -56,6 +56,26 @@ class HistogramUtilsTest(unittest.TestCase):
     )
     self.assertEqual(modified, {'MockVariants'})
 
+  def testGetModifiedVariantsBlocks_MetadataModified(self):
+    old_content = """
+<histogram-configuration>
+<variants name="MockVariants">
+  <variant name="V1" summary="Old summary"/>
+</variants>
+</histogram-configuration>
+"""
+    new_content = """
+<histogram-configuration>
+<variants name="MockVariants">
+  <variant name="V1" summary="New summary"/>
+</variants>
+</histogram-configuration>
+"""
+    modified = histogram_utils.get_modified_variants_blocks(
+      old_content, new_content
+    )
+    self.assertEqual(modified, {'MockVariants'})
+
   def testGetModifiedVariantsBlocks_Removed(self):
     old_content = """
 <histogram-configuration>
@@ -95,11 +115,48 @@ class HistogramUtilsTest(unittest.TestCase):
 </variants>
 </histogram-configuration>
 """
-    variants_doc = xml.dom.minidom.parseString(variants_xml)
+    variants_doc = ET.fromstring(variants_xml)
     names = histogram_utils.get_names_from_contents(
       contents.splitlines(), variants_doc
     )
     self.assertEqual(names, {'Test.V1', 'Test.V2'})
+
+
+  def testGetNamesUsingVariantsIgnoresInlineTokenKey(self):
+    contents = """
+<histogram-configuration>
+<histograms>
+  <histogram name="Test.{MockVariants}" units="count" expires_after="M200">
+    <owner>owner@chromium.org</owner>
+    <summary>Records the test value.</summary>
+    <token key="MockVariants">
+      <variant name="Inline"/>
+    </token>
+  </histogram>
+</histograms>
+</histogram-configuration>
+"""
+    variants_xml = """
+<histogram-configuration>
+<variants name="MockVariants">
+  <variant name="Global"/>
+</variants>
+</histogram-configuration>
+"""
+    variants_doc = ET.fromstring(variants_xml)
+
+    all_names = histogram_utils.get_names_from_contents(
+      contents.splitlines(), variants_doc
+    )
+    names = histogram_utils.get_names_using_variants_from_contents(
+      contents.splitlines(), variants_doc, {'MockVariants'}
+    )
+
+    # The explicit token supplies the inline value, so normal expansion uses
+    # Test.Inline. It does not make this histogram a user of the same-named
+    # global MockVariants block.
+    self.assertEqual(all_names, {'Test.Inline'})
+    self.assertEqual(names, set())
 
   def testFindFilesUsingVariants(self):
     content = """
@@ -110,7 +167,7 @@ class HistogramUtilsTest(unittest.TestCase):
 </histogram-configuration>
 """
 
-    with unittest.mock.patch.object(
+    with mock.patch.object(
       histogram_utils, '_path_contents', return_value=content
     ) as mock_read:
       files = histogram_utils.find_files_using_variants(

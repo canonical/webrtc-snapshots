@@ -733,58 +733,6 @@ be describing additional metrics about the same event.
   </metric>
 </event>
 
-<event name="AccessibilityAnnotator.ContentAnnotator.ClassifierResults"
-    singular="True">
-  <owner>qiaoli@google.com</owner>
-  <owner>akvuong@google.com</owner>
-  <owner>igoralsky@google.com</owner>
-  <summary>
-    Recorded when a page load is evaluated for annotation, which happens when a
-    page is loaded and sufficient data (content, language, sensitivity score)
-    has been gathered.
-  </summary>
-  <metric name="IsTargetLanguage" enum="Boolean">
-    <summary>
-      Records whether the page is in one of the target language(s).
-    </summary>
-  </metric>
-  <metric name="SemanticClassificationResult"
-      enum="ContentClassifierRelevanceValue">
-    <summary>
-      Indicates the level of confidence that the web page content is relevant to
-      the accessibility annotator based on the results of the semantic value
-      classifier.
-    </summary>
-  </metric>
-  <metric name="SemanticClassificationValueScore">
-    <summary>
-      Records a low entropy representation of the cosine similarity score output
-      by the semantic classification classifier. The low entropy value is
-      calculated using a RAPPOR-style calculation to enable analysis only on
-      aggregated results. The raw score is between 0 and 1. The score is then
-      placed into one of 16 linearly spaced buckets by dividing the score by the
-      bucket size and taking the floor. The resulting bucket value has noise
-      added with a probability of .5 where the noise is applied to each
-      individual bit. The noise is generated deterministically based on a
-      rotating user secret and the URL's host and path, ensuring the same URL
-      reports the same noisy value for a given user within the 28-day secret
-      rotation window.
-    </summary>
-  </metric>
-  <metric name="TitleKeywordResult" enum="ContentClassifierRelevanceValue">
-    <summary>
-      Records the level of interest in the web page content based on the results
-      of the title keyword value classifier.
-    </summary>
-  </metric>
-  <metric name="UrlMatchResult" enum="ContentClassifierRelevanceValue">
-    <summary>
-      Indicates the level of interest in the web page content based on the
-      results of the URL match classifier.
-    </summary>
-  </metric>
-</event>
-
 <event name="Actor.AttemptOtpFilling">
   <owner>salmaabdelaziz@google.com</owner>
   <owner>dembski@google.com</owner>
@@ -3050,40 +2998,6 @@ be describing additional metrics about the same event.
   </metric>
 </event>
 
-<event name="Autofill.AtAtPressed">
-  <owner>schwering@google.com</owner>
-  <owner>autofill-internal@google.com</owner>
-  <summary>
-    Recorded whenever the user hits &quot;@&quot; twice in quick succession.
-  </summary>
-  <metric name="FieldSessionIdentifier">
-    <summary>
-      A random variable assigned to a specific instance of a form control (e.g.
-      a HTML input element). This should be globally unique and suitable for
-      distinguishing fields. Two different users would have different values.
-      For the same user, the same field in the same form in two different tabs
-      would have two different values.
-    </summary>
-  </metric>
-  <metric name="FieldSignature">
-    <summary>
-      The field signature of the field where the &quot;@@&quot; sequence was
-      typed (value taken modulo 1021).
-    </summary>
-  </metric>
-  <metric name="FormControlType" enum="AutofillFormControlType2">
-    <summary>
-      The form control type of the field where &quot;@@&quot; was typed.
-    </summary>
-  </metric>
-  <metric name="FormSignature">
-    <summary>
-      The form signature of the form where &quot;@@&quot; was typed (value taken
-      modulo 1021).
-    </summary>
-  </metric>
-</event>
-
 <event name="Autofill.Bnpl.AiAmountExtraction.AmountInIssuerRange">
   <owner>jamessun@google.com</owner>
   <owner>payments-autofill-team@google.com</owner>
@@ -3544,6 +3458,59 @@ be describing additional metrics about the same event.
       Type of form. Stored as bitvector. A set ith bit implies enum
       FormTypeNameForLogging's ith type was detected. Multiple types are
       possible.
+    </summary>
+  </metric>
+</event>
+
+<event name="Autofill.OneTimeTokens">
+  <owner>kazinova@google.com</owner>
+  <owner>battre@chromium.org</owner>
+  <summary>
+    Recorded when one-time token (OTP) events occur on a page.
+  </summary>
+  <metric name="Latency.FieldDetectionToTickleInMillis">
+    <summary>
+      Records the latency in milliseconds between detecting an OTP field on a
+      web page and receiving a push notification (tickle) from the backend.
+      Recorded when a tickle arrives after an OTP field was detected.
+    </summary>
+    <aggregation>
+      <history>
+        <statistics>
+          <quantiles type="std-percentiles"/>
+        </statistics>
+      </history>
+    </aggregation>
+  </metric>
+  <metric name="Latency.TickleToFieldDetectionInMillis">
+    <summary>
+      Records the latency in milliseconds between receiving a push notification
+      (tickle) from the backend and detecting an OTP field on a web page.
+      Recorded when an OTP field is detected on a page after a tickle was
+      already received.
+    </summary>
+    <aggregation>
+      <history>
+        <statistics>
+          <quantiles type="std-percentiles"/>
+        </statistics>
+      </history>
+    </aggregation>
+  </metric>
+  <metric name="Tickle.Arrival" enum="OneTimeTokensTickleArrival">
+    <summary>
+      Records the arrival order and timing of push notifications (tickles)
+      relative to OTP form detection on a web page. Only recorded for
+      kAfterFieldDetection and kBeforeFieldDetection, where an OTP form was
+      detected and the URL can be reliably established.
+    </summary>
+  </metric>
+  <metric name="Tickle.FormOutcome" enum="OneTimeTokensTickleFormOutcome">
+    <summary>
+      Records the outcome of an OTP form on a web page relative to push
+      notification (tickle) delivery and user interaction (e.g. tickle arrived
+      before user interaction, after user interaction, or no tickle received
+      within timeout).
     </summary>
   </metric>
 </event>
@@ -4849,6 +4816,22 @@ be describing additional metrics about the same event.
       Records the time taken (in milliseconds) from the start of the token
       verification call until the post-prompt token verification and fetch
       completes.
+    </summary>
+  </metric>
+</event>
+
+<event name="Blink.EmailVerificationProtocol.FormSubmission">
+  <owner>npm@google.com</owner>
+  <owner>web-identity-eng@google.com</owner>
+  <summary>
+    Records metrics for the Email Verification Protocol (EVP) when a form
+    containing a verified email verification token is submitted.
+  </summary>
+  <metric name="Autofill.FormSubmitted" enum="BooleanHit">
+    <summary>
+      Records when a form containing a verified email verification token is
+      submitted. Recorded once when the form submission occurs after successful
+      email verification.
     </summary>
   </metric>
 </event>
@@ -10791,6 +10774,64 @@ be describing additional metrics about the same event.
   </metric>
 </event>
 
+<event name="Glic.MediaContext">
+  <owner>ahmedmoussa@google.com</owner>
+  <owner>liberato@chromium.org</owner>
+  <summary>
+    Recorded when a GlicMediaContext (associated with a document/frame) is
+    destroyed, storing the origin/domain of the document and whether any
+    transcripts were recorded.
+  </summary>
+  <metric name="HasTranscript" enum="Boolean">
+    <summary>
+      Whether any transcript chunks were recorded in GlicMediaContext.
+    </summary>
+    <aggregation>
+      <history>
+        <statistics>
+          <enumeration/>
+        </statistics>
+      </history>
+    </aggregation>
+  </metric>
+</event>
+
+<event name="Glic.Onboarding">
+  <owner>sanaakbani@google.com</owner>
+  <owner>birnie@google.com</owner>
+  <summary>
+    Recorded when an unconsented user interacts with Glic during the onboarding
+    funnel (opening Glic, viewing the FRE opt-in UI, accepting consent, or
+    submitting a prompt). The source_id reflects the focused tab at the moment
+    the event occurs, or NoURLSourceId if no tab is focused.
+  </summary>
+  <metric name="FunnelStep" enum="GlicOnboardingFunnelStep">
+    <summary>
+      The onboarding funnel step reached (NewUserOpen, FreOptInShown,
+      FreOptInAccepted, FirstPromptSubmitted).
+    </summary>
+    <aggregation>
+      <history>
+        <statistics>
+          <enumeration/>
+        </statistics>
+      </history>
+    </aggregation>
+  </metric>
+  <metric name="InvocationSource" enum="GlicInvocationSource">
+    <summary>
+      The entry point used to invoke Glic.
+    </summary>
+    <aggregation>
+      <history>
+        <statistics>
+          <enumeration/>
+        </statistics>
+      </history>
+    </aggregation>
+  </metric>
+</event>
+
 <event name="Glic.Response">
   <owner>erikchen@chromium.org</owner>
   <owner>iwells@google.com</owner>
@@ -15453,7 +15494,7 @@ be describing additional metrics about the same event.
 </event>
 
 <event name="MultistepFilter.ApplicationSession">
-  <owner>adigupt@google.com</owner>
+  <owner>jihadghanna@google.com</owner>
   <owner>chrome-multistep-filter-eng@google.com</owner>
   <summary>
     Recorded when a Multistep Filter suggestion application session is
@@ -15524,7 +15565,7 @@ be describing additional metrics about the same event.
 </event>
 
 <event name="MultistepFilter.UiSession">
-  <owner>adigupt@google.com</owner>
+  <owner>jihadghanna@google.com</owner>
   <owner>chrome-multistep-filter-eng@google.com</owner>
   <summary>
     Recorded when a Multistep Filter suggestion UI session is flushed
@@ -16205,7 +16246,6 @@ be describing additional metrics about the same event.
 
 <event name="NavigationRequestBreakDown" singular="True">
   <owner>chikamune@chromium.org</owner>
-  <owner>hayato@chromium.org</owner>
   <owner>chrome-loading@google.com</owner>
   <summary>
     Metrics to measure the main frame navigation timings by tracking
@@ -16321,7 +16361,7 @@ be describing additional metrics about the same event.
 </event>
 
 <event name="NavigationTimeline" singular="True">
-  <owner>hayato@chromium.org</owner>
+  <owner>chikamune@chromium.org</owner>
   <owner>chrome-loading@google.com</owner>
   <summary>
     Metrics to measure the navigation timings. These are recorded for 1 out of
@@ -18576,7 +18616,7 @@ be describing additional metrics about the same event.
 </event>
 
 <event name="PartitionedCookiePresentV3">
-  <owner>selya@chromium.org</owner>
+  <owner>selya@google.com</owner>
   <owner>dylancutler@google.com</owner>
   <summary>
     Recorded when a page has a partitioned cookie present and the cookie's name
@@ -19319,6 +19359,35 @@ be describing additional metrics about the same event.
     <summary>
       The reason why the browser window size check failed and the Payment
       Request or Payment Handler dialog was rejected.
+    </summary>
+  </metric>
+</event>
+
+<event name="Payments.ThreeDSecure.ChallengeRequest">
+  <owner>darwinyang@google.com</owner>
+  <owner>chrome-payments-eng@google.com</owner>
+  <summary>
+    Records when a 3D-Secure challenge request (cReq) is detected in the form
+    data of an HTTP POST navigation.
+  </summary>
+  <metric name="ChallengeRequest" enum="Boolean">
+    <summary>
+      Set to true when a 3D-Secure challenge request is detected in the form
+      data of an HTTP POST navigation.
+    </summary>
+  </metric>
+</event>
+
+<event name="Payments.ThreeDSecure.ChallengeResponse">
+  <owner>darwinyang@google.com</owner>
+  <owner>chrome-payments-eng@google.com</owner>
+  <summary>
+    Records the outcome of a 3D-Secure challenge response (cRes) detected in the
+    form data of an HTTP POST navigation.
+  </summary>
+  <metric name="ChallengeResponse" enum="ThreeDSecureTransactionStatus">
+    <summary>
+      The outcome of the 3D-Secure challenge response.
     </summary>
   </metric>
 </event>
@@ -20388,77 +20457,6 @@ be describing additional metrics about the same event.
   <summary>
     Recorded when a Flash object instance is created.
   </summary>
-</event>
-
-<event name="PlusAddresses.Submission">
-  <owner>jkeitel@google.com</owner>
-  <owner>vizcay@google.com</owner>
-  <summary>
-    An email was submitted in a form for which the user had previously seen a
-    plus address suggestions. More precisely, this event is recorded whenever a
-    user submits a form that contains a form field for which a plus address
-    suggestion was shown and the form field contains either a plus address or
-    the current profile's GAIA email.
-  </summary>
-  <metric name="CheckoutOrCartPage" enum="Boolean">
-    <summary>
-      Boolean value representing whether commerce heuristics suggest that the
-      main frame URL belongs to a checkout or a cart page.
-    </summary>
-  </metric>
-  <metric name="FieldCountBrowserForm">
-    <summary>
-      The number of fields in the browser form. This uses exponential bucketing
-      with a spacing of 1.15.
-    </summary>
-  </metric>
-  <metric name="FieldCountRendererForm">
-    <summary>
-      The number of fields in the renderer form. This uses exponential bucketing
-      with a spacing of 1.15.
-    </summary>
-  </metric>
-  <metric name="ManagedProfile" enum="Boolean">
-    <summary>
-      Boolean value representing whether the active profile is managed.
-    </summary>
-  </metric>
-  <metric name="NewlyCreatedPlusAddress" enum="Boolean">
-    <summary>
-      Boolean value representing whether the submitted email was newly created
-      for this submission.
-    </summary>
-  </metric>
-  <metric name="PasswordFormType" enum="AutofillPasswordFormType">
-    <summary>
-      The password manager classification of the form focused by the user when
-      showing the plus address suggestion.
-    </summary>
-  </metric>
-  <metric name="PlusAddressCount" enum="PlusAddressCountBucket">
-    <summary>
-      The (bucketed) number of plus addresses the user had when shown the plus
-      address suggestion.
-    </summary>
-  </metric>
-  <metric name="SubmittedPlusAddress" enum="Boolean">
-    <summary>
-      Boolean value representing whether the submitted email was a plus address.
-    </summary>
-  </metric>
-  <metric name="SuggestionContext"
-      enum="AutofillPlusAddressDelegateSuggestionContext">
-    <summary>
-      The context in which the plus address suggestion (filling or creation) was
-      shown in the Autofill UI.
-    </summary>
-  </metric>
-  <metric name="WasShownCreateSuggestion" enum="Boolean">
-    <summary>
-      Boolean value representing whether the user was offered a suggestion to
-      create a new plus address.
-    </summary>
-  </metric>
 </event>
 
 <event name="Popup.Closed">
@@ -23964,10 +23962,16 @@ be describing additional metrics about the same event.
       event (value 3). See page_load_metrics::PageLoadType.
     </summary>
   </metric>
+  <metric name="PaintTiming.FirstContentfulPaint">
+    <summary>
+      Measures the FirstContentfulPaint in milliseconds from the start time of
+      the soft navigation to the presentation time.
+    </summary>
+  </metric>
   <metric name="PaintTiming.LargestContentfulPaint">
     <summary>
       Measures the LargestContentfulPaint in milliseconds from the start time of
-      the soft navigation to the LCP time.
+      the soft navigation to the presentation time.
     </summary>
     <aggregation>
       <history>
@@ -27901,6 +27905,38 @@ be describing additional metrics about the same event.
     <summary>
       A value that represents how complex/unparsable SDP is used. The categories
       are defined in blink::ComplexSdpCategory.
+    </summary>
+  </metric>
+</event>
+
+<event name="WebSpeech.Usage">
+  <owner>evliu@chromium.org</owner>
+  <owner>chrome-media-ux@google.com</owner>
+  <summary>
+    Recorded when a page navigation invokes either SpeechRecognition or
+    SpeechSynthesis. Used to measure website adoption distribution and speech
+    recognition backend selection.
+  </summary>
+  <metric name="RequestedSpeechQuality" enum="WebSpeechRecognitionQuality">
+    <summary>
+      The explicit speech recognition quality level requested by the site
+      (Command=0, Dictation=1, Conversation=2).
+    </summary>
+  </metric>
+  <metric name="SpeechRecognitionBackend" enum="WebSpeechRecognitionBackend">
+    <summary>
+      The speech recognition backend selected/used for the session (Cloud=0,
+      SODA=1, SmallExpertModel=2, GeminiNano=3).
+    </summary>
+  </metric>
+  <metric name="SpeechRecognitionUsed" enum="BooleanHit">
+    <summary>
+      Logged as 1 if SpeechRecognition was initiated during the navigation.
+    </summary>
+  </metric>
+  <metric name="SpeechSynthesisUsed" enum="BooleanHit">
+    <summary>
+      Logged as 1 if SpeechSynthesis speak() was invoked during the navigation.
     </summary>
   </metric>
 </event>

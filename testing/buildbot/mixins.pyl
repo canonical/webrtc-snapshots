@@ -47,6 +47,11 @@
       },
     },
   },
+  'android_extra_verbosity': {
+    'android_args': [
+      '-v',
+    ],
+  },
   'blink_tests_write_run_histories': {
     'args': [
       '--write-run-histories-to=${ISOLATED_OUTDIR}/run_histories.json',
@@ -155,6 +160,9 @@
         'pool': 'chromium.tests',
       },
     },
+  },
+  'ci_only': {
+    'ci_only': True,
   },
   'crosier-no-arc': {
     'args': [
@@ -453,6 +461,27 @@
       ],
     },
   },
+  'legacy_gpu_vulkan_pixel_skia_gold_test_args': {
+    'args': [
+      '--extra-browser-args=--use-vulkan=native --disable-vulkan-fallback-to-gl-for-testing --enable-features=Vulkan --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough',
+    ],
+  },
+  'legacy_gpu_webgl2_conformance_shards': {
+    'swarming': {
+      'shards': 5,
+    },
+  },
+  'legacy_gpu_webgl_conformance_shards': {
+    'swarming': {
+      'shards': 2,
+    },
+    'android_swarming': {
+      'shards': 6,
+    },
+    'chromeos_swarming': {
+      'shards': 6,
+    },
+  },
   'limited_capacity_bot': {
     'fail_if_unused': False,
     'swarming': {
@@ -530,6 +559,14 @@
       },
     },
   },
+  'linux_gpu_high_tier_gemma4_ai_wpt_dimensions': {
+    'fail_if_unused': False,
+    'swarming': {
+      'dimensions': {
+        'gpu': '10de|1002',
+      },
+    },
+  },
   'linux_intel_uhd_630_experimental': {
     'fail_if_unused': False,
     'swarming': {
@@ -570,8 +607,8 @@
     'swarming': {
       'dimensions': {
         'display_server': 'x11',
-        'gpu': '10de:2184-535.183.01',
-        'os': 'Ubuntu-22.04',
+        'gpu': '10de:2184-595.91.07',
+        'os': 'Ubuntu-24.04',
         'pool': 'chromium.tests.gpu',
       },
     },
@@ -793,6 +830,11 @@
       '--do-not-store-tombstones',
     ],
   },
+  'no_xvfb_for_real_hardware': {
+    'linux_args': [
+      '$$MAGIC_SUBSTITUTION_GPUNoXvfbForRealHardware',
+    ],
+  },
   'non-gce': {
     'swarming': {
       'dimensions': {
@@ -891,6 +933,9 @@
     'args': [
       '--use-simulator-cache',
     ],
+  },
+  'use_isolated_scripts_api': {
+    'use_isolated_scripts_api': True,
   },
   'vaapi_unittest_args': {
     'args': [
@@ -1094,6 +1139,14 @@
       },
     },
   },
+  'win_gpu_gemma4_ai_wpt_dimensions': {
+    'fail_if_unused': False,
+    'swarming': {
+      'dimensions': {
+        'gpu': '10de',
+      },
+    },
+  },
   'x64_ai_wpt_shards': {
     'swarming': {
       'shards': 8,
@@ -1107,15 +1160,15 @@
       },
     },
   },
-  'xcode_26_main': {
+  'xcode_27_main': {
     'args': [
       '--xcode-build-version',
-      '17f42',
+      '27a266a',
     ],
     'swarming': {
       'named_caches': [
         {
-          'name': 'xcode_ios_17f42',
+          'name': 'xcode_ios_27a266a',
           'path': 'Xcode.app',
         },
       ],

@@ -44,6 +44,11 @@ chromium-metrics-reviews@google.com.
   <variant name="TurnOnModule"/>
 </variants>
 
+<variants name="MostVisitedSurface">
+  <variant name="NewTabPage" summary="New Tab Page"/>
+  <variant name="Omnibox" summary="Omnibox Everywhere"/>
+</variants>
+
 <variants name="NewTabPage_BackgroundService_RequestLatency">
   <variant name=".Failure"
       summary="Failed to fetch data from background service"/>
@@ -86,6 +91,8 @@ chromium-metrics-reviews@google.com.
       summary="Installed allowlist entry point suggestions."/>
   <variant name=".client" summary="Suggestions coming from the client."/>
   <variant name=".custom_links" summary="User customized links."/>
+  <variant name=".enterprise_shortcuts"
+      summary="Enterprise-managed shortcuts."/>
   <variant name=".explore" summary="Explore sites related entry points."/>
   <variant name=".homepage" summary="The currently set home page."/>
   <variant name=".popular_baked_in" summary="Baked-in, popular suggestions."/>
@@ -128,7 +135,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.ActionChips.Handler.ActionChipsRetrievalLatency"
-    units="ms" expires_after="2027-01-03">
+    units="ms" expires_after="2027-03-07">
   <owner>giannich@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>
@@ -175,7 +182,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.ActionChips.Shown2" enum="ActionChipIconType"
-    expires_after="2026-12-27">
+    expires_after="2027-02-28">
   <owner>giannich@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>Logged when any Action Chips was shown to the user.</summary>
@@ -376,7 +383,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Composebox.FromNTPLoadToSessionStart" units="ms"
-    expires_after="2026-12-20">
+    expires_after="2027-02-28">
   <owner>niharm@google.com</owner>
   <owner>rtatum@google.com</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -494,7 +501,7 @@ chromium-metrics-reviews@google.com.
   </token>
 </histogram>
 
-<histogram name="NewTabPage.Count" units="count" expires_after="2027-01-03">
+<histogram name="NewTabPage.Count" units="count" expires_after="2027-03-07">
   <owner>kawasin@google.com</owner>
   <owner>clank-performance-team@google.com</owner>
   <summary>
@@ -517,7 +524,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Customization.BottomSheet.Shown"
-    enum="NtpCustomizationBottomSheetType" expires_after="2027-01-03">
+    enum="NtpCustomizationBottomSheetType" expires_after="2027-03-07">
   <owner>hanxi@chromium.org</owner>
   <owner>yanlinghu@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -530,7 +537,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Customization.MvtEnabled" enum="BooleanEnabled"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>hanxi@chromium.org</owner>
   <owner>yanlinghu@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -612,7 +619,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="NewTabPage.Customization.Theme.ThemeCollection.DailyRefresh.TurnOff"
-    enum="NTPCollectionId" expires_after="2026-12-20">
+    enum="NTPCollectionId" expires_after="2027-02-28">
   <owner>hanxi@chromium.org</owner>
   <owner>yyanting@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -625,7 +632,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="NewTabPage.Customization.Theme.ThemeCollection.DailyRefresh.TurnOn"
-    enum="NTPCollectionId" expires_after="2026-12-20">
+    enum="NTPCollectionId" expires_after="2027-02-28">
   <owner>hanxi@chromium.org</owner>
   <owner>yyanting@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -650,7 +657,7 @@ chromium-metrics-reviews@google.com.
 <histogram
     name="NewTabPage.Customization.Theme.UploadImage.PreviewInteractions"
     enum="NtpCustomizationThemeUploadImagePreviewInteractions"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>hanxi@chromium.org</owner>
   <owner>yyanting@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -662,7 +669,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Customization.Theme.UploadImage.PreviewShow"
-    enum="BooleanVisible" expires_after="2027-01-03">
+    enum="BooleanVisible" expires_after="2027-03-07">
   <owner>hanxi@chromium.org</owner>
   <owner>yyanting@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -688,7 +695,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="NewTabPage.Customization.UserEngagement.MostVisitedSitesEnabled"
-    enum="BooleanVisible" expires_after="2027-01-03">
+    enum="BooleanVisible" expires_after="2027-03-07">
   <owner>hanxi@chromium.org</owner>
   <owner>yanlinghu@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -749,7 +756,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.CustomizeChromeSidePanelAction"
-    enum="NTPCustomizeChromeSidePanelAction" expires_after="2027-01-03">
+    enum="NTPCustomizeChromeSidePanelAction" expires_after="2027-03-07">
   <owner>pauladedeji@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>rtatum@google.com</owner>
@@ -879,7 +886,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Footer.Click" enum="FooterElement"
-    expires_after="2026-12-06">
+    expires_after="2027-02-28">
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>Logged when the Footer was clicked.</summary>
@@ -928,7 +935,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Footer.ToggledVisibility{FooterToggleSource}"
-    enum="BooleanVisible" expires_after="2026-12-16">
+    enum="BooleanVisible" expires_after="2027-02-28">
   <owner>pauladedeji@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -967,7 +974,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Footer.WebUI.LoadDocumentTime" units="ms"
-    expires_after="2026-12-13">
+    expires_after="2027-02-28">
   <owner>pauladedeji@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1416,7 +1423,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Module.LongClick" enum="ModuleTypeOnStartAndNTP"
-    expires_after="2026-12-27">
+    expires_after="2027-02-28">
   <owner>hanxi@chromium.org</owner>
   <owner>xinyiji@chromium.org</owner>
   <summary>
@@ -1427,7 +1434,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.AutoRemoval" units="count"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1441,7 +1448,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.AutoRemovalModuleId" enum="NtpModules"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1502,7 +1509,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.AutoRemovalUndone" units="count"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1516,7 +1523,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.AutoRemovalUndoneModuleId"
-    enum="NtpModules" expires_after="2027-01-03">
+    enum="NtpModules" expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1633,7 +1640,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.ImpressionRatio{NewTabPageModules}"
-    units="perdecage" expires_after="2027-01-03">
+    units="perdecage" expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1892,7 +1899,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.MostVisited.AutoRemovalSkipped"
-    enum="NtpShortcutsAutoRemovalReason" expires_after="2027-01-03">
+    enum="NtpShortcutsAutoRemovalReason" expires_after="2027-03-07">
   <owner>giannich@google.com</owner>
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
@@ -1909,7 +1916,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.MostVisited.AutoRemovalStaleDays" units="count"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>giannich@google.com</owner>
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
@@ -1947,31 +1954,6 @@ chromium-metrics-reviews@google.com.
     <variant name="8"/>
     <variant name="9"/>
   </token>
-</histogram>
-
-<histogram name="NewTabPage.MostVisited.IsExpandedOnLoad" enum="Boolean"
-    expires_after="2027-03-17">
-  <owner>adamyao@google.com</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Logs whether the Most Visited tiles were in the expanded state (showing more
-    than the default number of tiles) when the NTP was loaded. Logged when Most
-    Visited tiles are rendered (e.g., on NTP load and refresh). True (1) is
-    logged when the Most Visited tiles are expanded, showing more than the
-    default number of tiles. False (0) is logged when they are not expanded,
-    showing the default number of tiles.
-  </summary>
-</histogram>
-
-<histogram name="NewTabPage.MostVisited.NumberOfCustomTilesOnFirstNtp"
-    units="units" expires_after="2027-02-07">
-  <owner>fredmello@chromium.org</owner>
-  <owner>huangs@chromium.org</owner>
-  <owner>ginnyhuang@chromium.org</owner>
-  <summary>
-    The number of Custom Tiles on the NTP the first time the NTP opens for a
-    profile, assuming Custom Tiles are enabled.
-  </summary>
 </histogram>
 
 <histogram name="NewTabPage.MostVisited.ReselectMatch.{StrictnessSuffix}"
@@ -2015,40 +1997,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="NewTabPage.MostVisited{NewTabPageIconTypes}"
-    enum="MostVisitedTileIndex" expires_after="never">
-<!-- expires-never: part of top-line metric (internal: go/chrome-browser-nsm) -->
-
-<!-- expires-never: part of vital metric ChromeSearch.Actions -->
-
-  <owner>justincohen@chromium.org</owner>
-  <owner>mastiz@chromium.org</owner>
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-analysis-team@google.com</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Histogram for user clicks of the most visited tile. The value is equal to
-    the index of the tile.
-
-    For special types of results:
-
-    * Clicks on the &quot;Add Shortcut&quot; tile are not counted.
-
-    * Clicks on the Explore Sites tile on Android are counted.
-
-    The user action NewTabPage.MostVisited.Clicked is also logged at the same
-    time as this histogram.
-
-    This histogram is of special interest to the chrome-analysis-team@. Do not
-    change its semantics or retire it without talking to them first.
-    {NewTabPageIconTypes}
-  </summary>
-  <token key="NewTabPageIconTypes" variants="NewTabPageIconTypes">
-    <variant name=""/>
-  </token>
-</histogram>
-
 <histogram name="NewTabPage.NavigationOrActivationToFirstContentfulPaint"
     units="ms" expires_after="2027-01-17">
   <owner>robertlin@chromium.org</owner>
@@ -2090,26 +2038,9 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="NewTabPage.NumberOfTiles" units="units"
-    expires_after="2027-02-14">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    The number of tiles that are on the NTP, no matter if they are thumbnails,
-    gray tiles, or external tiles. Recorded before reloading the suggestions,
-    navigating to a URL, switching tabs, changing the active window or closing
-    the tab/shutting down Chrome. The sum of this histogram does not have to
-    equal to the total count of tile impressions (such as the total count in
-    NewTabPage.TileType). The reason is that not all tiles have to be impressed
-    initially (e.g., the second row of tiles may be initially out of sight on
-    iOS).
-  </summary>
-</histogram>
-
 <histogram
     name="NewTabPage.OneGoogleBar.RequestLatency{NewTabPage_OneGoogleBar_RequestLatency}"
-    units="ms" expires_after="2027-01-03">
+    units="ms" expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -2126,7 +2057,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.OneGoogleBar.ShownTime" units="ms"
-    expires_after="2026-12-20">
+    expires_after="2027-02-21">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -2332,31 +2263,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="NewTabPage.SuggestionsImpression{NewTabPageIconTypes}"
-    enum="MostVisitedTileIndex" expires_after="2027-02-07">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Histogram for impressions on the various most visited tiles. The value is
-    equal to the index of the thumbnail. {NewTabPageIconTypes}
-  </summary>
-  <token key="NewTabPageIconTypes" variants="NewTabPageIconTypes">
-    <variant name=""/>
-  </token>
-</histogram>
-
-<histogram name="NewTabPage.SuggestionsImpression{NewTabPageProviders}"
-    enum="MostVisitedTileIndex" expires_after="2027-01-10">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Histogram for impressions on the various most visited tiles. The value is
-    equal to the index of the thumbnail. {NewTabPageProviders}
-  </summary>
-</histogram>
-
 <histogram name="NewTabPage.SuggestTiles.DeletedTileType"
     enum="SuggestTileType" expires_after="2027-01-03">
   <owner>ender@google.com</owner>
@@ -2373,7 +2279,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.SuggestTiles.SelectedTileType"
-    enum="SuggestTileType" expires_after="2027-01-03">
+    enum="SuggestTileType" expires_after="2027-03-07">
   <owner>ender@google.com</owner>
   <owner>mahmadi@chromium.org</owner>
   <owner>chrome-omnibox-team@google.com</owner>
@@ -2398,7 +2304,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.TabGroups.CreateNewTabGroup{ExperimentalState}"
-    units="count" expires_after="2026-12-31">
+    units="count" expires_after="2027-03-07">
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>
@@ -2540,65 +2446,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="NewTabPage.TileTitleClicked{NewTabPageProviders}"
-    enum="NTPTileTitleSource" expires_after="2027-01-31">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>ginnyhuang@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Records the source for the name a most visited tile showed when the user
-    clicked it, e.g. a URL, or the page title. {NewTabPageProviders}
-  </summary>
-  <token key="NewTabPageProviders" variants="NewTabPageProviders">
-    <variant name=""/>
-  </token>
-</histogram>
-
-<histogram name="NewTabPage.TileTitle{NewTabPageProviders}"
-    enum="NTPTileTitleSource" expires_after="2024-07-21">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Records the source of the title for each most visited tiled displayed when
-    an NTP is opened, e.g. a short_name from a manifest, or the page title.
-    {NewTabPageProviders}
-  </summary>
-  <token key="NewTabPageProviders" variants="NewTabPageProviders">
-    <variant name=""/>
-  </token>
-</histogram>
-
-<histogram name="NewTabPage.TileTypeClicked{NewTabPageProviders}"
-    enum="NTPTileVisualType" expires_after="2024-03-17">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    The visual type of the most visited item that the user clicked on, e.g.
-    actual thumbnail or placeholder thumbnail. {NewTabPageProviders}
-  </summary>
-  <token key="NewTabPageProviders" variants="NewTabPageProviders">
-    <variant name=""/>
-  </token>
-</histogram>
-
-<histogram name="NewTabPage.TileType{NewTabPageProviders}"
-    enum="NTPTileVisualType" expires_after="2025-05-04">
-  <owner>romanarora@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    The visual type of each most visited tile displayed on the new tab page,
-    e.g. actual thumbnail or placeholder thumbnail. This is recorded for each
-    most visited item when the NTP is opened. {NewTabPageProviders}
-  </summary>
-  <token key="NewTabPageProviders" variants="NewTabPageProviders">
-    <variant name=""/>
-  </token>
-</histogram>
-
 <histogram name="NewTabPage.TimeSinceLastNTP" units="ms"
     expires_after="2026-07-27">
   <owner>romanarora@chromium.org</owner>
@@ -2664,7 +2511,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.VoiceErrors" enum="NewTabPageVoiceError"
-    expires_after="2026-12-31">
+    expires_after="2027-03-07">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -2750,7 +2597,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.WallpaperSearch.Status"
-    enum="NtpWallpaperSearchStatus" expires_after="2027-01-03">
+    enum="NtpWallpaperSearchStatus" expires_after="2027-03-07">
   <owner>pauladedeji@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>rtatum@google.com</owner>
@@ -2772,6 +2619,197 @@ chromium-metrics-reviews@google.com.
     search engine, Incognito and Guest mode NTPs are not considered 1P and don't
     log this histogram.
   </summary>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.MostVisited.IsExpandedOnLoad"
+    enum="Boolean" expires_after="2027-03-17">
+  <owner>adamyao@google.com</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Logs whether the Most Visited tiles were in the expanded state (showing more
+    than the default number of tiles) when {MostVisitedSurface} was loaded.
+    Logged when Most Visited tiles are rendered (e.g., on load and refresh).
+    True (1) is logged when the Most Visited tiles are expanded, showing more
+    than the default number of tiles. False (0) is logged when they are not
+    expanded, showing the default number of tiles.
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+</histogram>
+
+<histogram
+    name="{MostVisitedSurface}.MostVisited.NumberOfCustomTilesOnFirstNtp"
+    units="units" expires_after="2027-02-07">
+  <owner>fredmello@chromium.org</owner>
+  <owner>huangs@chromium.org</owner>
+  <owner>ginnyhuang@chromium.org</owner>
+  <summary>
+    The number of Custom Tiles on {MostVisitedSurface} the first time it opens
+    for a profile, assuming Custom Tiles are enabled.
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.MostVisited{NewTabPageIconTypes}"
+    enum="MostVisitedTileIndex" expires_after="never">
+<!-- expires-never: part of top-line metric (internal: go/chrome-browser-nsm) -->
+
+<!-- expires-never: part of vital metric ChromeSearch.Actions -->
+
+  <owner>justincohen@chromium.org</owner>
+  <owner>mastiz@chromium.org</owner>
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-analysis-team@google.com</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Histogram for user clicks of the most visited tile on {MostVisitedSurface}.
+    The value is equal to the index of the tile.
+
+    For special types of results:
+
+    * Clicks on the &quot;Add Shortcut&quot; tile are not counted.
+
+    * Clicks on the Explore Sites tile on Android are counted.
+
+    The user action {MostVisitedSurface}.MostVisited.Clicked is also logged at
+    the same time as this histogram.
+
+    This histogram is of special interest to the chrome-analysis-team@. Do not
+    change its semantics or retire it without talking to them first.
+    {NewTabPageIconTypes}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageIconTypes" variants="NewTabPageIconTypes">
+    <variant name=""/>
+  </token>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.MostVisited{NewTabPageProviders}"
+    enum="MostVisitedTileIndex" expires_after="2027-08-15">
+  <owner>niharm@google.com</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Histogram for user clicks of the most visited tile by suggestion provider on
+    {MostVisitedSurface}. The value is equal to the index of the tile.
+    {NewTabPageProviders}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageProviders" variants="NewTabPageProviders"/>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.NumberOfTiles" units="units"
+    expires_after="2027-02-14">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    The number of tiles that are on {MostVisitedSurface}, no matter if they are
+    thumbnails, gray tiles, or external tiles. Recorded before reloading the
+    suggestions, navigating to a URL, switching tabs, changing the active window
+    or closing the tab/shutting down Chrome. The sum of this histogram does not
+    have to equal to the total count of tile impressions (such as the total
+    count in {MostVisitedSurface}.TileType). The reason is that not all tiles
+    have to be impressed initially (e.g., the second row of tiles may be
+    initially out of sight on iOS).
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+</histogram>
+
+<histogram
+    name="{MostVisitedSurface}.SuggestionsImpression{NewTabPageIconTypes}"
+    enum="MostVisitedTileIndex" expires_after="2027-02-07">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Histogram for impressions on the various most visited tiles on
+    {MostVisitedSurface}. The value is equal to the index of the thumbnail.
+    {NewTabPageIconTypes}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageIconTypes" variants="NewTabPageIconTypes">
+    <variant name=""/>
+  </token>
+</histogram>
+
+<histogram
+    name="{MostVisitedSurface}.SuggestionsImpression{NewTabPageProviders}"
+    enum="MostVisitedTileIndex" expires_after="2027-01-10">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Histogram for impressions on the various most visited tiles on
+    {MostVisitedSurface}. The value is equal to the index of the thumbnail.
+    {NewTabPageProviders}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageProviders" variants="NewTabPageProviders"/>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.TileTitleClicked{NewTabPageProviders}"
+    enum="NTPTileTitleSource" expires_after="2027-01-31">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>ginnyhuang@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Records the source for the name a most visited tile showed when the user
+    clicked it on {MostVisitedSurface}, e.g. a URL, or the page title.
+    {NewTabPageProviders}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageProviders" variants="NewTabPageProviders">
+    <variant name=""/>
+  </token>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.TileTitle{NewTabPageProviders}"
+    enum="NTPTileTitleSource" expires_after="2027-08-15">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    Records the source of the title for each most visited tiled displayed when
+    {MostVisitedSurface} is opened, e.g. a short_name from a manifest, or the
+    page title. {NewTabPageProviders}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageProviders" variants="NewTabPageProviders">
+    <variant name=""/>
+  </token>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.TileTypeClicked{NewTabPageProviders}"
+    enum="NTPTileVisualType" expires_after="2027-08-15">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    The visual type of the most visited item that the user clicked on on
+    {MostVisitedSurface}, e.g. actual thumbnail or placeholder thumbnail.
+    {NewTabPageProviders}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageProviders" variants="NewTabPageProviders">
+    <variant name=""/>
+  </token>
+</histogram>
+
+<histogram name="{MostVisitedSurface}.TileType{NewTabPageProviders}"
+    enum="NTPTileVisualType" expires_after="2027-08-15">
+  <owner>romanarora@chromium.org</owner>
+  <owner>tiborg@chromium.org</owner>
+  <owner>chrome-desktop-ntp@google.com</owner>
+  <summary>
+    The visual type of each most visited tile displayed on {MostVisitedSurface},
+    e.g. actual thumbnail or placeholder thumbnail. This is recorded for each
+    most visited item when {MostVisitedSurface} is opened. {NewTabPageProviders}
+  </summary>
+  <token key="MostVisitedSurface" variants="MostVisitedSurface"/>
+  <token key="NewTabPageProviders" variants="NewTabPageProviders">
+    <variant name=""/>
+  </token>
 </histogram>
 
 </histograms>

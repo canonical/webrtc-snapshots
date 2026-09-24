@@ -75,7 +75,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="SharedHighlights.LinkGenerated.Error"
-    enum="LinkGenerationError" expires_after="2027-01-03">
+    enum="LinkGenerationError" expires_after="2027-03-07">
   <owner>jeffreycohen@chromium.org</owner>
   <owner>chrome-shared-highlighting@google.com</owner>
   <summary>
@@ -86,7 +86,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="SharedHighlights.LinkGenerated.Error.Requested"
-    enum="LinkGenerationError" expires_after="2026-12-27">
+    enum="LinkGenerationError" expires_after="2027-02-28">
   <owner>jeffreycohen@chromium.org</owner>
   <owner>chrome-shared-highlighting@google.com</owner>
   <summary>
@@ -582,6 +582,8 @@ chromium-metrics-reviews@google.com.
     <variant name=".OmniboxMenu" summary="the context menu on the Omnibox"/>
     <variant name=".ShareMenu" summary="the Share menu in the 3-dot menu"/>
     <variant name=".ShareSheet" summary="the OS-level Share Sheet"/>
+    <variant name=".ShareSheetDirectShare"
+        summary="a DirectShare target on the OS-level Share Sheet"/>
     <variant name=".TabMenu"
         summary="the context menu on a tab (in the tab strip or tab switcher)"/>
     <variant name=".ToolbarIcon"

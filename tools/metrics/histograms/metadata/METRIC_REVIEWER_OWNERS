@@ -1,12 +1,6 @@
 # accessibility
 evliu@google.com
 jonross@chromium.org
-# accessibility_annotator
-holte@chromium.org
-nyquist@chromium.org
-schwering@google.com
-sophiechang@chromium.org
-wittman@chromium.org
 # account_manager
 sinhak@chromium.org
 # android
@@ -23,6 +17,7 @@ ashleynewson@chromium.org
 mklw@google.com
 mschillaci@google.com
 aishwaryarj@google.com
+agazal@google.com
 # apps
 nancylingwang@chromium.org
 tby@chromium.org
@@ -100,7 +95,6 @@ gavinwill@chromium.org
 achuith@chromium.org
 chadduffin@chromium.org
 crisrael@google.com
-enlightened@chromium.org
 jiajunz@google.com
 khorimoto@chromium.org
 nikhilcn@google.com
@@ -272,6 +266,7 @@ dschuff@chromium.org
 fabiansommer@chromium.org
 # navigation
 cthomp@chromium.org
+nhiroki@chromium.org
 tbansal@chromium.org
 toyoshim@chromium.org
 gjc@google.com
@@ -372,11 +367,13 @@ olivierli@chromium.org
 tby@chromium.org
 # prefetch
 curranmax@chromium.org
+nhiroki@chromium.org
 spelchat@chromium.org
 tbansal@chromium.org
 toyoshim@chromium.org
 # preloading
 curranmax@chromium.org
+nhiroki@chromium.org
 spelchat@chromium.org
 # printing
 andyphan@chromium.org
@@ -389,7 +386,6 @@ andzaytsev@google.com
 dullweber@chromium.org
 harrisonsean@chromium.org
 csharrison@chromium.org
-boujane@google.com
 xiaochenzh@chromium.org
 liu@chromium.org
 svend@chromium.org
@@ -472,6 +468,8 @@ zgroza@chromium.org
 drubery@chromium.org
 thefrog@chromium.org
 xinghuilu@chromium.org
+# stability and Windows
+wfh@chromium.org
 # startup
 fdoray@chromium.org
 spvm@chromium.org

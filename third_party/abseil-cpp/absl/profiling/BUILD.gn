@@ -35,6 +35,8 @@ absl_test("exponential_biased_test") {
   sources = [ "internal/exponential_biased_test.cc" ]
   deps = [
     ":exponential_biased",
+    "//third_party/abseil-cpp/absl/base:config",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings",
   ]
 }
@@ -45,6 +47,7 @@ absl_source_set("periodic_sampler") {
   visibility = [ "//third_party/abseil-cpp/absl/*" ]
   deps = [
     ":exponential_biased",
+    "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
@@ -53,6 +56,7 @@ absl_test("periodic_sampler_test") {
   sources = [ "internal/periodic_sampler_test.cc" ]
   deps = [
     ":periodic_sampler",
+    "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
@@ -67,6 +71,7 @@ absl_source_set("profile_builder") {
     "//third_party/abseil-cpp/absl/base:raw_logging_internal",
     "//third_party/abseil-cpp/absl/container:btree",
     "//third_party/abseil-cpp/absl/container:flat_hash_map",
+    "//third_party/abseil-cpp/absl/container:hash_container_defaults",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:str_format",
     "//third_party/abseil-cpp/absl/strings:string_view",
@@ -80,6 +85,7 @@ absl_source_set("hashtable") {
   visibility = [ "//third_party/abseil-cpp/absl/*" ]
   deps = [
     ":profile_builder",
+    "//third_party/abseil-cpp/absl/base",
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/container:hashtablez_sampler",
     "//third_party/abseil-cpp/absl/status:statusor",

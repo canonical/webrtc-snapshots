@@ -9,18 +9,40 @@
  * Cached registry of all permanent DOM nodes accessed by the UI.
  */
 class MainElements {
-  constructor() {}
+  constructor() {
+    const getById = (id) => document.getElementById(id);
+    this.btnLoad = getById('btn-load');
+    this.divControls = getById('div-controls');
+    this.divInfoBar = getById('div-info-bar');
+    this.divMain = getById('div-main');
+    this.divMainSplitter = getById('div-main-splitter');
+    this.divOverlay = getById('div-overlay');
+    this.divPaneScreenshot = getById('div-pane-screenshot');
+    this.divScreenshot = getById('div-screenshot');
+    this.divViewTree = getById('div-view-tree');
+  }
 }
 
 /******** MainVis ********/
 /**
- * Orchestrates top-level visual state spanning multiple visualizers. Modifies
- * the DOM but has no layout logic.
+ * Orchestrates top-level visual state spanning multiple visualizers (like the
+ * Screenshot, or View Tree). Modifies the DOM but has no layout logic.
  */
 class MainVis {
   constructor(el, model) {
     this.el = el;
     this.model = model;
+
+    this.screenshotVis =
+        new ScreenshotVis(this.el.divScreenshot, this.model.visOpts);
+    this.treeVis = new TreeVis(this.el.divViewTree);
+    this.infoBarVis = new InfoBarVis(this.el.divInfoBar);
+    this.overlayVis = new OverlayVis(this.el.divOverlay);
+  }
+
+  clearUI() {
+    this.screenshotVis.clear();
+    this.treeVis.clear();
   }
 }
 
@@ -34,9 +56,63 @@ class MainController {
     this.model = model;
     this.vis = vis;
     this.el = this.vis.el;
+
+    this.hintCtrl = new HintController(this.vis.infoBarVis);
+
+    this.layoutCtrl = new LayoutController(
+        this.model, this.el.divMain, this.el.divPaneScreenshot,
+        this.el.divMainSplitter, this.hintCtrl);
+
+    this.treeCtrl = new TreeController(this.model, this.vis.treeVis);
   }
 
-  init() {}
+  // Event Handlers - File Operations/Markup
+  async handleLoad() {
+    this.vis.clearUI();
+    this.vis.overlayVis.show('overlay-loading', 'Loading...');
+    await this.model.unload();
+
+    try {
+      await this.model.load();  // Also updates `visOpts`.
+
+      this.vis.screenshotVis.init(this.model.imgScreenshot, this.model.visOpts);
+
+      const {wDims} = this.model.visOpts;
+      this.layoutCtrl.setLayoutMode(LayoutMode.fromVector(-wDims.h, -wDims.w));
+
+      // The model is the source of truth for view data.
+      this.treeCtrl.populate();
+
+    } catch (error) {
+      console.error('Failed to load screen data:', error);
+      alert(`An error occurred: ${error.message}`);
+    } finally {
+      this.vis.overlayVis.hide();
+    }
+  }
+
+  bindAll() {
+    this.el.btnLoad.addEventListener('click', () => this.handleLoad());
+
+    // Delegated hover hints for controls.
+    this.el.divControls.addEventListener('mouseover', (e) => {
+      const target = e.target.closest('[data-hint]');
+      if (target) {
+        const hintKey = target.getAttribute('data-hint');
+        if (HINT[hintKey]) this.hintCtrl.setHint(HINT[hintKey]);
+      }
+    });
+    this.el.divControls.addEventListener('mouseout', (e) => {
+      if (!e.relatedTarget || !this.el.divControls.contains(e.relatedTarget)) {
+        this.hintCtrl.clear();
+      }
+    });
+  }
+
+  init() {
+    this.bindAll();
+    this.el.btnLoad.focus();
+  }
 }
 
 /******** Initialization ********/

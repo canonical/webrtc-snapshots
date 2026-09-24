@@ -133,12 +133,18 @@ class LocalMachineJunitTestRun(test_run.TestRun):
             '--add-opens=java.base/java.lang=ALL-UNNAMED',
             '--add-opens=java.base/java.util=ALL-UNNAMED',
             '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED',
+            # JEP 472 (JDK 24+) requires native access to be explicitly enabled to
+            # avoid warnings on restricted methods like System.load.
+            '--enable-native-access=ALL-UNNAMED',
             # Disable warning about mockito/bytebuddy dynamically adding an
             # agent.
             '-XX:+EnableDynamicAgentLoading',
             '-Drobolectric.dependency.dir=%s'
             % self._test_instance.robolectric_runtime_deps_dir,
             '-Ddir.source.root=%s' % constants.DIR_SOURCE_ROOT,
+            # Set the default to @ConscryptMode(ConscryptMode.Mode.OFF)
+            # Saves ~60ms of start-up time.
+            '-Drobolectric.conscryptMode=OFF',
             # Use locally available sdk jars from 'robolectric.dependency.dir'
             '-Drobolectric.offline=true',
             '-Drobolectric.resourcesMode=binary',

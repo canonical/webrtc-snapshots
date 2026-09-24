@@ -393,6 +393,7 @@ chromium-metrics-reviews@google.com.
 <enum name="DTKeyType">
   <int value="0" label="RSA"/>
   <int value="1" label="EC"/>
+  <int value="2" label="Unknown"/>
 </enum>
 
 <enum name="DTLoadPersistedKeyResult">
@@ -611,6 +612,7 @@ chromium-metrics-reviews@google.com.
   <int value="35" label="FAILURE_INVALID_ARGUMENT"/>
   <int value="36" label="FAILURE_NETWORK_FAILURE"/>
   <int value="37" label="FAILURE_OPERATION_TIMEOUT"/>
+  <int value="38" label="FAILURE_SOFTWARE_UPGRADED"/>
 </enum>
 
 <!-- LINT.IfChange(EnterpriseDeviceManagementStatus) -->
@@ -2518,7 +2520,7 @@ chromium-metrics-reviews@google.com.
   <int value="1466" label="ProxyProvisioningDomains"/>
   <int value="1467" label="ThirdPartyAiChatSettings"/>
   <int value="1468" label="ProcessIsolationEnabled"/>
-  <int value="1469" label="Indigo"/>
+  <int value="1469" label="TryOnYouSettings"/>
   <int value="1470" label="DeviceOnlinePasswordMismatchBehavior"/>
   <int value="1471" label="UpdateOnZeroWindowEnabled"/>
   <int value="1472" label="BackForwardCacheForWebSocketsAllowed"/>
@@ -2527,9 +2529,11 @@ chromium-metrics-reviews@google.com.
   <int value="1475" label="OnNetworkRequestEnterpriseConnector"/>
   <int value="1476" label="EnterprisePublishedSkills"/>
   <int value="1477" label="OnDataCopiedEnterpriseConnector"/>
-  <int value="1478" label="DeviceLocalNetworkAccessAllowedForUrls"/>
-  <int value="1479" label="DeviceLocalNetworkAccessBlockedForUrls"/>
-  <int value="1480" label="DeviceLocalNetworkAccessIpAddressSpaceOverrides"/>
+  <int value="1481" label="DeviceOsMigrationTargetDate"/>
+  <int value="1482" label="RendererAccessibilityEnabled"/>
+  <int value="1483" label="ExtensionReviewPromptsEnabled"/>
+  <int value="1484" label="BackgroundTabFreezingEnabled"/>
+  <int value="1485" label="ShowInputOptionsInShelfEnabled"/>
 </enum>
 
 <enum name="EnterprisePoliciesSources">
@@ -2671,6 +2675,20 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Failed (Permanent Error)"/>
 </enum>
 
+<!-- LINT.IfChange(EnterpriseSignalsDisclaimerDismissalCause) -->
+
+<enum name="EnterpriseSignalsDisclaimerDismissalCause">
+  <int value="0" label="Tapped accept"/>
+  <int value="1" label="Tapped sign out"/>
+  <int value="2" label="Dismissed by back press"/>
+  <int value="3" label="Dismissed by swipe down"/>
+  <int value="4" label="Dismissed by tap outside"/>
+  <int value="5" label="Dismissed by close button"/>
+  <int value="6" label="Dismissed without explicit user action"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/enterprise_signals_disclaimer/java/src/org/chromium/chrome/browser/ui/enterprise_signals_disclaimer/EnterpriseSignalsDisclaimerHost.java:EnterpriseSignalsDisclaimerDismissalCause) -->
+
 <!-- LINT.IfChange(EnterpriseSignalsDisclaimerModalResult) -->
 
 <enum name="EnterpriseSignalsDisclaimerModalResult">
@@ -2682,6 +2700,16 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/enterprise/signin/signals_disclaimer_metrics.h:EnterpriseSignalsDisclaimerModalResult) -->
 
+<!-- LINT.IfChange(EnterpriseSignalsDisclaimerNotShownReason) -->
+
+<enum name="EnterpriseSignalsDisclaimerNotShownReason">
+  <int value="0" label="Active web contents/tab not ready"/>
+  <int value="1" label="Profile creation in progress"/>
+  <int value="2" label="Other modal dialog shown"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/enterprise/signin/signals_disclaimer_metrics.h:EnterpriseSignalsDisclaimerNotShownReason) -->
+
 <!-- LINT.IfChange(EnterpriseSignalsDisclaimerProfilePickerResult) -->
 
 <enum name="EnterpriseSignalsDisclaimerProfilePickerResult">
@@ -2692,6 +2720,15 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/enterprise/signin/signals_disclaimer_metrics.h:EnterpriseSignalsDisclaimerProfilePickerResult) -->
+
+<!-- LINT.IfChange(EnterpriseSignalsDisclaimerShownOn) -->
+
+<enum name="EnterpriseSignalsDisclaimerShownOn">
+  <int value="0" label="Startup"/>
+  <int value="1" label="Sign-in"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/enterprise_signals_disclaimer/java/src/org/chromium/chrome/browser/ui/enterprise_signals_disclaimer/MetricsHelper.java:EnterpriseSignalsDisclaimerShownOn) -->
 
 <!-- LINT.IfChange(EnterpriseSkillValidationResult) -->
 

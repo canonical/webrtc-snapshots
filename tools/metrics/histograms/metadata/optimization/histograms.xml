@@ -737,7 +737,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AIPageContent.ExtractionConcurrency"
-    enum="AIPageContentExtractionConcurrency" expires_after="2026-12-27">
+    enum="AIPageContentExtractionConcurrency" expires_after="2027-02-28">
   <owner>alexmt@chromium.org</owner>
   <owner>khushalsagar@chromium.org</owner>
   <summary>
@@ -749,7 +749,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AIPageContent.ExtractionsBetweenNavigations"
-    units="extractions" expires_after="2026-12-27">
+    units="extractions" expires_after="2027-02-28">
   <owner>alexmt@chromium.org</owner>
   <owner>khushalsagar@chromium.org</owner>
   <summary>
@@ -760,7 +760,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AIPageContent.ExtractionsPerPage"
-    units="extractions" expires_after="2026-12-27">
+    units="extractions" expires_after="2027-02-28">
   <owner>alexmt@chromium.org</owner>
   <owner>khushalsagar@chromium.org</owner>
   <summary>
@@ -811,7 +811,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AIPageContent.RendererLatency.{FrameType}"
-    units="ms" expires_after="2027-01-03">
+    units="ms" expires_after="2027-03-07">
   <owner>khushalsagar@chromium.org</owner>
   <owner>abigailbklein@google.com</owner>
   <summary>
@@ -854,7 +854,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AIPageContent.TimeSinceLastExtraction"
-    units="ms" expires_after="2026-12-27">
+    units="ms" expires_after="2027-02-28">
   <owner>alexmt@chromium.org</owner>
   <owner>khushalsagar@chromium.org</owner>
   <summary>
@@ -865,7 +865,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AIPageContent.TotalLatency" units="ms"
-    expires_after="2027-01-03">
+    expires_after="2027-03-07">
   <owner>khushalsagar@chromium.org</owner>
   <owner>abigailbklein@google.com</owner>
   <summary>
@@ -878,7 +878,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.AIPageContent.TotalLatency.{AIPageContentMode}.{CriticalPath}"
-    units="ms" expires_after="2027-01-03">
+    units="ms" expires_after="2027-03-07">
   <owner>khushalsagar@chromium.org</owner>
   <owner>abigailbklein@google.com</owner>
   <owner>gklassen@chromium.org</owner>
@@ -891,7 +891,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="OptimizationGuide.AnnotatedPageContent.ComputeMetricsLatency"
-    units="microseconds" expires_after="2027-01-03">
+    units="microseconds" expires_after="2027-03-07">
   <owner>khushalsagar@chromium.org</owner>
   <owner>abigailbklein@google.com</owner>
   <summary>
@@ -937,7 +937,7 @@ chromium-metrics-reviews@google.com.
 <!-- LINT.IfChange(APCTotalWordCount) -->
 
 <histogram name="OptimizationGuide.AnnotatedPageContent.TotalWordCount"
-    units="words" expires_after="2027-01-03">
+    units="words" expires_after="2027-03-07">
   <owner>khushalsagar@chromium.org</owner>
   <owner>abigailbklein@google.com</owner>
   <summary>
@@ -1340,26 +1340,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="OptimizationGuide.ModelExecution.OnDeviceBaseModelLoadResult"
-    enum="LoadPlatformModelStatus" expires_after="2027-04-14">
-  <owner>holte@chromium.org</owner>
-  <owner>wittman@chromium.org</owner>
-  <summary>
-    Records the result of loading the base model, whether it succeeded or failed
-    with various reasons.
-  </summary>
-</histogram>
-
-<histogram name="OptimizationGuide.ModelExecution.OnDeviceBaseModelLoadVersion"
-    enum="OnDeviceBaseModelVersion" expires_after="2027-04-14">
-  <owner>holte@chromium.org</owner>
-  <owner>wittman@chromium.org</owner>
-  <summary>
-    Records the hash code of base model version that is loaded. Recorded on
-    every load of the base model.
-  </summary>
-</histogram>
-
 <histogram
     name="OptimizationGuide.ModelExecution.OnDeviceContextTokensProcessed.{ModelExecutionFeature}"
     units="tokens" expires_after="2027-04-14">
@@ -1516,31 +1496,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="OptimizationGuide.ModelExecution.OnDeviceModelStatusAtUseTime"
-    enum="OptimizationGuideOnDeviceModelStatus" expires_after="2027-04-14">
-  <owner>holte@chromium.org</owner>
-  <owner>wittman@chromium.org</owner>
-  <summary>
-    Records the on-device model status. Recorded when a feature is used that
-    could benefit from an on-device model.
-  </summary>
-</histogram>
-
-<histogram
-    name="OptimizationGuide.ModelExecution.OnDeviceModelToBeInstalledReason.{ModelExecutionFeature}"
-    enum="OptimizationGuideOnDeviceModelStatus" expires_after="2027-04-14">
-  <owner>holte@chromium.org</owner>
-  <owner>nwokedi@chromium.org</owner>
-  <summary>
-    Records the OptimizationGuideOnDeviceModelStatus when it is determined that
-    the device is eligible but the model has not been installed yet. This is
-    logged when it is checked if an on-device session can be created for a given
-    feature usually when a session is created or when an eligibility check is
-    conducted.
-  </summary>
-  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
-</histogram>
-
 <histogram
     name="OptimizationGuide.ModelExecution.OnDeviceModelUninstallReason.{BaseModel}"
     enum="OnDeviceModelUninstallReason" expires_after="2027-02-14">
@@ -1551,18 +1506,6 @@ chromium-metrics-reviews@google.com.
     on-device base model is uninstalled.
   </summary>
   <token key="BaseModel" variants="BaseModel"/>
-</histogram>
-
-<histogram
-    name="OptimizationGuide.ModelExecution.OnDeviceModelValidationResult"
-    enum="OnDeviceModelValidationResult" expires_after="2027-04-14">
-  <owner>cduvall@chromium.org</owner>
-  <owner>holte@chromium.org</owner>
-  <owner>wittman@chromium.org</owner>
-  <summary>
-    Records the result of running the on-device model validation prompts.
-    Recorded each time validation is run.
-  </summary>
 </histogram>
 
 <histogram
@@ -2005,20 +1948,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram
-    name="OptimizationGuide.OnDeviceModel.OnDeviceModelComponentInstantiated"
-    enum="Boolean" expires_after="2027-04-14">
-  <owner>zekunjiang@google.com</owner>
-  <owner>holte@chromium.org</owner>
-  <owner>wittman@chromium.org</owner>
-  <summary>
-    Only records `true`. Recorded once when OnDeviceModelComponent is
-    instantiated. This histogram helps compute the number of clients without an
-    installed model, by subtracting from it the clients that have logged to
-    `OptimizationGuide.OnDeviceModel.InstalledModel`.
-  </summary>
-</histogram>
-
 <histogram name="OptimizationGuide.OptimizationFilterStatus.{OptimizationType}"
     enum="OptimizationGuideOptimizationFilterStatus" expires_after="2027-04-14">
   <owner>holte@chromium.org</owner>
@@ -2070,7 +1999,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.PageContentAnnotations.BatchSuccess.{AnnotationType}"
-    enum="BooleanSuccess" expires_after="2027-01-03">
+    enum="BooleanSuccess" expires_after="2027-03-07">
   <owner>robertogden@chromium.org</owner>
   <owner>chrome-intelligence-core@google.com</owner>
   <summary>
@@ -2116,7 +2045,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.PageContentAnnotations.JobExecutionTime.{AnnotationType}"
-    units="ms" expires_after="2027-01-03">
+    units="ms" expires_after="2027-03-07">
   <owner>robertogden@chromium.org</owner>
   <owner>chrome-intelligence-core@google.com</owner>
   <summary>
@@ -3031,22 +2960,6 @@ chromium-metrics-reviews@google.com.
     across OptimizationTargets as the GetModelsRequests bundle requests for
     various OptimizationTargets into single request to the server.
   </summary>
-</histogram>
-
-<histogram
-    name="OptimizationGuide.PredictionModelFetcher.GetModelsResponse.Status.{OptimizationTarget}"
-    enum="HttpResponseCode" expires_after="2025-12-14">
-  <owner>rajendrant@chromium.org</owner>
-  <owner>wittman@chromium.org</owner>
-  <summary>
-    For each GetModelsRequest to the Optimization Guide Service for
-    {OptimizationTarget}, log the HTTP response code on success and failure.
-    Recorded once per GetModelsRequest where the model for {OptimizationTarget}
-    was fetched for. It is not advisable to sum up the counts across
-    OptimizationTargets as the GetModelsRequests bundle requests for various
-    OptimizationTargets into single request to the server.
-  </summary>
-  <token key="OptimizationTarget" variants="OptimizationTarget"/>
 </histogram>
 
 <histogram

@@ -15,7 +15,7 @@ each histogram. Maybe add here or add a new performance controls one
 <histograms>
 
 <histogram name="PerformanceControls.BatterySaver.BubbleAction"
-    enum="BatterySaverBubbleActionType" expires_after="2026-10-09">
+    enum="BatterySaverBubbleActionType" expires_after="2027-08-31">
   <owner>agale@chromium.org</owner>
   <owner>estalin@chromium.org</owner>
   <owner>chrome-performance-ui-sea@google.com</owner>
@@ -49,6 +49,28 @@ each histogram. Maybe add here or add a new performance controls one
     Logs the state of the battery saver mode pref when the user makes a change
     to it through the settings page. This will be used to measure the
     discoverability and usefulness of battery saver mode.
+  </summary>
+</histogram>
+
+<histogram name="PerformanceControls.CpuPerformanceTier.PolicyOverride"
+    enum="CpuPerformanceTierOverridePair" expires_after="2027-06-30">
+  <owner>nikolaos@chromium.org</owner>
+  <owner>chrome-performance-ui-sea@google.com</owner>
+  <summary>
+    Logs the pair of the nominal hardware CPU performance tier and the
+    overridden tier when an enterprise policy override is active. No metric is
+    logged if no override is set.
+  </summary>
+</histogram>
+
+<histogram name="PerformanceControls.CpuPerformanceTier.UserOverride"
+    enum="CpuPerformanceTierOverridePair" expires_after="2027-06-30">
+  <owner>nikolaos@chromium.org</owner>
+  <owner>chrome-performance-ui-sea@google.com</owner>
+  <summary>
+    Logs the pair of the nominal hardware CPU performance tier and the
+    overridden tier when a user-selected override is active. No metric is logged
+    if no override is set.
   </summary>
 </histogram>
 

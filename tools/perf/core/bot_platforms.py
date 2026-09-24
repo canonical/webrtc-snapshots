@@ -831,6 +831,19 @@ def _loadline2_phone_crossbench(
   )
 
 
+# Web Power:
+@_register('web_power.crossbench')
+def _web_power_crossbench(
+  estimated_runtime: int = 7200, flags: tuple[str, ...] = ()
+):
+  return CrossbenchConfig(
+    'web_power.crossbench',
+    'web-power',
+    estimated_runtime=estimated_runtime,
+    flags=flags,
+  )
+
+
 # Webview:
 @_register('loading.crossbench')
 def _crossbench_loading(
@@ -940,6 +953,12 @@ PLATFORM_INFO = {
   },
   'linux-falcon-rak-5070-perf': {
     'description': 'Linux Falcon RAK 5070',
+    'num_shards': 1,
+    'platform_os': 'linux',
+    'is_fyi': False,
+  },
+  'linux-nvidia-dgx-spark-arm-perf': {
+    'description': 'Ubuntu-24.04, Nvidia DGX Spark',
     'num_shards': 1,
     'platform_os': 'linux',
     'is_fyi': False,
@@ -1195,6 +1214,12 @@ PLATFORM_INFO = {
   'android-pixel10_webview-perf-pgo': {
     'description': 'Android B',
     'num_shards': 23,
+    'platform_os': 'android',
+    'is_fyi': False,
+  },
+  'android-pixel10_webview-perf-pgo-heapdump': {
+    'description': 'Android B',
+    'num_shards': 1,
     'platform_os': 'android',
     'is_fyi': False,
   },

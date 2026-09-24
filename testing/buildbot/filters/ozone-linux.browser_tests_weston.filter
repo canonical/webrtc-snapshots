@@ -42,3 +42,9 @@
 
 # Fail on try bot due to DCHECKs being enabled there
 -PermissionElementBrowserTest.TabSwitchingClosesPrompt
+
+# TODO(crbug.com/417784653): Re-enable once the bug is fixed.
+-PlatformAppBrowserTest.TouchpadPinchSyntheticWheelEvents
+
+# TODO(crbug.com/40799125): Flaky.
+-PageLoadMetricsBrowserTest.SoftNavigation

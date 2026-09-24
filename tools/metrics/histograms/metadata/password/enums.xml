@@ -707,6 +707,19 @@ chromium-metrics-reviews@google.com.
   <int value="30" label="Autofill and passwords settings page"/>
 </enum>
 
+<!-- LINT.IfChange(OnDeviceEncryptionStateHistogramBucket) -->
+
+<enum name="OnDeviceEncryptionStateHistogramBucket">
+  <int value="0" label="On-device encryption not enabled"/>
+  <int value="1" label="Device not ready"/>
+  <int value="2" label="Device ready"/>
+  <int value="3" label="Password and passkey sync disabled"/>
+  <int value="4" label="Profile not signed in"/>
+  <int value="5" label="Profile sign-in pending"/>
+</enum>
+
+<!-- LINT.ThenChange(//components/password_manager/core/browser/ode/on_device_encryption_data_type_specific_metrics_reporter.h:OnDeviceEncryptionStateHistogramBucket) -->
+
 <enum name="PasskeysMigrationStatus">
   <int value="0" label="Passkey created"/>
   <int value="1" label="Passkey updated"/>
@@ -937,7 +950,11 @@ chromium-metrics-reviews@google.com.
   <int value="7" label="Safety Check Notification"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/resources/settings/autofill_page/password_manager_proxy.ts:PasswordCheckReferrer, //components/password_manager/core/browser/ui/password_check_referrer.h:PasswordCheckReferrer) -->
+<!-- LINT.ThenChange(
+  //chrome/browser/resources/password_manager/side_bar.ts:PasswordCheckReferrer,
+  //chrome/browser/resources/settings/autofill_page/passwords/password_manager_proxy.ts:PasswordCheckReferrer,
+  //components/password_manager/core/browser/ui/password_check_referrer.h:PasswordCheckReferrer
+) -->
 
 <enum name="PasswordCheckResolutionAction">
   <int value="0" label="Opened a site to change password manually"/>
@@ -1510,7 +1527,23 @@ chromium-metrics-reviews@google.com.
   <int value="4" label="Relaunch Chrome"/>
   <int value="5" label="Move passwords"/>
   <int value="6" label="(Obsolete) Enable screenlock reauth before filling"/>
+  <int value="7" label="Passkey unlock promo"/>
 </enum>
+
+<!-- LINT.IfChange(SaveWithTrustedVaultErrorOutcome) -->
+
+<enum name="PasswordManagerSaveWithTrustedVaultErrorOutcome">
+  <int value="0" label="Saved successfully after key retrieval"/>
+  <int value="1" label="Message timed out"/>
+  <int value="2" label="User dismissed the prompt"/>
+  <int value="3" label="Device lock UI canceled"/>
+  <int value="4" label="New store error"/>
+  <int value="5" label="Never save for this site"/>
+  <int value="6" label="Key retrieval failed or canceled"/>
+  <int value="7" label="Tab destroyed before resolution"/>
+</enum>
+
+<!-- LINT.ThenChange(/components/password_manager/core/browser/password_manager_metrics_util.h:SaveWithTrustedVaultErrorOutcome) -->
 
 <enum name="PasswordManagerShortcutMetric">
   <int value="0" label="User clicked Add shortcut from the UI."/>
@@ -1803,6 +1836,7 @@ chromium-metrics-reviews@google.com.
   <int value="12" label="Passkey copy display name button clicked"/>
   <int value="13" label="Passkey card delete button clicked"/>
   <int value="14" label="Passkey edit button clicked"/>
+  <int value="15" label="Change password button clicked"/>
 </enum>
 
 <enum name="PasswordVsOtpFormType">

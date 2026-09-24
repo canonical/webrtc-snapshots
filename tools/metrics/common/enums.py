@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import logging
-from xml.dom import minidom
+import xml.etree.ElementTree as ET
 
 
 import setup_modules  # pylint: disable=unused-import
@@ -19,47 +19,47 @@ _METRIC_FILES_WITH_ENUMS = [
 ]
 
 
-def _get_enums_from_histogram_files(files: list[str]) -> set[str]:
-  """Finds the names of all referenced enums from the specified XML files."""
-  merged = merge_xml.MergeFiles(files)
-  histograms, _ = extract_histograms.ExtractHistogramsFromDom(merged)
-  enums_used_in_file = set()
-  for _, data in histograms.items():
-    # Skip non-enum histograms.
-    if 'enumDetails' not in data:
-      continue
-    enum_name = data['enumDetails']['name']
-    enums_used_in_file.add(enum_name)
-  return enums_used_in_file
-
-
 def _get_enums_referenced_by_metric_nodes(files: list[str]) -> set[str]:
   """Finds enums used by ukm.xml and similar files."""
   enums_used_in_files = set()
 
   for file_path in files:
-    with open(file_path, 'r') as f:
-      document = minidom.parse(f)
-
-    for node in document.getElementsByTagName('metric'):
-      if not 'enum' in node.attributes:
-        continue
-      enums_used_in_files.add(node.attributes['enum'].value)
+    root = ET.parse(file_path).getroot()
+    for node in root.findall('.//metric'):
+      if 'enum' in node.attrib:
+        enums_used_in_files.add(node.attrib['enum'])
 
   return enums_used_in_files
 
 
-def get_enums_used_in_files() -> set[str]:
-  """Finds the names of all referenced enums from the specified XML files."""
-  logging.info(f'Reading histogram XML files...')
-  enum_names = _get_enums_from_histogram_files(histogram_paths.ALL_XMLS)
-  logging.info(f'Found {len(enum_names)} enums from histograms.')
+def get_all_used_enums(
+  histograms: dict[str, extract_histograms.HistogramDict],
+) -> set[str]:
+  """Finds referenced enum names from parsed histograms and metric files.
+
+  Note that metric files (ukm.xml, dwa.xml) are read from disk.
+  """
+  enums_used = set()
+  for data in histograms.values():
+    if 'enumDetails' in data:
+      enums_used.add(data['enumDetails']['name'])
+  logging.info(f'Found {len(enums_used)} enums from histograms.')
 
   metric_enum_names = _get_enums_referenced_by_metric_nodes(
     _METRIC_FILES_WITH_ENUMS
   )
-  logging.info(f'Found {len(metric_enum_names)} enums from ukm, dkm, and dwa.')
+  logging.info(
+    f'Found {len(metric_enum_names)} enums from ukm and dwa XML files.'
+  )
 
-  enum_names.update(metric_enum_names)
-  logging.info(f'Found {len(enum_names)} enums total.')
-  return enum_names
+  enums_used.update(metric_enum_names)
+  logging.info(f'Found {len(enums_used)} enums total.')
+  return enums_used
+
+
+def get_enums_used_in_files() -> set[str]:
+  """Finds referenced enum names from all XML files."""
+  logging.info('Reading histogram XML files...')
+  merged = merge_xml.MergeFiles(histogram_paths.ALL_XMLS)
+  histograms, _ = extract_histograms.ExtractHistogramsFromXmlET(merged)
+  return get_all_used_enums(histograms)

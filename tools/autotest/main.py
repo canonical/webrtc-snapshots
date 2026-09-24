@@ -195,10 +195,12 @@ def main(ctx, **kwargs) -> int:
     files_to_test.extend(found_files)
 
   if config.run_changed:
-    files_to_test.extend(file_finder.GetChangedTestFiles())
+    files_to_test.extend(file_finder.GetChangedTestFiles(config.git_ref))
 
   if config.run_related:
-    files_to_test.extend(file_finder.GetRelatedTestFiles(use_remote_search))
+    files_to_test.extend(
+      file_finder.GetRelatedTestFiles(config.git_ref, use_remote_search)
+    )
 
   # Ensure duplicates are removed.
   if config.run_changed or config.run_related:
@@ -207,7 +209,12 @@ def main(ctx, **kwargs) -> int:
   filenames: list[str] = []
   for f in files_to_test:
     filenames.extend(
-      file_finder.FindMatchingTestFiles(f, use_remote_search, config.path_index)
+      file_finder.FindMatchingTestFiles(
+        f,
+        use_remote_search,
+        config.path_index,
+        config.run_all or config.run_changed or config.run_related,
+      )
     )
 
   web_test_files = {f for f in filenames if file_finder.IsWebTestFile(f)}
@@ -268,6 +275,7 @@ def main(ctx, **kwargs) -> int:
         config.run_all,
         config.run_changed or config.run_related,
         config.target_index,
+        config.files,
       )
       if targets != new_targets:
         # Note that this can happen, for example, if you rename a test target.

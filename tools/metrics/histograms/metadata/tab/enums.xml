@@ -147,7 +147,8 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Launch Failed"/>
   <int value="2" label="Started"/>
   <int value="3" label="Start Foreground Failed"/>
-  <int value="4" label="Timed Out"/>
+  <int value="4" label="Timed Out (Internal)"/>
+  <int value="5" label="Timed Out (OS)"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/GracefulShutdownService.java:GracefulShutdownStatus) -->
@@ -198,6 +199,15 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Group"/>
   <int value="2" label="Bulk"/>
 </enum>
+
+<!-- LINT.IfChange(HorizontalTabStripScrollSource) -->
+
+<enum name="HorizontalTabStripScrollSource">
+  <int value="0" label="Buttons"/>
+  <int value="1" label="Touchpad or Mouse Wheel"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/tabs/horizontal_tab_strip_metrics.h:HorizontalTabStripScrollSource) -->
 
 <enum name="IOSAllOpenTabsAge">
   <int value="0" label="Less than 1 day"/>
@@ -439,6 +449,7 @@ chromium-metrics-reviews@google.com.
   <int value="5" label="Active tab unpinned"/>
   <int value="6" label="Tab group header dragged into window"/>
   <int value="7" label="Active tab group changed or ungrouped"/>
+  <int value="8" label="Tab outside focused group closed"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/tab_enums.h:TabGroupFocusExitReason) -->
@@ -479,6 +490,8 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/ui/browser_commands.h:TabGroupShortcut) -->
 
+<!-- LINT.IfChange(TabRestoreMethod) -->
+
 <enum name="TabRestoreMethod">
   <int value="0" label="TabState"/>
   <int value="1" label="CriticalPersistedTabData"/>
@@ -486,7 +499,10 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Failed to restore"/>
   <int value="4" label="Skipped (NTP)"/>
   <int value="5" label="Skipped (Empty URL)"/>
+  <int value="6" label="Reparenting"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabPersistentStoreImpl.java:TabRestoreMethod) -->
 
 <!-- LINT.IfChange(TabSearchCloseAction) -->
 

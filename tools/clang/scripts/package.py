@@ -115,6 +115,16 @@ def PackageInArchive(directory_path, archive_path):
       )
 
 
+def VerifyPackageDoesntExist(gcs_bucket, filename, gcs_platform):
+  """Verifies that the package doesn't already exist on GCS, exiting if so."""
+  gcs_path = f'gs://{gcs_bucket}/{gcs_platform}/{filename}'
+  print(f'Checking if {gcs_path} already exists...')
+  if (RunGsutil(['stat', gcs_path]) == 0):
+    print(f'Package {gcs_path} already exists!')
+    print('Did you forget to update the sub-revision?')
+    sys.exit(1)
+
+
 def MaybeUpload(
   do_upload, gcs_bucket, filename, gcs_platform, extra_gsutil_args=[]
 ):
@@ -126,7 +136,8 @@ def MaybeUpload(
     }
   )
   gsutil_args = (
-    ['cp']
+    # Fail if the item generation is not 0 (i.e. if it already exists).
+    ['-h', 'x-goog-if-generation-match:0', 'cp']
     + extra_gsutil_args
     + ['-n', filename, 'gs://%s/%s/' % (gcs_bucket, gcs_platform)]
   )
@@ -206,6 +217,7 @@ def UploadPDBsToSymbolServer(binaries):
     exit_code = RunGsutil(gsutil_args)
     if exit_code != 0:
       print("gsutil failed, exit_code: %s" % exit_code)
+      print("If a precondition did not hold, a package at this revision likely aready exists.")
       sys.exit(exit_code)
 
 
@@ -275,6 +287,9 @@ def main():
     gcs_platform = 'Win'
   else:
     gcs_platform = 'Linux_x64'
+
+  if args.upload:
+    VerifyPackageDoesntExist(args.bucket, pdir + '.tar.xz', gcs_platform)
 
   with open('buildlog.txt', 'w', encoding='utf-8') as log:
     Tee('Starting build\n', log)
@@ -491,10 +506,9 @@ def main():
       ]
     )
     # The Android compiler-rt runtimes are cross-compiled target libraries
-    # (host-independent). Ship them as a standalone package so non-Linux hosts
-    # building for Android can overlay them onto their host clang without
-    # pulling the entire Linux clang package. They are also kept in the Linux
-    # package above (via want.update) for native Linux Android builds.
+    # (host-independent). Ship them only as a standalone package that every
+    # host building for Android (Linux included) overlays onto its host clang,
+    # rather than bundling them into each host's clang package.
     runtime_package_name = 'clang-android-runtime-library'
     runtime_packages = set(
       [
@@ -536,7 +550,6 @@ def main():
         # pylint: enable=line-too-long
       ]
     )
-    want.update(runtime_packages)
   elif sys.platform == 'win32':
     runtime_package_name = 'clang-win-runtime-library'
 
@@ -727,10 +740,13 @@ def main():
     shutil.rmtree(runtime_dir, ignore_errors=True)
     for f in sorted(replace_version(runtime_packages, RELEASE_VERSION)):
       os.makedirs(os.path.dirname(os.path.join(runtime_dir, f)), exist_ok=True)
-      shutil.copy(
-        os.path.join(pdir, f),
-        os.path.join(runtime_dir, f),
-      )
+      # Prefer the staged package dir, but fall back to the build output for
+      # runtimes that are not bundled into the host package (e.g. the Android
+      # target runtimes, which ship only in this standalone package).
+      src = os.path.join(pdir, f)
+      if not os.path.exists(src):
+        src = os.path.join(LLVM_RELEASE_DIR, f)
+      shutil.copy(src, os.path.join(runtime_dir, f))
     PackageInArchive(runtime_dir, runtime_dir)
     MaybeUpload(args.upload, args.bucket, f'{runtime_dir}.tar.xz', gcs_platform)
 
@@ -872,8 +888,6 @@ def main():
     UploadPDBsToSymbolServer(binaries)
     end = time.time()
     print('symbol upload took', end - start, 'seconds')
-
-  # FIXME: Warn if the file already exists on the server.
 
   if args.output_artifacts_json:
     with open(args.output_artifacts_json, 'w') as f:
