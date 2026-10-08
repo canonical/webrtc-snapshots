@@ -275,6 +275,8 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Opened from the tab group submenu from the app menu."/>
   <int value="3"
       label="Opened from the tab group submenu from the mac system menu."/>
+  <int value="4"
+      label="Opened from the tab group submenu from the organizer panel."/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/saved_tab_groups/saved_tab_group_metrics.h:SavedTabGroupOpenedSubmenuDesktop) -->
@@ -343,6 +345,8 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="Opened from the tab group submenu from the app menu."/>
   <int value="7"
       label="Opened from the tab group submenu from the mac system menu."/>
+  <int value="8"
+      label="Opened from the tab group submenu from the organizer panel."/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/saved_tab_groups/saved_tab_group_metrics.h:SharedTabGroupRecallTypeDesktop) -->
@@ -434,6 +438,8 @@ chromium-metrics-reviews@google.com.
 
 <enum name="TabGroupFocusEntryPoint">
   <int value="0" label="Editor bubble ('Focus group')"/>
+  <int value="1" label="Tab context menu ('Focus tab group')"/>
+  <int value="2" label="Tab context menu ('Focus tab(s)')"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/tab_enums.h:TabGroupFocusEntryPoint) -->
@@ -450,6 +456,8 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="Tab group header dragged into window"/>
   <int value="7" label="Active tab group changed or ungrouped"/>
   <int value="8" label="Tab outside focused group closed"/>
+  <int value="9" label="Tab context menu ('Unfocus tab group')"/>
+  <int value="10" label="Tab group created or opened"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/tabs/tab_enums.h:TabGroupFocusExitReason) -->

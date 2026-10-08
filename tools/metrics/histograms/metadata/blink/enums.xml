@@ -2692,7 +2692,7 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="2277" label="V8DeoptimizerDisableSpeculation"/>
   <int value="2278" label="CSSSelectorCue"/>
   <int value="2279" label="CSSSelectorWebkitCalendarPickerIndicator"/>
-  <int value="2280" label="CSSSelectorWebkitClearButton"/>
+  <int value="2280" label="OBSOLETE_CSSSelectorWebkitClearButton"/>
   <int value="2281" label="CSSSelectorWebkitColorSwatch"/>
   <int value="2282" label="CSSSelectorWebkitColorSwatchWrapper"/>
   <int value="2283" label="CSSSelectorWebkitDateAndTimeValue"/>
@@ -4258,9 +4258,9 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="3743" label="ReadableStreamWithByteSource"/>
   <int value="3744" label="ReadableStreamBYOBReader"/>
   <int value="3745" label="EmbedElementWithoutTypeSrcChanged_Deleted"/>
-  <int value="3746" label="SamePartyCookieAttribute"/>
-  <int value="3747" label="SamePartyCookieExclusionOverruledSameSite"/>
-  <int value="3748" label="SamePartyCookieInclusionOverruledSameSite"/>
+  <int value="3746" label="OBSOLETE_SamePartyCookieAttribute"/>
+  <int value="3747" label="OBSOLETE_SamePartyCookieExclusionOverruledSameSite"/>
+  <int value="3748" label="OBSOLETE_SamePartyCookieInclusionOverruledSameSite"/>
   <int value="3749" label="EmbedElementWithoutTypeSrcChanged"/>
   <int value="3750" label="PaymentHandlerStandardizedPaymentMethodIdentifier"/>
   <int value="3751" label="WebCodecsAudioEncoder"/>
@@ -6753,6 +6753,14 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="6015" label="VideoAdDetected"/>
   <int value="6016" label="ElementTimingEntryEmitted"/>
   <int value="6017" label="ContainerTimingEntryEmitted"/>
+  <int value="6018" label="BeforeUnloadShowedDialog"/>
+  <int value="6019" label="BeforeUnloadDialogBlockedUnload"/>
+  <int value="6020" label="SRIModuleMapIntegrityMismatch"/>
+  <int value="6021" label="EventTimingCreationTimeInFuture"/>
+  <int value="6022" label="AttributionReportingWindowOpen"/>
+  <int value="6023" label="StickyVideoAdDetected"/>
+  <int value="6024" label="CSSTimelineTreeScopeMismatch"/>
+  <int value="6025" label="WorkerScriptURLFetchBlockedByCrossOrigin"/>
 </enum>
 
 <!-- LINT.ThenChange(//third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom:WebFeature) -->
@@ -6889,7 +6897,7 @@ Called by update_permissions_policy_enum.py.-->
   <int value="123" label="Deprecated: PartitionedPopins"/>
   <int value="124" label="WebAppInstallation"/>
   <int value="125" label="ControlledFrame"/>
-  <int value="126" label="DirectSocketsPrivate"/>
+  <int value="126" label="Deprecated: DirectSocketsPrivate"/>
   <int value="127" label="FencedUnpartitionedStorageRead"/>
   <int value="128" label="DeferredFetchMinimal"/>
   <int value="129" label="ClientHintUAHighEntropyValues"/>
@@ -6949,6 +6957,7 @@ Called by update_permissions_policy_enum.py.-->
   <int value="3" label="Account is not dict"/>
   <int value="4" label="Account misses required field"/>
   <int value="5" label="Accounts share the same id"/>
+  <int value="6" label="Use native UI delegation"/>
 </enum>
 
 <!-- LINT.ThenChange(//content/browser/webid/idp_network_request_manager.h:AccountsResponseInvalidReason) -->
@@ -7642,7 +7651,8 @@ Called by update_permissions_policy_enum.py.-->
              enabled."/>
   <int value="27" label="(Deliberately skipped due to C++/enums.xml mismatch)"/>
   <int value="28" label="Failed because a deep hierarchy was encountered."/>
-  <int value="29" label="Failed because a long text string was encountered."/>
+  <int value="29"
+      label="(Obsolete) Failed because a long text string was encountered."/>
 </enum>
 
 <enum name="InnerHTMLFastPathParserUnsupportedTagType">
@@ -8656,6 +8666,7 @@ Called by update_use_counter_css.py.-->
   <int value="963" label="max-content-sizing"/>
   <int value="964" label="text-decoration-inset"/>
   <int value="965" label="overscroll-container-type"/>
+  <int value="966" label="link-parameters"/>
 </enum>
 
 <!-- LINT.ThenChange(//third_party/blink/public/mojom/use_counter/metrics/css_property_id.mojom:CSSSampleId) -->
@@ -9218,12 +9229,12 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="417" label="MetaTextScale"/>
   <int value="418" label="Jpegxl"/>
   <int value="419" label="PartitionedCookies"/>
-  <int value="420" label="LanguageModel"/>
+  <int value="420" label="Languagemodel"/>
   <int value="421" label="Proofreader"/>
   <int value="422" label="Rewriter"/>
   <int value="423" label="Writer"/>
   <int value="424" label="DRAFT_InstallElement"/>
-  <int value="425" label="LanguageDetector"/>
+  <int value="425" label="Languagedetector"/>
   <int value="426" label="Translator"/>
   <int value="427" label="DocumentModelcontext"/>
   <int value="428" label="LoadingLazyMedia"/>
@@ -9253,6 +9264,9 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="452" label="InteractionContentfulPaint"/>
   <int value="453" label="ElementTiming"/>
   <int value="454" label="ContainerTiming"/>
+  <int value="455"
+      label="SameSiteCookieInclusionChangedByCrossSiteRedirectNoInitiator"/>
+  <int value="456" label="DRAFT_GeolocationAccuracyModeApproximate"/>
 </enum>
 
 <!-- LINT.ThenChange(//third_party/blink/public/mojom/use_counter/metrics/webdx_feature.mojom:WebDXFeature) -->
