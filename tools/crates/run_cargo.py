@@ -125,14 +125,14 @@ def RunCargo(rust_sysroot, home_dir, cargo_args, extra_rustflags=None):
 
     _PrependOrInsert(cargo_env, 'PATH', os.pathsep, str(bin_dir))
 
-    # `extra_rustflags` belongs to the caller, so copy it instead of appending
-    # to it in place.
-    rustflags = list(extra_rustflags or []) + _GetWindowsToolchainFlags()
+    if not extra_rustflags:
+        extra_rustflags = []
+    extra_rustflags += _GetWindowsToolchainFlags()
     _PrependOrInsert(
         cargo_env,
         'CARGO_ENCODED_RUSTFLAGS',
         chr(0x1F),
-        chr(0x1F).join(rustflags),
+        chr(0x1F).join(extra_rustflags),
     )
 
     # https://docs.python.org/3/library/subprocess.html#subprocess.Popen:

@@ -69,8 +69,3 @@ declare_args() {
   # dependency for googletest.
   gtest_enable_absl_printers = true
 }
-
-vpython_spec_files = [
-  "//vpython.toml",
-  "//vpython.toml.uv.lock",
-]

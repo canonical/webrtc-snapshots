@@ -34,8 +34,7 @@ void ComputeFrequencyResponse_Avx2(
   }
 
   const size_t num_render_channels = H[0].size();
-  RTC_DCHECK_GE(H.size(), num_partitions);
-  RTC_DCHECK_GE(H2->size(), num_partitions);
+  RTC_DCHECK_EQ(H.size(), H2->capacity());
   for (size_t p = 0; p < num_partitions; ++p) {
     RTC_DCHECK_EQ(kFftLengthBy2Plus1, (*H2)[p].size());
     auto& H2_p = (*H2)[p];

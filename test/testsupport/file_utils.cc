@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crypto_random.h"
@@ -64,9 +65,9 @@ namespace webrtc {
 namespace test {
 
 #if defined(WEBRTC_WIN)
-constinit const absl::string_view kPathDelimiter = "\\";
+ABSL_CONST_INIT const absl::string_view kPathDelimiter = "\\";
 #else
-constinit const absl::string_view kPathDelimiter = "/";
+ABSL_CONST_INIT const absl::string_view kPathDelimiter = "/";
 #endif
 
 std::string DirName(absl::string_view path) {

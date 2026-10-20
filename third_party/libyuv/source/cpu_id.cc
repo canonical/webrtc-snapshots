@@ -248,14 +248,12 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
 static bool have_feature(const char* feature) {
   // For more information on sysctlbyname(), see:
   // https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics
-  // If feature is "hw.optional.arm.sme_max_svl_b", this function returns
-  // whether the value of sme_max_svl_b is nonzero.
   int64_t feature_present = 0;
   size_t size = sizeof(feature_present);
   if (sysctlbyname(feature, &feature_present, &size, NULL, 0) != 0) {
     return false;
   }
-  return feature_present != 0;
+  return feature_present;
 }
 
 // For AArch64, but public to allow testing on any CPU.
@@ -267,14 +265,7 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
     features |= kCpuHasNeonDotProd;
     if (have_feature("hw.optional.arm.FEAT_I8MM")) {
       features |= kCpuHasNeonI8MM;
-      // An Apple processor may have SME hardware (e.g. A18/A19), but the XNU
-      // kernel only enables EL0 execution if sme_max_svl_b is nonzero.
-      // macOS and iPadOS (e.g. on M4) support and enable user-mode SME, but iOS
-      // disables user-mode SME, which causes SMSTART to trigger an
-      // EXC_BAD_INSTRUCTION fault. See
-      // https://github.com/pytorch/cpuinfo/issues/432.
-      if (have_feature("hw.optional.arm.sme_max_svl_b") &&
-          have_feature("hw.optional.arm.FEAT_SME")) {
+      if (have_feature("hw.optional.arm.FEAT_SME")) {
         features |= kCpuHasSME;
         if (have_feature("hw.optional.arm.FEAT_SME2")) {
           features |= kCpuHasSME2;
@@ -304,7 +295,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
   int flag = 0;
   FILE* f = fopen(cpuinfo_name, "re");
   if (!f) {
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv) && __riscv_xlen == 64
+#if defined(__riscv_vector)
     // Assume RVV if /proc/cpuinfo is unavailable.
     // This will occur for Chrome sandbox for Pepper or Render process.
     return kCpuHasRVV;
@@ -364,7 +355,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
         }
       }
     }
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv) && __riscv_xlen == 64
+#if defined(__riscv_vector)
     // Assume RVV if /proc/cpuinfo is from x86 host running QEMU.
     else if ((memcmp(cpuinfo_line, "vendor_id\t: GenuineIntel", 24) == 0) ||
              (memcmp(cpuinfo_line, "vendor_id\t: AuthenticAMD", 24) == 0)) {

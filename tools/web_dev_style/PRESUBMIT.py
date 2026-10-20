@@ -15,8 +15,6 @@ def CheckChangeOnCommit(*args):
 
 
 def _CommonChecks(input_api, output_api):
-  if not input_api.HasAffectedFiles(extensions='.py'):
-    return []
   tests = ['test_suite.py']
 
   return input_api.canned_checks.RunUnitTests(input_api, output_api, tests)
@@ -27,8 +25,6 @@ def CheckEsLintConfigChanges(input_api, output_api):
   file eslint.config.mjs file is modified. This is important because
   modifications to this file can trigger ESLint errors in any .js or .ts
   files in the repository, leading to hidden presubmit errors."""
-  if not input_api.HasAffectedFiles(path='eslint.config.mjs'):
-    return []
   results = []
 
   eslint_filter = lambda f: input_api.FilterSourceFile(

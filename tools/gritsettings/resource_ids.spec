@@ -356,6 +356,10 @@
     "META": {"sizes": {"includes": [320],}},
     "includes": [3360],
   },
+  "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/chromeos/manage_mirrorsync/resources.grd": {
+    "META": {"sizes": {"includes": [10]}},
+    "includes": [3380],
+  },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/chromeos/multidevice_internals/resources.grd": {
     "META": {"sizes": {"includes": [35]}},
     "includes": [3400],
@@ -445,7 +449,7 @@
     "includes": [3760],
   },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/context_hub/resources.grd": {
-    "META": {"sizes": {"includes": [60]}},
+    "META": {"sizes": {"includes": [40]}},
     "includes": [3768],
   },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/contextual_cueing/internals/resources.grd": {
@@ -453,7 +457,7 @@
     "includes": [3769],
   },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/contextual_tasks/extension/resources.grd": {
-    "META": {"sizes": {"includes": [30]}},
+    "META": {"sizes": {"includes": [10]}},
     "includes": [3770],
   },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/contextual_tasks/resources.grd": {
@@ -524,6 +528,10 @@
     "META": {"sizes": {"includes": [20],}},
     "includes": [4000],
   },
+  "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/geic/resources.grd": {
+    "META": {"sizes": {"includes": [5]}},
+    "includes": [4005],
+  },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/glic/resources.grd": {
     "META": {"sizes": {"includes": [60]}},
     "includes": [4010],
@@ -533,7 +541,7 @@
     "includes": [4020],
   },
     "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/glic/selection_overlay/resources.grd": {
-    "META": {"sizes": {"includes": [20]}},
+    "META": {"sizes": {"includes": [10]}},
     "includes": [4033],
   },
     "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/guest_view_shared/resources.grd": {
@@ -839,13 +847,13 @@
     "META": {"sizes": {"includes": [20]}},
     "includes": [5030],
   },
-  "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/tab_group_shared/resources.grd": {
-    "META": {"sizes": {"includes": [20]}},
-    "includes": [5035],
-  },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/tab_search/resources.grd": {
     "META": {"sizes": {"includes": [90]}},
     "includes": [5040],
+  },
+  "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/tab_search/shared/resources.grd": {
+    "META": {"sizes": {"includes": [10]}},
+    "includes": [5050],
   },
   "<(SHARED_INTERMEDIATE_DIR)/chrome/browser/resources/tab_strip/resources.grd": {
     "META": {"sizes": {"includes": [40]}},

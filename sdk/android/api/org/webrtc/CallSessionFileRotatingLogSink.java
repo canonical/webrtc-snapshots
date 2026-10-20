@@ -17,7 +17,7 @@ import org.jni_zero.NativeMethods;
  * log sink.
  */
 public class CallSessionFileRotatingLogSink {
-  private final NativeLifecycleLock lifecycleLock;
+  private long nativeSink;
 
   public static byte[] getLogData(String dirPath) {
     if (dirPath == null) {
@@ -32,16 +32,15 @@ public class CallSessionFileRotatingLogSink {
     if (dirPath == null) {
       throw new IllegalArgumentException("dirPath may not be null.");
     }
-    this.lifecycleLock =
-        new NativeLifecycleLock(
-            "CallSessionFileRotatingLogSink",
-            CallSessionFileRotatingLogSinkJni.get()
-                .addSink(dirPath, maxFileSize, severity.ordinal()));
+    nativeSink =
+        CallSessionFileRotatingLogSinkJni.get().addSink(dirPath, maxFileSize, severity.ordinal());
   }
 
   public void dispose() {
-    lifecycleLock.dispose(
-        nativeSink -> CallSessionFileRotatingLogSinkJni.get().deleteSink(nativeSink));
+    if (nativeSink != 0) {
+      CallSessionFileRotatingLogSinkJni.get().deleteSink(nativeSink);
+      nativeSink = 0;
+    }
   }
 
   @NativeMethods

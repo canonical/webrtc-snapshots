@@ -495,7 +495,6 @@ template("mac_app_bundle") {
                            "*",
                            [
                              "assert_no_deps",
-                             "bundle_deps",
                              "data_deps",
                              "info_plist",
                              "output_name",
@@ -545,9 +544,6 @@ template("mac_app_bundle") {
                            ])
     if (!defined(deps)) {
       deps = []
-    }
-    if (defined(invoker.bundle_deps)) {
-      deps += invoker.bundle_deps
     }
     deps += [
       ":$_executable_bundle_data",

@@ -48,9 +48,6 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateOffer(
   if (options.enable_ice_renomination) {
     desc->AddOption(ICE_OPTION_RENOMINATION);
   }
-  if (options.dtls_handshake_in_stun) {
-    desc->AddOption(ICE_OPTION_SPED);
-  }
 
   if (SSLStreamAdapter::IsBoringSsl() &&
       field_trials_.IsEnabled("WebRTC-IceHandshakeDtls") &&
@@ -101,10 +98,6 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
   if (options.enable_ice_renomination) {
     desc->AddOption(ICE_OPTION_RENOMINATION);
   }
-  if (options.dtls_handshake_in_stun && offer->HasOption(ICE_OPTION_SPED)) {
-    desc->AddOption(ICE_OPTION_SPED);
-  }
-
   if (SSLStreamAdapter::IsBoringSsl() &&
       field_trials_.IsEnabled("WebRTC-IceHandshakeDtls") &&
       offer->HasOption(ICE_OPTION_GOOG_SPED_V1) &&

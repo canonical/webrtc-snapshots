@@ -1100,11 +1100,6 @@ void SwapUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
-#if defined(HAS_SWAPUVROW_RVV)
-  if (TestCpuFlag(kCpuHasRVV)) {
-    SwapUVRow = SwapUVRow_RVV;
-  }
-#endif
 
   for (y = 0; y < height; ++y) {
     SwapUVRow(src_uv, dst_vu, width);
@@ -3368,11 +3363,6 @@ int ARGBMultiply(const uint8_t* src_argb0,
     if (IS_ALIGNED(width, 8)) {
       ARGBMultiplyRow = ARGBMultiplyRow_LASX;
     }
-  }
-#endif
-#if defined(HAS_ARGBMULTIPLYROW_RVV)
-  if (TestCpuFlag(kCpuHasRVV)) {
-    ARGBMultiplyRow = ARGBMultiplyRow_RVV;
   }
 #endif
 

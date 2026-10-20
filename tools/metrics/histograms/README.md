@@ -1186,7 +1186,6 @@ run (from the repo root) as:
 ```
 ./tools/metrics/histograms/print_histogram_names.py --diff origin/main
 ```
-***
 
 ## When To Use Sparse Histograms
 

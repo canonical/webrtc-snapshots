@@ -977,15 +977,12 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Accessibility.Bundle" enum="AccessibilityModeBundleEnum"
-    expires_after="2027-06-01">
-  <owner>lucasradaelli@google.com</owner>
+    expires_after="2025-05-04">
+  <owner>kevers@chromium.org</owner>
   <owner>chrome-a11y-core@chromium.org</owner>
   <summary>
     Tracks when combinations of mode flags are set. Records when the mode flag
     changes and aligns with one of the common (named) flag bundles.
-
-    Warning: this histogram was expired from 2025-05-04 to 2026-09-15; data may
-    be missing.
   </summary>
 </histogram>
 
@@ -1158,7 +1155,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Accessibility.CrosColorCorrection.FilterAmount" units="%"
-    expires_after="2027-09-14">
+    expires_after="2026-10-25">
   <owner>katie@chromium.org</owner>
   <owner>chrome-a11y-core@google.com</owner>
   <summary>
@@ -1171,7 +1168,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Accessibility.CrosColorCorrection.FilterType"
-    enum="ColorCorrectionFilterTypes" expires_after="2027-09-14">
+    enum="ColorCorrectionFilterTypes" expires_after="2026-10-25">
   <owner>katie@chromium.org</owner>
   <owner>chrome-a11y-core@google.com</owner>
   <summary>
@@ -1461,7 +1458,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Accessibility.CrosSelectToSpeak.TtsEngineUsed"
-    enum="CrosSelectToSpeakTtsEngineUsed" expires_after="2027-03-21">
+    enum="CrosSelectToSpeakTtsEngineUsed" expires_after="2027-01-17">
   <owner>ajitnarayanan@google.com</owner>
   <owner>chrome-a11y-core@google.com</owner>
   <summary>
@@ -1906,7 +1903,7 @@ recorded in the same way, even if they fit the naming pattern. -->
 </histogram>
 
 <histogram name="Accessibility.FaceGaze.AverageFaceLandmarkerLatency"
-    units="ms" expires_after="2027-09-14">
+    units="ms" expires_after="2026-08-02">
   <owner>katie@chromium.org</owner>
   <owner>chrome-a11y-core@google.com</owner>
   <summary>
@@ -1917,8 +1914,6 @@ recorded in the same way, even if they fit the naming pattern. -->
     FaceLandmarker API during a FaceGaze session and we don't want to clutter
     the histograms. Each call to record a histogram also takes work and we don't
     want to spam the histograms API multiple times per second.
-
-    Note: this metric was expired from 2026-08-02 to 2026-09-15.
   </summary>
 </histogram>
 
@@ -1969,7 +1964,7 @@ recorded in the same way, even if they fit the naming pattern. -->
 </histogram>
 
 <histogram name="Accessibility.ImageLabels.ModalDialogAccepted"
-    enum="BooleanAccepted" expires_after="2027-09-14">
+    enum="BooleanAccepted" expires_after="2026-06-01">
   <owner>katie@chromium.org</owner>
   <owner>dtseng@chromium.org</owner>
   <summary>
@@ -1977,13 +1972,11 @@ recorded in the same way, even if they fit the naming pattern. -->
     labels option. If the user does not accept it this does not track whether
     they closed it with the negative button, the close button, or keyboard
     escape.
-
-    Note: this metric was expired from 2026-06-01 to 2026-09-15.
   </summary>
 </histogram>
 
 <histogram name="Accessibility.ImageLabels.PageLanguage" enum="LanguageName"
-    expires_after="2027-09-14">
+    expires_after="2026-10-04">
   <owner>katie@chromium.org</owner>
   <owner>dtseng@chromium.org</owner>
   <owner>chrome-a11y-core@google.com</owner>
@@ -2516,7 +2509,7 @@ recorded in the same way, even if they fit the naming pattern. -->
 </histogram>
 
 <histogram name="Accessibility.PDF.IsPDFTagged" enum="BooleanExists"
-    expires_after="2027-03-21">
+    expires_after="2027-01-17">
   <owner>dtseng@chromium.org</owner>
   <owner>kyungjunlee@google.com</owner>
   <owner>chrome-a11y-core@google.com</owner>
@@ -2527,7 +2520,7 @@ recorded in the same way, even if they fit the naming pattern. -->
 </histogram>
 
 <histogram name="Accessibility.PDF.OpenedWith{A11yFeature}.PdfOcr"
-    enum="BooleanExists" expires_after="2027-09-01">
+    enum="BooleanExists" expires_after="2026-10-04">
   <owner>kyungjunlee@google.com</owner>
   <owner>chrome-a11y-core@google.com</owner>
   <summary>
@@ -3357,7 +3350,7 @@ recorded in the same way, even if they fit the naming pattern. -->
   <summary>
     Records the length of time the user spends in Reading mode with line focus
     on. This is measured from when line focus is enabled to when the user
-    disables line focus, changes pages, or hides Reading mode.
+    disables line focus or hides Reading mode.
   </summary>
 </histogram>
 
@@ -4361,16 +4354,14 @@ recorded in the same way, even if they fit the naming pattern. -->
   </summary>
 </histogram>
 
-<histogram name="Accessibility.WebSpeech.DownloadActivationOutcome"
-    enum="WebSpeechDownloadActivationOutcome" expires_after="2027-09-01">
+<histogram name="Accessibility.WebSpeech.DownloadRelaxed" enum="Boolean"
+    expires_after="2027-06-01">
   <owner>evliu@google.com</owner>
   <owner>chrome-media-ux@google.com</owner>
   <summary>
-    Records the outcome of the user activation check in
-    SpeechRecognition.install(), when a downloadable language pack is requested
-    without transient user activation. Replaces
-    Accessibility.WebSpeech.DownloadRelaxed, which could not distinguish the
-    reasons for rejection.
+    Recorded when Web Speech API relaxes the user activation requirement for
+    downloading a language pack because it is present in the Accept-Language
+    header.
   </summary>
 </histogram>
 

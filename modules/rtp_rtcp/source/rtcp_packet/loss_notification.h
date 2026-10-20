@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "absl/base/attributes.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/psfb.h"
 
@@ -31,14 +32,14 @@ class LossNotification : public Psfb {
 
   size_t BlockLength() const override;
 
-  [[nodiscard]]
+  ABSL_MUST_USE_RESULT
   bool Create(uint8_t* packet,
               size_t* index,
               size_t max_length,
               PacketReadyCallback callback) const override;
 
   // Parse assumes header is already parsed and validated.
-  [[nodiscard]]
+  ABSL_MUST_USE_RESULT
   bool Parse(const CommonHeader& packet);
 
   // Set all of the values transmitted by the loss notification message.
@@ -47,7 +48,7 @@ class LossNotification : public Psfb {
   // when `last_received` is ahead of `last_decoded` by more than 0x7fff.
   // This is because `last_received` is represented on the wire as a delta,
   // and only 15 bits are available for that delta.
-  [[nodiscard]]
+  ABSL_MUST_USE_RESULT
   bool Set(uint16_t last_decoded,
            uint16_t last_received,
            bool decodability_flag);

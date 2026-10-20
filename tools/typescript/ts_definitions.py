@@ -13,8 +13,9 @@ _CWD = os.getcwd()
 _HERE_DIR = os.path.dirname(__file__)
 _SRC_DIR = os.path.normpath(os.path.join(_HERE_DIR, '..', '..'))
 
-sys.path.append(os.path.join(_SRC_DIR, 'third_party', 'typescript'))
-import typescript
+sys.path.append(os.path.join(_SRC_DIR, 'third_party', 'node'))
+import node
+import node_modules
 
 
 _TSCONFIG_BASE = 'tsconfig_definitions_base.json'
@@ -40,6 +41,7 @@ def main(argv):
   parser.add_argument('--root_dir', required=True)
   parser.add_argument('--js_files', nargs='*', required=True)
   parser.add_argument('--path_mappings', nargs='*')
+  parser.add_argument('--use_typescript_go', action='store_true')
   args = parser.parse_args(argv)
 
   with open(
@@ -81,9 +83,22 @@ def main(argv):
       if os.path.exists(to_delete):
         os.remove(to_delete)
 
-  stdout = typescript.RunTypeScript(
-    ['--project', os.path.join(args.gen_dir, _TSCONFIG_GEN)]
-  )
+  stdout = None
+  if args.use_typescript_go:
+    sys.path.append(os.path.join(_SRC_DIR, 'third_party', 'typescript'))
+    import typescript
+
+    stdout = typescript.RunTypeScript(
+      ['--project', os.path.join(args.gen_dir, _TSCONFIG_GEN)]
+    )
+  else:
+    stdout = node.RunNode(
+      [
+        node_modules.PathToTypescript(),
+        '--project',
+        os.path.join(args.gen_dir, _TSCONFIG_GEN),
+      ]
+    )
 
   # Verify that that no unexpected .d.ts files were generated.
   lines = stdout.splitlines()

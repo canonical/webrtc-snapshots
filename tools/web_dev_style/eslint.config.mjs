@@ -128,8 +128,7 @@ export default [
       // No point linting auto-generated files.
       'tools/typescript/definitions/**/*',
 
-      // Ignore generated checked-in JS files.
-      'components/variations/proto/devtools/client_variations.js',
+      // Ignore generated checked-in JS file.
       'ios/tools/documents_statistics_viewer/tsc/viewer.js',
 
       // No point checking minify_js expected output tests.

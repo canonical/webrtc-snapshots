@@ -27,7 +27,6 @@
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/congestion_controller/scream/scream_v2.h"
-#include "modules/congestion_controller/scream/scream_v2_parameters.h"
 #include "rtc_base/bitrate_tracker.h"
 
 namespace webrtc {
@@ -100,7 +99,6 @@ class LogScreamSimulation {
   void LogState(Timestamp log_time);
 
   const Environment env_;
-  const ScreamV2Parameters params_;
   std::optional<ScreamV2> scream_;
 
   Timestamp current_time_ = Timestamp::MinusInfinity();

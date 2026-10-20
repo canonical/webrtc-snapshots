@@ -145,7 +145,7 @@ void AudioDecoderOpusImpl::GeneratePlc(
     if (ret < 0) {
       return 0;
     }
-    return ret * static_cast<int>(channels_);
+    return ret;
   });
 }
 

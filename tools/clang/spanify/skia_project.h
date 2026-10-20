@@ -80,8 +80,8 @@ class SkiaProject : public Project {
         source_manager, raw_ptr_plugin::getRepresentativeLocation(Node),
         raw_ptr_plugin::FilenameLocationType::kSpellingLoc);
 
-    return IsExcludedFromSubmodule(filename, "third_party/skia/",
-                                   "tools/clang/spanify/tests/skia/");
+    llvm::StringRef file(filename);
+    return file.contains("third_party");
   }
   bool SupportsStaticExtent() const override { return false; }
 };

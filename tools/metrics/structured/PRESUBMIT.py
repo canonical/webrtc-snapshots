@@ -14,8 +14,6 @@ STRUCTURED_OLD_XML = 'sync/structured.old.xml'
 
 def CheckChange(input_api, output_api):
   """Checks that structured.xml is pretty-printed and well-formatted."""
-  if not input_api.HasAffectedFiles(extensions=('.xml', '.py')):
-    return []
   errors = []
 
   for file in input_api.AffectedFiles():

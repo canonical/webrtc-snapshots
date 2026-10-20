@@ -17,6 +17,7 @@
 #include <span>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "api/field_trials_view.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/network_types.h"
@@ -118,7 +119,7 @@ class ProbeController {
   ProbeController(const ProbeController&) = delete;
   ProbeController& operator=(const ProbeController&) = delete;
 
-  [[nodiscard]] std::vector<ProbeClusterConfig> SetBitrates(
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> SetBitrates(
       DataRate min_bitrate,
       DataRate start_bitrate,
       DataRate max_bitrate,
@@ -126,14 +127,14 @@ class ProbeController {
 
   // The total bitrate, as opposed to the max bitrate, is the sum of the
   // configured bitrates for all active streams.
-  [[nodiscard]] std::vector<ProbeClusterConfig> OnMaxTotalAllocatedBitrate(
-      DataRate max_total_allocated_bitrate,
-      Timestamp at_time);
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig>
+  OnMaxTotalAllocatedBitrate(DataRate max_total_allocated_bitrate,
+                             Timestamp at_time);
 
-  [[nodiscard]] std::vector<ProbeClusterConfig> OnNetworkAvailability(
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> OnNetworkAvailability(
       NetworkAvailability msg);
 
-  [[nodiscard]] std::vector<ProbeClusterConfig> SetEstimatedBitrate(
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> SetEstimatedBitrate(
       DataRate bitrate,
       BandwidthLimitedCause bandwidth_limited_cause,
       Timestamp at_time);
@@ -150,7 +151,8 @@ class ProbeController {
   void SetAlrStartTime(std::optional<Timestamp> alr_start_time);
   void SetAlrEndedTime(Timestamp alr_end_time);
 
-  [[nodiscard]] std::vector<ProbeClusterConfig> RequestProbe(Timestamp at_time);
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> RequestProbe(
+      Timestamp at_time);
 
   void SetNetworkStateEstimate(NetworkStateEstimate estimate);
 
@@ -160,7 +162,8 @@ class ProbeController {
   // `max_total_allocated_bitrate_`.
   void Reset(Timestamp at_time);
 
-  [[nodiscard]] std::vector<ProbeClusterConfig> Process(Timestamp at_time);
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> Process(
+      Timestamp at_time);
 
  private:
   enum class State {
@@ -173,9 +176,9 @@ class ProbeController {
   };
 
   void UpdateState(State new_state);
-  [[nodiscard]] std::vector<ProbeClusterConfig> InitiateExponentialProbing(
-      Timestamp at_time);
-  [[nodiscard]] std::vector<ProbeClusterConfig> InitiateProbing(
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig>
+  InitiateExponentialProbing(Timestamp at_time);
+  ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> InitiateProbing(
       Timestamp now,
       std::span<const DataRate> bitrates_to_probe,
       bool probe_further);

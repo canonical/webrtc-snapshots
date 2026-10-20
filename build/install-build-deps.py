@@ -248,7 +248,6 @@ def dev_list():
         "bzip2",
         "curl",
         "dbus-x11",
-        "debhelper",
         "devscripts",
         "dpkg-dev",
         "elfutils",

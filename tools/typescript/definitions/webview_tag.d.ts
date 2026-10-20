@@ -359,9 +359,6 @@ declare global {
         captureVisibleRegion(
             options: extensionTypes.ImageDetails|undefined|null,
             callback: (dataUrl: string) => void): void;
-        find(
-            searchText: string, options?: FindOptions,
-            callback?: (results?: FindCallbackResults) => void): void;
       }
 
       export function setAudioMuted(mute: boolean): void;

@@ -1,8 +1,7 @@
 {
   "base": {
       "exclusions": [
-          "vpython.toml",
-          "vpython.toml.uv.lock",
+          ".vpython3",
           "DEPS",
           "infra/specs/.*",
           "tools_webrtc/mb/mb_config.pyl",

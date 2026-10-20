@@ -4,11 +4,6 @@
 
 
 def CheckRunUnitTests(input_api, output_api):
-  if not (
-    input_api.HasAffectedFiles(extensions='.py')
-    or input_api.HasAffectedFiles(path='test_data')
-  ):
-    return []
   presubmit_path = input_api.PresubmitLocalPath()
 
   tests = [

@@ -137,7 +137,7 @@ std::unique_ptr<VideoFrameSampler> VideoFrameSampler::Create(
     default:
       // Conversion and copy to I420 from some other format.
       return std::make_unique<I420FrameSampler>(
-          frame.video_frame_buffer()->ToI420ForInspection());
+          frame.video_frame_buffer()->ToI420());
   }
 }
 

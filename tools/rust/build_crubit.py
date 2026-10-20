@@ -23,11 +23,15 @@ officially supported by the Crubit team.
 '''
 
 import argparse
-import contextlib
+import json
 import os
+import platform
 import shutil
 import sys
 import tempfile
+import urllib
+
+from pathlib import Path
 
 # Get variables and helpers from `//tools/clang/scripts/build.py`.
 sys.path.append(
@@ -65,12 +69,7 @@ CC_BINDINGS_FROM_RS_CARGO_TOML_PATH = os.path.join(
     "Cargo.toml",
 )
 
-CRUBIT_BINS = ['cc_bindings_from_rs']
-
-IS_WIN = sys.platform == 'win32'
-IS_MAC = sys.platform == 'darwin'
-
-EXE = '.exe' if IS_WIN else ''
+EXE = '.exe' if sys.platform == 'win32' else ''
 
 
 def GetLatestCrubitCommit():
@@ -85,12 +84,12 @@ def GetCcBindingsFromRsRustFlags():
     # as seen in
     # https://github.com/rust-lang/rust/blob/b889870082dd0b0e3594bbfbebb4545d54710829/src/bootstrap/src/core/builder/cargo.rs#L285-L306
     # See also https://crbug.com/460482110#comment14 - #comment16
-    if IS_MAC:
+    if sys.platform == 'darwin':
         return [
             "-Zosx-rpath-install-name",
             "-Clink-args=-Wl,-rpath,@loader_path/../lib",
         ]
-    elif not IS_WIN:
+    elif sys.platform != 'win32':
         return [
             "-Clink-args=-Wl,-z,origin",
             "-Clink-args=-Wl,-rpath,$ORIGIN/../lib",
@@ -100,42 +99,27 @@ def GetCcBindingsFromRsRustFlags():
 
 
 def GetNativeLibsRustFlags():
-    """Returns rustflags needed to link native libs on Windows.
+    if sys.platform == 'win32':
+        # See https://crbug.com/481661885 to learn why adding `zlib.lib` and
+        # `libxml2s.lib` paths is required to build `cc_bindings_from_rs` on
+        # Windows when using Chromium-built Rust sysroot.
+        #
+        # Note that some of the calls below may be expensive (e.g. downloading
+        # zlib sources and building it) so `GetNativeLibsRustFlags` probably
+        # shouldn't be called in incremental builds (e.g. when
+        # `--skip-checkout` is present).
+        libxml2_lib_path = GetLibXml2Dirs().lib_dir
+        zlib_lib_path = AddZlibToPath()
+        return [
+            f'-Clink-arg=/LIBPATH:{libxml2_lib_path}',
+            f'-Clink-arg=/LIBPATH:{zlib_lib_path}',
+        ]
 
-    See https://crbug.com/481661885 to learn why adding `zlib.lib` and
-    `libxml2s.lib` paths is required to build `cc_bindings_from_rs` on Windows
-    when using a Chromium-built Rust sysroot.
-
-    Both libraries are built by the prerequisite `build_rust.py` run (zlib
-    directly, libxml2 as part of the LLVM build), so we only compute their
-    paths here.  In particular `AddZlibToPath(dry_run=False)` must not be used:
-    it deletes and rebuilds zlib, and leaves the process CWD inside `zlib_dir`.
-    """
-    if not IS_WIN:
-        # No native libs needed on other platforms:
-        return []
-
-    libxml2_lib_dir = GetLibXml2Dirs().lib_dir
-    zlib_lib_dir = AddZlibToPath(dry_run=True)
-    # Neither `dry_run=True` nor `GetLibXml2Dirs` checks that the libraries are
-    # really there, so verify here - otherwise a missing prerequisite shows up
-    # much later as an obscure linker error.
-    for lib in [
-        os.path.join(zlib_lib_dir, 'zlib.lib'),
-        os.path.join(libxml2_lib_dir, 'libxml2s.lib'),
-    ]:
-        if not os.path.exists(lib):
-            raise RuntimeError(
-                f'{lib} not found.  Run `tools/rust/build_rust.py` first.'
-            )
-
-    return [
-        f'-Clink-arg=/LIBPATH:{libxml2_lib_dir}',
-        f'-Clink-arg=/LIBPATH:{zlib_lib_dir}',
-    ]
+    # No native libs needed on other platforms:
+    return []
 
 
-def BuildCrubit(rust_sysroot, out_dir):
+def BuildCrubit(rust_sysroot, out_dir, skip_checkout):
     target_dir = os.path.abspath(os.path.join(out_dir, 'target'))
     release_dir = os.path.join(target_dir, 'release')
     home_dir = os.path.join(target_dir, 'cargo_home')
@@ -147,19 +131,21 @@ def BuildCrubit(rust_sysroot, out_dir):
     cargo_args += ['--target-dir', target_dir]
     cargo_args += ['--manifest-path', CC_BINDINGS_FROM_RS_CARGO_TOML_PATH]
     extra_rustflags = GetCcBindingsFromRsRustFlags()
-    extra_rustflags += GetNativeLibsRustFlags()
+    if not skip_checkout:
+        extra_rustflags += GetNativeLibsRustFlags()
     cargo_result = RunCargo(rust_sysroot, home_dir, cargo_args, extra_rustflags)
     print(f'Building cc_bindings_from_rs ... done.  Result: {cargo_result}')
     if cargo_result:
         return cargo_result
 
     print(f'Installing Crubit to {RUST_TOOLCHAIN_OUT_DIR} ...')
-    for bin_name in CRUBIT_BINS:
-        bin_exe = bin_name + EXE
-        print(f'    Copying {bin_exe} ...')
+    CRUBIT_BINS = ['cc_bindings_from_rs']
+    for bin in CRUBIT_BINS:
+        bin = bin + EXE
+        print(f'    Copying {bin} ...')
         shutil.copy(
-            os.path.join(release_dir, bin_exe),
-            os.path.join(RUST_TOOLCHAIN_OUT_DIR, 'bin', bin_exe),
+            os.path.join(release_dir, bin),
+            os.path.join(RUST_TOOLCHAIN_OUT_DIR, 'bin', bin),
         )
 
     # `crubit_target_dir` below helps ensure that Chromium can use the same
@@ -195,6 +181,9 @@ def main():
         help='cache artifacts in specified directory instead of a temp dir.',
     )
     parser.add_argument(
+        '--debug', action='store_true', help=('build Crubit in debug mode')
+    )
+    parser.add_argument(
         '--crubit-force-head-revision',
         action='store_true',
         help=(
@@ -212,11 +201,15 @@ def main():
     if not args.skip_checkout:
         CheckoutGitRepo("crubit", CRUBIT_GIT, crubit_revision, CRUBIT_SRC_DIR)
 
-    with contextlib.ExitStack() as stack:
-        out_dir = args.out_dir or stack.enter_context(
-            tempfile.TemporaryDirectory()
+    if args.out_dir:
+        return BuildCrubit(
+            RUST_TOOLCHAIN_OUT_DIR, args.out_dir, args.skip_checkout
         )
-        return BuildCrubit(RUST_TOOLCHAIN_OUT_DIR, out_dir)
+    else:
+        with tempfile.TemporaryDirectory() as out_dir:
+            return BuildCrubit(
+                RUST_TOOLCHAIN_OUT_DIR, out_dir, args.skip_checkout
+            )
 
 
 if __name__ == '__main__':

@@ -191,9 +191,6 @@ std::string VideoEncoder::EncoderInfo::ToString() const {
   if (is_qp_trusted.has_value()) {
     oss << ", is_qp_trusted = " << is_qp_trusted.value();
   }
-  if (max_pixels_per_frame.has_value()) {
-    oss << ", max_pixels_per_frame = " << max_pixels_per_frame.value();
-  }
   if (mapped_resolution.has_value()) {
     oss << ", mapped_resolution = " << mapped_resolution->width << " x "
         << mapped_resolution->height;
@@ -223,8 +220,7 @@ bool VideoEncoder::EncoderInfo::operator==(const EncoderInfo& rhs) const {
       implementation_name != rhs.implementation_name ||
       has_trusted_rate_controller != rhs.has_trusted_rate_controller ||
       is_hardware_accelerated != rhs.is_hardware_accelerated ||
-      enable_cpu_overuse_detection != rhs.enable_cpu_overuse_detection ||
-      max_pixels_per_frame != rhs.max_pixels_per_frame) {
+      enable_cpu_overuse_detection != rhs.enable_cpu_overuse_detection) {
     return false;
   }
 

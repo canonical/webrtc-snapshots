@@ -172,7 +172,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("aimd_rate_control_unittest") {
+  rtc_library("aimd_rate_control_unittest") {
+    testonly = true
     sources = [ "aimd_rate_control_unittest.cc" ]
     deps = [
       ":remote_bitrate_estimator",
@@ -188,7 +189,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("congestion_control_feedback_generator_unittest") {
+  rtc_library("congestion_control_feedback_generator_unittest") {
+    testonly = true
     sources = [ "congestion_control_feedback_generator_unittest.cc" ]
     deps = [
       ":congestion_control_feedback_generator",
@@ -206,7 +208,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("congestion_control_feedback_tracker_unittest") {
+  rtc_library("congestion_control_feedback_tracker_unittest") {
+    testonly = true
     sources = [ "congestion_control_feedback_tracker_unittest.cc" ]
     deps = [
       ":congestion_control_feedback_generator",
@@ -219,7 +222,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("inter_arrival_unittest") {
+  rtc_library("inter_arrival_unittest") {
+    testonly = true
     sources = [ "inter_arrival_unittest.cc" ]
     deps = [
       ":remote_bitrate_estimator",
@@ -228,7 +232,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("overuse_detector_unittest") {
+  rtc_library("overuse_detector_unittest") {
+    testonly = true
     sources = [ "overuse_detector_unittest.cc" ]
     deps = [
       ":remote_bitrate_estimator",
@@ -239,7 +244,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("packet_arrival_map_test") {
+  rtc_library("packet_arrival_map_test") {
+    testonly = true
     sources = [ "packet_arrival_map_test.cc" ]
     deps = [
       ":remote_bitrate_estimator_unittest_helper",
@@ -249,7 +255,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("remote_bitrate_estimator_abs_send_time_unittest") {
+  rtc_library("remote_bitrate_estimator_abs_send_time_unittest") {
+    testonly = true
     sources = [ "remote_bitrate_estimator_abs_send_time_unittest.cc" ]
     deps = [
       ":remote_bitrate_estimator",
@@ -259,7 +266,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("remote_bitrate_estimator_single_stream_unittest") {
+  rtc_library("remote_bitrate_estimator_single_stream_unittest") {
+    testonly = true
     sources = [ "remote_bitrate_estimator_single_stream_unittest.cc" ]
     deps = [
       ":remote_bitrate_estimator",
@@ -269,7 +277,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("transport_sequence_number_feedback_generator_unittest") {
+  rtc_library("transport_sequence_number_feedback_generator_unittest") {
+    testonly = true
     sources = [ "transport_sequence_number_feedback_generator_unittest.cc" ]
     deps = [
       ":remote_bitrate_estimator_unittest_helper",
@@ -283,6 +292,22 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../test:test_support",
       "../rtp_rtcp:rtp_rtcp_format",
+    ]
+  }
+
+  rtc_library("remote_bitrate_estimator_unittests") {
+    testonly = true
+
+    sources = []
+    deps = [
+      ":aimd_rate_control_unittest",
+      ":congestion_control_feedback_generator_unittest",
+      ":congestion_control_feedback_tracker_unittest",
+      ":inter_arrival_unittest",
+      ":overuse_detector_unittest",
+      ":remote_bitrate_estimator_abs_send_time_unittest",
+      ":remote_bitrate_estimator_single_stream_unittest",
+      ":transport_sequence_number_feedback_generator_unittest",
     ]
   }
 }

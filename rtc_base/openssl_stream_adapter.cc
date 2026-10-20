@@ -902,7 +902,8 @@ void OpenSSLStreamAdapter::SetTimeout(int delay_ms) {
             retransmission_count_++;
             RTC_LOG(LS_INFO) << "DTLS retransmission";
           } else if (res < 0) {
-            Error("DTLSv1_handle_timeout", res, SSL_AD_INTERNAL_ERROR, true);
+            RTC_LOG(LS_INFO) << "DTLSv1_handle_timeout() return -1";
+            Error("DTLSv1_handle_timeout", res, -1, true);
             return TimeDelta::PlusInfinity();
           }
           // We check the timer even after SSL_CONNECTED,

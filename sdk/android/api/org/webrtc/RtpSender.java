@@ -16,7 +16,7 @@ import org.jni_zero.NativeMethods;
 
 /** Java wrapper for a C++ RtpSenderInterface. */
 public class RtpSender {
-  final NativeLifecycleLock lifecycleLock;
+  private long nativeRtpSender;
 
   @Nullable private MediaStreamTrack cachedTrack;
   private boolean ownsTrack = true;
@@ -24,7 +24,7 @@ public class RtpSender {
 
   @CalledByNative
   public RtpSender(long nativeRtpSender) {
-    this.lifecycleLock = new NativeLifecycleLock("RtpSender", nativeRtpSender);
+    this.nativeRtpSender = nativeRtpSender;
     long nativeTrack = RtpSenderJni.get().getTrack(nativeRtpSender);
     cachedTrack = MediaStreamTrack.createMediaStreamTrack(nativeTrack);
 
@@ -40,35 +40,30 @@ public class RtpSender {
 
   /**
    * Starts sending a new track, without requiring additional SDP negotiation.
+   * <p>
+   * Note: This is equivalent to replaceTrack in the official WebRTC API. It
+   * was just implemented before the standards group settled on a name.
    *
-   * <p>Note: This is equivalent to replaceTrack in the official WebRTC API. It was just implemented
-   * before the standards group settled on a name.
-   *
-   * @param takeOwnership If true, the RtpSender takes ownership of the track from the caller, and
-   *     will auto-dispose of it when no longer needed. `takeOwnership` should only be used if the
-   *     caller owns the track; it is not appropriate when the track is owned by, for example,
-   *     another RtpSender or a MediaStream.
-   * @return true on success and false on failure.
+   * @param takeOwnership If true, the RtpSender takes ownership of the track
+   *                      from the caller, and will auto-dispose of it when no
+   *                      longer needed. `takeOwnership` should only be used if
+   *                      the caller owns the track; it is not appropriate when
+   *                      the track is owned by, for example, another RtpSender
+   *                      or a MediaStream.
+   * @return              true on success and false on failure.
    */
   public boolean setTrack(@Nullable MediaStreamTrack track, boolean takeOwnership) {
-    return lifecycleLock.callOrDefault(
-        sender -> {
-          boolean success =
-              (track == null)
-                  ? RtpSenderJni.get().setTrack(sender, 0)
-                  : track.lifecycleLock.callOrDefault(
-                      nativeTrack -> RtpSenderJni.get().setTrack(sender, nativeTrack), false);
-          if (!success) {
-            return false;
-          }
-          if (cachedTrack != null && ownsTrack) {
-            cachedTrack.dispose();
-          }
-          cachedTrack = track;
-          ownsTrack = takeOwnership;
-          return true;
-        },
-        false);
+    checkRtpSenderExists();
+    if (!RtpSenderJni.get()
+        .setTrack(nativeRtpSender, (track == null) ? 0 : track.getNativeMediaStreamTrack())) {
+      return false;
+    }
+    if (cachedTrack != null && ownsTrack) {
+      cachedTrack.dispose();
+    }
+    cachedTrack = track;
+    ownsTrack = takeOwnership;
+    return true;
   }
 
   @Nullable
@@ -77,23 +72,28 @@ public class RtpSender {
   }
 
   public void setStreams(List<String> streamIds) {
-    lifecycleLock.run(sender -> RtpSenderJni.get().setStreams(sender, streamIds));
+    checkRtpSenderExists();
+    RtpSenderJni.get().setStreams(nativeRtpSender, streamIds);
   }
 
   public List<String> getStreams() {
-    return lifecycleLock.call(sender -> RtpSenderJni.get().getStreams(sender));
+    checkRtpSenderExists();
+    return RtpSenderJni.get().getStreams(nativeRtpSender);
   }
 
   public boolean setParameters(RtpParameters parameters) {
-    return lifecycleLock.call(sender -> RtpSenderJni.get().setParameters(sender, parameters));
+    checkRtpSenderExists();
+    return RtpSenderJni.get().setParameters(nativeRtpSender, parameters);
   }
 
   public RtpParameters getParameters() {
-    return lifecycleLock.call(sender -> RtpSenderJni.get().getParameters(sender));
+    checkRtpSenderExists();
+    return RtpSenderJni.get().getParameters(nativeRtpSender);
   }
 
   public String id() {
-    return lifecycleLock.call(sender -> RtpSenderJni.get().getId(sender));
+    checkRtpSenderExists();
+    return RtpSenderJni.get().getId(nativeRtpSender);
   }
 
   @Nullable
@@ -102,27 +102,32 @@ public class RtpSender {
   }
 
   public void setFrameEncryptor(FrameEncryptor frameEncryptor) {
-    lifecycleLock.run(
-        sender ->
-            RtpSenderJni.get().setFrameEncryptor(sender, frameEncryptor.getNativeFrameEncryptor()));
+    checkRtpSenderExists();
+    RtpSenderJni.get().setFrameEncryptor(nativeRtpSender, frameEncryptor.getNativeFrameEncryptor());
   }
 
   public void dispose() {
-    lifecycleLock.dispose(
-        sender -> {
-          if (dtmfSender != null) {
-            dtmfSender.dispose();
-          }
-          if (cachedTrack != null && ownsTrack) {
-            cachedTrack.dispose();
-          }
-          JniCommon.nativeReleaseRef(sender);
-        });
+    checkRtpSenderExists();
+    if (dtmfSender != null) {
+      dtmfSender.dispose();
+    }
+    if (cachedTrack != null && ownsTrack) {
+      cachedTrack.dispose();
+    }
+    JniCommon.nativeReleaseRef(nativeRtpSender);
+    nativeRtpSender = 0;
   }
 
   /** Returns a pointer to webrtc::RtpSenderInterface. */
   long getNativeRtpSender() {
-    return lifecycleLock.getNativePointer();
+    checkRtpSenderExists();
+    return nativeRtpSender;
+  }
+
+  private void checkRtpSenderExists() {
+    if (nativeRtpSender == 0) {
+      throw new IllegalStateException("RtpSender has been disposed.");
+    }
   }
 
   @NativeMethods

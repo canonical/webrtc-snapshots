@@ -1,6 +1,9 @@
 {
     "0": {
         "benchmarks": {
+            "ad_frames.fencedframe": {
+                "abridged": false
+            },
             "jetstream2": {
                 "abridged": false
             }

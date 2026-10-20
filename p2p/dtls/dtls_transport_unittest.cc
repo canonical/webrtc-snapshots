@@ -1737,9 +1737,6 @@ class DtlsEventOrderingTest
     if (pqc && ::testing::get<2>(GetParam()) != SSL_PROTOCOL_DTLS_13) {
       GTEST_SKIP() << "PQC requires DTLS1.3";
     }
-    if (pqc && !SSLStreamAdapter::IsBoringSsl()) {
-      GTEST_SKIP() << "PQC needs boringssl.";
-    }
 
     SetPqc(::testing::get<3>(GetParam()));
     SetMaxProtocolVersions(::testing::get<2>(GetParam()),
@@ -1909,14 +1906,15 @@ std::vector<std::tuple<EndpointConfig, EndpointConfig>> AllEndpointVariants() {
           for (auto dtls_in_stun1 : {false, true}) {
             for (auto dtls_in_stun2 : {false, true}) {
               // The endpoint receiving the remote certificate directly (callee)
-              // knows if the caller supports dtls_in_stun.
+              // knows if the caller supports dtls_in_stun. Skip cases where the
+              // callee has dtls_in_stun enabled but the caller does not.
               bool caller_dtls_in_stun = (ice_role == ICEROLE_CONTROLLING)
                                              ? dtls_in_stun1
                                              : dtls_in_stun2;
               bool callee_dtls_in_stun = (ice_role == ICEROLE_CONTROLLING)
                                              ? dtls_in_stun2
                                              : dtls_in_stun1;
-              if (caller_dtls_in_stun != callee_dtls_in_stun) {
+              if (!caller_dtls_in_stun && callee_dtls_in_stun) {
                 continue;
               }
               v.push_back(std::make_tuple(
@@ -2098,12 +2096,6 @@ TEST_P(DtlsTransportInternalImplDtlsInStunTest, PartiallyPiggybacked) {
 
 TEST_P(DtlsTransportInternalImplDtlsInStunTest,
        DtlsDoesNotSignalWritableUnlessIceWritableOnce) {
-  if (!SSLStreamAdapter::IsBoringSsl() &&
-      std::get<0>(GetParam()).dtls_in_stun &&
-      std::get<1>(GetParam()).dtls_in_stun) {
-    GTEST_SKIP() << "DTLS-in-STUN needs boringssl.";
-  }
-
   Prepare(/* rtt_estimate= */ false);
   AddPacketLogging();
 

@@ -31,6 +31,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPPacketType
@@ -277,6 +278,9 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   void OnReceivedRtcpReportBlocks(
       std::span<const ReportBlockData> report_blocks) override;
   void OnRequestSendReport() override;
+
+  void SetVideoBitrateAllocation(
+      const VideoBitrateAllocation& bitrate) override;
 
   RTPSender* RtpSender() override;
   const RTPSender* RtpSender() const override;

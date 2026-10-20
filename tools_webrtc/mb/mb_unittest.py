@@ -328,10 +328,9 @@ class UnitTest(unittest.TestCase):
         files = isolate_file_contents['variables']['files']
         command = isolate_file_contents['variables']['command']
 
-        self.assertEqual(files, [
-            '../../testing/test_env.py', '../../vpython.toml',
-            '../../vpython.toml.uv.lock', 'foo_unittests'
-        ])
+        self.assertEqual(
+            files,
+            ['../../.vpython3', '../../testing/test_env.py', 'foo_unittests'])
         self.assertEqual(command, [
             'luci-auth',
             'context',
@@ -373,10 +372,9 @@ class UnitTest(unittest.TestCase):
         files = isolate_file_contents['variables']['files']
         command = isolate_file_contents['variables']['command']
 
-        self.assertEqual(files, [
-            '../../testing/test_env.py', '../../vpython.toml',
-            '../../vpython.toml.uv.lock', 'foo_unittests'
-        ])
+        self.assertEqual(
+            files,
+            ['../../.vpython3', '../../testing/test_env.py', 'foo_unittests'])
         self.assertEqual(command, [
             'luci-auth',
             'context',
@@ -419,9 +417,8 @@ class UnitTest(unittest.TestCase):
         command = isolate_file_contents['variables']['command']
 
         self.assertEqual(files, [
+            '../../.vpython3',
             '../../testing/test_env.py',
-            '../../vpython.toml',
-            '../../vpython.toml.uv.lock',
             'foo_unittests',
         ])
         self.assertEqual(command, ['bin/run_foo_unittests'])
@@ -453,12 +450,11 @@ class UnitTest(unittest.TestCase):
         command = isolate_file_contents['variables']['command']
 
         self.assertEqual(files, [
+            '../../.vpython3',
             '../../testing/test_env.py',
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../third_party/gtest-parallel/gtest_parallel.py',
             '../../tools_webrtc/gtest-parallel-wrapper.py',
-            '../../vpython.toml',
-            '../../vpython.toml.uv.lock',
             'foo_unittests',
         ])
         self.assertEqual(command, [
@@ -504,13 +500,12 @@ class UnitTest(unittest.TestCase):
         command = isolate_file_contents['variables']['command']
 
         self.assertEqual(files, [
+            '../../.vpython3',
             '../../testing/test_env.py',
             '../../testing/xvfb.py',
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../third_party/gtest-parallel/gtest_parallel.py',
             '../../tools_webrtc/gtest-parallel-wrapper.py',
-            '../../vpython.toml',
-            '../../vpython.toml.uv.lock',
             'foo_unittests',
         ])
         self.assertEqual(command, [
@@ -554,12 +549,11 @@ class UnitTest(unittest.TestCase):
         command = isolate_file_contents['variables']['command']
 
         self.assertEqual(files, [
+            '../../.vpython3',
             '../../testing/test_env.py',
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../third_party/gtest-parallel/gtest_parallel.py',
             '../../tools_webrtc/gtest-parallel-wrapper.py',
-            '../../vpython.toml',
-            '../../vpython.toml.uv.lock',
             'foo_unittests',
         ])
         self.assertEqual(command, [

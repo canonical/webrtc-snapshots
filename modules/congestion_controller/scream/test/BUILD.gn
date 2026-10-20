@@ -33,7 +33,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("cc_feedback_generator_unittests") {
+  rtc_library("cc_feedback_generator_unittests") {
+    testonly = true
     sources = [ "cc_feedback_generator_unittest.cc" ]
     deps = [
       ":cc_feedback_generator",

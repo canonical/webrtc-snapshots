@@ -11,8 +11,6 @@ def CheckFreeze(input_api, output_api):
 
 
 def CheckTests(input_api, output_api):
-  if not input_api.HasAffectedFiles(extensions='.py'):
-    return []
   return input_api.RunTests(
     input_api.canned_checks.GetUnitTestsInDirectory(
       input_api, output_api, '.', [r'.+_(unit)?test\.py$']
@@ -21,8 +19,6 @@ def CheckTests(input_api, output_api):
 
 
 def CheckPylint(input_api, output_api):
-  if not input_api.HasAffectedFiles(extensions='.py'):
-    return []
   disabled_warnings = [
     'bad-indentation',
     'consider-using-with',
@@ -42,10 +38,6 @@ def CheckPylint(input_api, output_api):
 
 
 def CheckMbValidate(input_api, output_api):
-  if not input_api.HasAffectedFiles(
-    path=['mb_config.pyl', 'mb.py', 'mb_config_expectations']
-  ):
-    return []
   cmd = [input_api.python3_executable, 'mb.py', 'validate']
   kwargs = {'cwd': input_api.PresubmitLocalPath()}
   return input_api.RunTests(

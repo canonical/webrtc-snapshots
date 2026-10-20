@@ -225,7 +225,7 @@ std::vector<FilteredSample> GetSampleValuesForFrame(
       scoped_refptr<I420Buffer> scaled_buffer =
           I420Buffer::Create(scaled_width, scaled_height);
       scoped_refptr<I420BufferInterface> buffer =
-          frame.video_frame_buffer()->ToI420ForInspection();
+          frame.video_frame_buffer()->ToI420();
       if (buffer == nullptr) {
         RTC_LOG(LS_WARNING) << "Unable to convert frame to I420 format.";
         return {};

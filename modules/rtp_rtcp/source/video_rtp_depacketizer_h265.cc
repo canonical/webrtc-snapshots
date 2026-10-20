@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
 #include "common_video/h265/h265_bitstream_parser.h"
@@ -145,7 +146,7 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessApOrSingleNalu(
           RTC_LOG(LS_WARNING) << "Failed to parse SPS from SPS slice.";
         }
       }
-        [[fallthrough]];
+        ABSL_FALLTHROUGH_INTENDED;
       case H265::NaluType::kVps:
       case H265::NaluType::kPps:
       case H265::NaluType::kTrailN:

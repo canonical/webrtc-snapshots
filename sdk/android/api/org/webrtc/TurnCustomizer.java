@@ -15,21 +15,29 @@ import org.jni_zero.NativeMethods;
 
 /** Java wrapper for a C++ TurnCustomizer. */
 public class TurnCustomizer {
-  private final NativeLifecycleLock lifecycleLock;
+  private long nativeTurnCustomizer;
 
   public TurnCustomizer(long nativeTurnCustomizer) {
-    this.lifecycleLock = new NativeLifecycleLock("TurnCustomizer", nativeTurnCustomizer);
+    this.nativeTurnCustomizer = nativeTurnCustomizer;
   }
 
   public void dispose() {
-    lifecycleLock.dispose(
-        nativeTurnCustomizer -> TurnCustomizerJni.get().freeTurnCustomizer(nativeTurnCustomizer));
+    checkTurnCustomizerExists();
+    TurnCustomizerJni.get().freeTurnCustomizer(nativeTurnCustomizer);
+    nativeTurnCustomizer = 0;
   }
 
   /** Return a pointer to webrtc::TurnCustomizer. */
   @CalledByNative
   long getNativeTurnCustomizer() {
-    return lifecycleLock.getNativePointer();
+    checkTurnCustomizerExists();
+    return nativeTurnCustomizer;
+  }
+
+  private void checkTurnCustomizerExists() {
+    if (nativeTurnCustomizer == 0) {
+      throw new IllegalStateException("TurnCustomizer has been disposed.");
+    }
   }
 
   @NativeMethods

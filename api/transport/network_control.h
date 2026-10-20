@@ -14,6 +14,7 @@
 #include <memory>
 #include <optional>
 
+#include "absl/base/attributes.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/transport/network_types.h"
@@ -67,39 +68,41 @@ class NetworkControllerInterface {
   virtual ~NetworkControllerInterface() = default;
 
   // Called when network availabilty changes.
-  [[nodiscard]] virtual NetworkControlUpdate OnNetworkAvailability(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkAvailability(
       NetworkAvailability) = 0;
   // Called when the receiving or sending endpoint changes address.
-  [[nodiscard]] virtual NetworkControlUpdate OnNetworkRouteChange(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkRouteChange(
       NetworkRouteChange) = 0;
   // Called periodically with a periodicy as specified by
   // NetworkControllerFactoryInterface::GetProcessInterval.
-  [[nodiscard]] virtual NetworkControlUpdate OnProcessInterval(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnProcessInterval(
       ProcessInterval) = 0;
   // Called when remotely calculated bitrate is received.
-  [[nodiscard]] virtual NetworkControlUpdate OnRemoteBitrateReport(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnRemoteBitrateReport(
       RemoteBitrateReport) = 0;
   // Called round trip time has been calculated by protocol specific mechanisms.
-  [[nodiscard]] virtual NetworkControlUpdate OnRoundTripTimeUpdate(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnRoundTripTimeUpdate(
       RoundTripTimeUpdate) = 0;
   // Called when a packet is sent on the network.
-  [[nodiscard]] virtual NetworkControlUpdate OnSentPacket(SentPacket) = 0;
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnSentPacket(
+      SentPacket) = 0;
   // Called when a packet is received from the remote client.
-  [[nodiscard]] virtual NetworkControlUpdate OnReceivedPacket(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnReceivedPacket(
       ReceivedPacket) = 0;
   // Called when the stream specific configuration has been updated.
-  [[nodiscard]] virtual NetworkControlUpdate OnStreamsConfig(StreamsConfig) = 0;
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnStreamsConfig(
+      StreamsConfig) = 0;
   // Called when target transfer rate constraints has been changed.
-  [[nodiscard]] virtual NetworkControlUpdate OnTargetRateConstraints(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTargetRateConstraints(
       TargetRateConstraints) = 0;
   // Called when a protocol specific calculation of packet loss has been made.
-  [[nodiscard]] virtual NetworkControlUpdate OnTransportLossReport(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTransportLossReport(
       TransportLossReport) = 0;
   // Called with per packet feedback regarding receive time.
-  [[nodiscard]] virtual NetworkControlUpdate OnTransportPacketsFeedback(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTransportPacketsFeedback(
       TransportPacketsFeedback) = 0;
   // Called with network state estimate updates.
-  [[nodiscard]] virtual NetworkControlUpdate OnNetworkStateEstimate(
+  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkStateEstimate(
       NetworkStateEstimate) = 0;
   // Returns true if the network controller supports adaptation to ECN.
   // https://www.rfc-editor.org/rfc/rfc9331.html

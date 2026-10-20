@@ -42,12 +42,8 @@ class Violation(
         return self.severity == 'error'
 
 
-class _CheckstyleError(Exception):
-    pass
-
-
-def _checkstyle_command(style_file, java_files):
-    return [
+def run_checkstyle(local_path, style_file, java_files):
+    cmd = [
         _JAVA_PATH,
         '-cp',
         _CHECKSTYLE_ROOT,
@@ -57,26 +53,27 @@ def _checkstyle_command(style_file, java_files):
         '-f',
         'xml',
     ] + java_files
+    result = subprocess.run(cmd, capture_output=True, check=False, text=True)
 
-
-def _parse_violations(local_path, returncode, stdout, stderr):
-    stderr_lines = stderr.splitlines()
+    stderr_lines = result.stderr.splitlines()
     # One line is always: "Checkstyle ends with # warnings/errors".
     if len(stderr_lines) > 1 or (
         stderr_lines and 'ends with' not in stderr_lines[0]
     ):
-        raise _CheckstyleError(
-            f'{stderr}\nCheckstyle failed with returncode={returncode}.\n'
-            'This might mean you have a syntax error'
+        sys.stderr.write(result.stderr)
+        sys.stderr.write(
+            f'\nCheckstyle failed with returncode={result.returncode}.\n'
         )
+        sys.stderr.write('This might mean you have a syntax error\n')
+        sys.exit(-1)
 
     try:
-        root = xml.dom.minidom.parseString(stdout)
-    except Exception as e:
-        raise _CheckstyleError(
-            f'Tried to parse:\n{stdout}\n'
-            f'Checkstyle failed with returncode={returncode}.\n{e}'
-        ) from e
+        root = xml.dom.minidom.parseString(result.stdout)
+    except Exception:
+        sys.stderr.write('Tried to parse:\n')
+        sys.stderr.write(result.stdout)
+        sys.stderr.write('\n')
+        raise
 
     inclusive_files = []
     inclusive_warning = ''
@@ -115,18 +112,6 @@ def _parse_violations(local_path, returncode, stdout, stderr):
     return results
 
 
-def run_checkstyle(local_path, style_file, java_files):
-    cmd = _checkstyle_command(style_file, java_files)
-    result = subprocess.run(cmd, capture_output=True, check=False, text=True)
-    try:
-        return _parse_violations(
-            local_path, result.returncode, result.stdout, result.stderr
-        )
-    except _CheckstyleError as e:
-        sys.stderr.write(f'{e}\n')
-        sys.exit(-1)
-
-
 def run_presubmit(input_api, output_api, files_to_skip=None):
     # Android toolchain is only available on Linux.
     if not sys.platform.startswith('linux'):
@@ -144,42 +129,23 @@ def run_presubmit(input_api, output_api, files_to_skip=None):
         return []
 
     local_path = input_api.PresubmitLocalPath()
+    violations = run_checkstyle(local_path, _STYLE_FILE, java_files)
+    warnings = ['  ' + str(v) for v in violations if v.is_warning()]
+    errors = ['  ' + str(v) for v in violations if v.is_error()]
 
-    def parse_output(returncode, stdout, stderr):
-        try:
-            violations = _parse_violations(
-                local_path, returncode, stdout, stderr
-            )
-        except _CheckstyleError as e:
-            return [output_api.PresubmitError(str(e))]
-
-        warnings = ['  ' + str(v) for v in violations if v.is_warning()]
-        errors = ['  ' + str(v) for v in violations if v.is_error()]
-
-        ret = []
-        if warnings:
-            ret.append(output_api.PresubmitPromptWarning('\n'.join(warnings)))
-        if errors:
-            msg = '\n'.join(errors)
-            if 'Unused import:' in msg or 'Duplicate import' in msg:
-                msg += """
+    ret = []
+    if warnings:
+        ret.append(output_api.PresubmitPromptWarning('\n'.join(warnings)))
+    if errors:
+        msg = '\n'.join(errors)
+        if 'Unused import:' in msg or 'Duplicate import' in msg:
+            msg += """
 
 To remove unused imports: """ + input_api.os_path.relpath(
-                    _REMOVE_UNUSED_IMPORTS_PATH, local_path
-                )
-            ret.append(output_api.PresubmitError(msg))
-        return ret
-
-    return input_api.RunTests(
-        [
-            input_api.Command(
-                name='checkstyle',
-                cmd=_checkstyle_command(_STYLE_FILE, java_files),
-                kwargs={},
-                output_parser=parse_output,
+                _REMOVE_UNUSED_IMPORTS_PATH, local_path
             )
-        ]
-    )
+        ret.append(output_api.PresubmitError(msg))
+    return ret
 
 
 def main():

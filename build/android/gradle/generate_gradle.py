@@ -85,7 +85,10 @@ _DEFAULT_TARGETS = [
 # Priority order for canonical browser resource srcjars in the _all module.
 _PREFERRED_COMPILE_RESOURCES_TARGETS = (
     '//clank/java:chrome_apk',
+    '//chrome/android:chrome_apk',
     '//chrome/android:chrome_public_apk',
+    '//chrome/android:monochrome_public_apk',
+    '//chrome/android:monochrome_apk',
 )
 
 
@@ -820,7 +823,7 @@ def _GenerateGradleFile(entry, generator, build_vars, jinja_processor):
     )
 
 
-# Example: //chrome/android:chrome_public_apk
+# Example: //chrome/android:monochrome
 def _GetNative(relative_func, target_names):
     """Returns an object containing native c++ sources list and its included path
 

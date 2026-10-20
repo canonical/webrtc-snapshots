@@ -36,6 +36,10 @@ class MockVideoStreamEncoder : public VideoStreamEncoderInterface {
               AddAdaptationResource,
               (scoped_refptr<Resource>),
               (override));
+  MOCK_METHOD(std::vector<scoped_refptr<Resource>>,
+              GetAdaptationResources,
+              (),
+              (override));
   MOCK_METHOD(void,
               SetSource,
               (VideoSourceInterface<VideoFrame>*, const DegradationPreference&),

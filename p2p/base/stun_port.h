@@ -148,8 +148,6 @@ class RTC_EXPORT UDPPort : public Port {
 
   void OnReadyToSend(AsyncPacketSocket* socket);
 
-  void OnSocketClose(AsyncPacketSocket* socket, int error);
-
   // This method will send STUN binding request if STUN server address is set.
   void MaybePrepareStunCandidate();
 

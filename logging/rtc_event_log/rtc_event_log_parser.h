@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/dtls_transport_interface.h"
@@ -680,10 +681,11 @@ class ParsedRtcEventLog {
   std::vector<InferredRouteChangeEvent> GetRouteChanges() const;
 
  private:
-  [[nodiscard]] ParseStatus ParseStreamInternal(absl::string_view s);
-  [[nodiscard]] ParseStatus ParseStreamInternalV3(absl::string_view s);
+  ABSL_MUST_USE_RESULT ParseStatus ParseStreamInternal(absl::string_view s);
+  ABSL_MUST_USE_RESULT ParseStatus ParseStreamInternalV3(absl::string_view s);
 
-  [[nodiscard]] ParseStatus StoreParsedLegacyEvent(const rtclog::Event& event);
+  ABSL_MUST_USE_RESULT ParseStatus
+  StoreParsedLegacyEvent(const rtclog::Event& event);
 
   template <typename T>
   void StoreFirstAndLastTimestamp(const std::vector<T>& v);

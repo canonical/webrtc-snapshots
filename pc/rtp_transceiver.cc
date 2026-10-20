@@ -1017,7 +1017,8 @@ void RtpTransceiver::ApplySframeEnabled(bool sframe_enabled) {
   sframe_enabled_ = sframe_enabled;
 
   if (sframe_enabled && channel_) {
-    channel_->EnableSframe();
+    // TODO(bugs.webrtc.org/479862368): Enable Sframe on the media send and
+    // receive channels when the encryption pipeline is implemented.
   }
 }
 

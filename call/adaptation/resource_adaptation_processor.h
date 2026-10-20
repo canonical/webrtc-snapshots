@@ -62,6 +62,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void RemoveResourceLimitationsListener(
       ResourceLimitationsListener* limitations_listener) override;
   void AddResource(scoped_refptr<Resource> resource) override;
+  std::vector<scoped_refptr<Resource>> GetResources() const override;
   void RemoveResource(scoped_refptr<Resource> resource) override;
 
   // ResourceListener implementation.
@@ -138,7 +139,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   TaskQueueBase* task_queue_;
   scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
   // Input and output.
-  Mutex resources_lock_;
+  mutable Mutex resources_lock_;
   std::vector<scoped_refptr<Resource>> resources_
       RTC_GUARDED_BY(resources_lock_);
   std::vector<ResourceLimitationsListener*> resource_limitations_listeners_

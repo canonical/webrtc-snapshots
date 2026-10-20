@@ -79,6 +79,7 @@ rtc_source_set("buffer") {
     ":type_traits",
     ":zero_memory",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -89,6 +90,7 @@ rtc_source_set("byte_order") {
   deps = [
     ":checks",
     "system:arch",
+    "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
 
@@ -123,7 +125,10 @@ rtc_source_set("span_helpers") {
 rtc_source_set("swap_queue") {
   visibility = [ "*" ]
   sources = [ "swap_queue.h" ]
-  deps = [ ":checks" ]
+  deps = [
+    ":checks",
+    "//third_party/abseil-cpp/absl/base:core_headers",
+  ]
 }
 
 rtc_source_set("macromagic") {
@@ -231,6 +236,7 @@ rtc_library("event_tracer") {
     "../system_wrappers",
     "synchronization:mutex",
     "system:rtc_export",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -519,6 +525,7 @@ rtc_library("logging") {
     "../api/task_queue",
     "../api/units:timestamp",
     "synchronization:mutex",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:no_destructor",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
@@ -677,6 +684,7 @@ rtc_library("stringutils") {
     ":checks",
     ":safe_minmax",
     "system:rtc_export",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -1090,6 +1098,7 @@ rtc_library("threading") {
     "system:system_time",
     "system:unused",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/cleanup",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/strings:string_view",
@@ -1298,6 +1307,7 @@ rtc_library("network") {
     "experiments:field_trial_parser",
     "system:rtc_export",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/memory",
@@ -1903,6 +1913,7 @@ rtc_library("rtc_base_tests_utils") {
     "network:received_packet",
     "synchronization:mutex",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
@@ -2262,6 +2273,7 @@ if (rtc_include_tests) {
         "task_utils:repeating_task",
         "//testing/gtest",
         "//third_party/abseil-cpp/absl/algorithm:container",
+        "//third_party/abseil-cpp/absl/base:core_headers",
         "//third_party/abseil-cpp/absl/cleanup",
         "//third_party/abseil-cpp/absl/functional:any_invocable",
         "//third_party/abseil-cpp/absl/memory",

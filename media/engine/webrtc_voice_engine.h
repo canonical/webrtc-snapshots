@@ -54,7 +54,6 @@
 #include "call/audio_send_stream.h"
 #include "call/audio_state.h"
 #include "call/call.h"
-#include "call/sframe_options.h"
 #include "media/base/audio_source.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
@@ -245,8 +244,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
       uint32_t ssrc,
       scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
 
-  void EnableSframe() override;
-
   bool CanInsertDtmf() override;
   bool InsertDtmf(uint32_t ssrc, int event, int duration) override;
 
@@ -315,7 +312,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.
   const CryptoOptions crypto_options_;
-  SframeSendOptions sframe_options_ RTC_GUARDED_BY(worker_thread_);
 
   // Callback invoked whenever the list of SSRCs changes.
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
@@ -387,8 +383,6 @@ class WebRtcVoiceReceiveChannel final
   void SetFrameDecryptor(
       uint32_t ssrc,
       scoped_refptr<FrameDecryptorInterface> frame_decryptor) override;
-
-  void EnableSframe() override;
 
   bool SetOutputVolume(uint32_t ssrc, double volume) override;
   // Applies the new volume to current and future unsignaled streams.
@@ -485,7 +479,6 @@ class WebRtcVoiceReceiveChannel final
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.
   const CryptoOptions crypto_options_;
-  SframeReceiveOptions sframe_options_ RTC_GUARDED_BY(worker_thread_);
   // Unsignaled streams have an option to have a frame decryptor set on them.
   scoped_refptr<FrameDecryptorInterface> unsignaled_frame_decryptor_
       RTC_GUARDED_BY(worker_thread_);

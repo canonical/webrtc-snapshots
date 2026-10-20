@@ -91,7 +91,8 @@ rtc_library("bitrate_controller") {
 }
 
 if (rtc_include_tests && !build_with_chromium) {
-  rtc_cc_test("pcc_bitrate_controller_unittest") {
+  rtc_library("bitrate_controller_unittest") {
+    testonly = true
     sources = [ "bitrate_controller_unittest.cc" ]
     deps = [
       ":bitrate_controller",
@@ -106,7 +107,8 @@ if (rtc_include_tests && !build_with_chromium) {
     ]
   }
 
-  rtc_cc_test("monitor_interval_unittest") {
+  rtc_library("monitor_interval_unittest") {
+    testonly = true
     sources = [ "monitor_interval_unittest.cc" ]
     deps = [
       ":monitor_interval",
@@ -119,7 +121,8 @@ if (rtc_include_tests && !build_with_chromium) {
     ]
   }
 
-  rtc_cc_test("pcc_network_controller_unittest") {
+  rtc_library("pcc_network_controller_unittest") {
+    testonly = true
     sources = [ "pcc_network_controller_unittest.cc" ]
     deps = [
       ":pcc",
@@ -135,7 +138,8 @@ if (rtc_include_tests && !build_with_chromium) {
     ]
   }
 
-  rtc_cc_test("rtt_tracker_unittest") {
+  rtc_library("rtt_tracker_unittest") {
+    testonly = true
     sources = [ "rtt_tracker_unittest.cc" ]
     deps = [
       ":rtt_tracker",
@@ -146,7 +150,8 @@ if (rtc_include_tests && !build_with_chromium) {
     ]
   }
 
-  rtc_cc_test("utility_function_unittest") {
+  rtc_library("utility_function_unittest") {
+    testonly = true
     sources = [ "utility_function_unittest.cc" ]
     deps = [
       ":monitor_interval",
@@ -157,6 +162,18 @@ if (rtc_include_tests && !build_with_chromium) {
       "../../../api/units:time_delta",
       "../../../api/units:timestamp",
       "../../../test:test_support",
+    ]
+  }
+
+  rtc_library("pcc_unittests") {
+    testonly = true
+    sources = []
+    deps = [
+      ":bitrate_controller_unittest",
+      ":monitor_interval_unittest",
+      ":pcc_network_controller_unittest",
+      ":rtt_tracker_unittest",
+      ":utility_function_unittest",
     ]
   }
 }

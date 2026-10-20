@@ -14,8 +14,6 @@ TEST_PATTERNS = [r'.+_test.py$']
 
 
 def _CommonChecks(input_api, output_api):
-    if not input_api.HasAffectedFiles(extensions='.py'):
-        return []
     env = os.environ
     pythonpath = [os.path.join(os.getcwd(), '..')]
     if 'PYTHONPATH' in env:

@@ -35,7 +35,7 @@ _NAMESPACES_IN_MULTIPLE_FILES = [
 ]
 
 
-def CheckNamespaces(trees: dict[str, ET.Element]) -> bool:
+def CheckNamespaces(xml_paths: list[str]):
   """Check that histograms from a single namespace are all in the same file.
 
   Generally we want the histograms from a single namespace to be in the same
@@ -46,11 +46,13 @@ def CheckNamespaces(trees: dict[str, ET.Element]) -> bool:
   `Foo.Bar.Baz` has a namespace of `Foo`.
 
   Args:
-    trees: A mapping from XML file path to its parsed ET Element root.
+    xml_paths: A list of paths to the xml files to validate.
   """
   namespaces: dict[str, str] = {}
   has_errors = False
-  for path, tree in trees.items():
+  for path in xml_paths:
+    tree = ET.parse(path).getroot()
+
     namespaces_in_file = set(
       name.lower().split('.')[0]
       for h in tree.iter('histogram')
@@ -80,7 +82,7 @@ def _IsGlobalVariantFile(path: str) -> bool:
   )
 
 
-def _CheckVariantsRegistered(trees: dict[str, ET.Element]) -> bool:
+def _CheckVariantsRegistered(xml_paths: list[str]) -> bool:
   """Checks that all tokens within histograms are registered.
 
   Tokens within histograms should be registered as tokens either inline
@@ -88,13 +90,14 @@ def _CheckVariantsRegistered(trees: dict[str, ET.Element]) -> bool:
   it is used, or in the global `variants.xml` file.
 
   Args:
-    trees: A mapping from XML file path to its parsed ET Element root.
+    xml_paths: A list of paths to the xml files to validate.
   """
   has_errors = False
 
   global_variants = {}
-  for path, tree in trees.items():
+  for path in xml_paths:
     if _IsGlobalVariantFile(path):
+      tree = ET.parse(path).getroot()
       variants, variants_errors = extract_histograms.ExtractVariantsFromXmlTree(
         tree
       )
@@ -102,10 +105,11 @@ def _CheckVariantsRegistered(trees: dict[str, ET.Element]) -> bool:
       global_variants.update(variants)
       break
 
-  for path, tree in trees.items():
+  for path in xml_paths:
     if _IsGlobalVariantFile(path):
       continue
 
+    tree = ET.parse(path).getroot()
     variants, variants_errors = extract_histograms.ExtractVariantsFromXmlTree(
       tree
     )
@@ -142,19 +146,20 @@ def _CheckVariantsRegistered(trees: dict[str, ET.Element]) -> bool:
 
 
 def _CheckNoUnusedEnums(
-  trees: dict[str, ET.Element],
+  xml_paths: list[str],
   histograms: dict[str, extract_histograms.HistogramDict] | None = None,
 ) -> bool:
   """Checks that all enums are referenced by metrics."""
   # Only reuse `histograms` if it was generated from the full XML dataset.
   # Otherwise, fetch all enums to prevent false-positive unused enum errors.
-  if histograms is not None and set(trees) == set(histogram_paths.ALL_XMLS):
+  if histograms is not None and set(xml_paths) == set(histogram_paths.ALL_XMLS):
     enum_names = enums.get_all_used_enums(histograms)
   else:
     enum_names = enums.get_enums_used_in_files()
 
   has_errors = False
-  for enum_file, tree in trees.items():
+  for enum_file in xml_paths:
+    tree = ET.parse(enum_file).getroot()
     for enum_node in tree.iter('enum'):
       enum_name = enum_node.get('name')
       if enum_name and enum_name not in enum_names:
@@ -180,18 +185,13 @@ def main():
   )
   paths_to_check = parser.parse_args().xml_paths
 
-  # Parse and create a tree once as this is same for all checks below.
-  trees = {path: ET.parse(path).getroot() for path in paths_to_check}
-
-  # Use ElementTree directly to avoid minidom round-trips (crbug.com/531790306).
-  merged = merge_xml.MergeTrees(
-    list(trees.values()), should_expand_owners=False
+  doc = merge_xml.MergeFilesDeprecated(
+    paths_to_check, expand_owners_and_extract_components=False
   )
-  histograms, errors = extract_histograms.ExtractHistogramsFromXmlET(merged)
-
-  errors = errors or CheckNamespaces(trees)
-  errors = errors or _CheckVariantsRegistered(trees)
-  errors = errors or _CheckNoUnusedEnums(trees, histograms)
+  histograms, errors = extract_histograms.ExtractHistogramsFromDom(doc)
+  errors = errors or CheckNamespaces(paths_to_check)
+  errors = errors or _CheckVariantsRegistered(paths_to_check)
+  errors = errors or _CheckNoUnusedEnums(paths_to_check, histograms)
   sys.exit(bool(errors))
 
 

@@ -25,7 +25,6 @@
 #include "api/test/mock_transformable_audio_frame.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/ntp_time.h"
 #include "test/gmock.h"
@@ -67,7 +66,8 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
       make_ref_counted<MockFrameTransformer>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          [](auto...) {}, mock_frame_transformer, main_thread.task_queue());
+          ChannelReceiveFrameTransformerDelegate::ReceiveFrameCallback(),
+          mock_frame_transformer, main_thread.task_queue());
   EXPECT_CALL(*mock_frame_transformer, RegisterTransformedFrameCallback);
   delegate->Init();
 }
@@ -81,7 +81,8 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
       make_ref_counted<MockFrameTransformer>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          [](auto...) {}, mock_frame_transformer, main_thread.task_queue());
+          ChannelReceiveFrameTransformerDelegate::ReceiveFrameCallback(),
+          mock_frame_transformer, main_thread.task_queue());
   EXPECT_CALL(*mock_frame_transformer, UnregisterTransformedFrameCallback);
   delegate->Reset();
 }
@@ -205,7 +206,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
       make_ref_counted<NiceMock<MockFrameTransformer>>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          /*receive_frame_callback=*/[](auto...) {}, mock_frame_transformer,
+          /*receive_frame_callback=*/nullptr, mock_frame_transformer,
           main_thread.task_queue());
   scoped_refptr<TransformedFrameCallback> callback;
   EXPECT_CALL(*mock_frame_transformer, RegisterTransformedFrameCallback)
@@ -242,7 +243,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
       make_ref_counted<NiceMock<MockFrameTransformer>>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          /*receive_frame_callback=*/[](auto...) {}, mock_frame_transformer,
+          /*receive_frame_callback=*/nullptr, mock_frame_transformer,
           main_thread.task_queue());
   scoped_refptr<TransformedFrameCallback> callback;
   EXPECT_CALL(*mock_frame_transformer, RegisterTransformedFrameCallback)
@@ -280,7 +281,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
       make_ref_counted<NiceMock<MockFrameTransformer>>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          /*receive_frame_callback=*/[](auto...) {}, mock_frame_transformer,
+          /*receive_frame_callback=*/nullptr, mock_frame_transformer,
           main_thread.task_queue());
   scoped_refptr<TransformedFrameCallback> callback;
   EXPECT_CALL(*mock_frame_transformer, RegisterTransformedFrameCallback)
@@ -323,7 +324,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest, SetAudioLevel) {
       make_ref_counted<NiceMock<MockFrameTransformer>>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          /*receive_frame_callback=*/[](auto...) {}, mock_frame_transformer,
+          /*receive_frame_callback=*/nullptr, mock_frame_transformer,
           main_thread.task_queue());
   delegate->Init();
   const uint8_t data[] = {1, 2, 3, 4};
@@ -357,7 +358,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest, GetAndSetRtpTimestampInfo) {
       make_ref_counted<NiceMock<MockFrameTransformer>>();
   scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
       make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          /*receive_frame_callback=*/[](auto...) {}, mock_frame_transformer,
+          /*receive_frame_callback=*/nullptr, mock_frame_transformer,
           main_thread.task_queue());
   delegate->Init();
 
@@ -419,48 +420,6 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
 
   ASSERT_TRUE(header.extension.audio_level().has_value());
   EXPECT_EQ(header.extension.audio_level()->level(), 111);
-}
-
-TEST(ChannelReceiveFrameTransformerDelegateTest,
-     StartShortCircuitingFromAnotherThreadPostsToReceiveThread) {
-  test::RunLoop main_thread;
-  scoped_refptr<MockFrameTransformer> mock_frame_transformer =
-      make_ref_counted<NiceMock<MockFrameTransformer>>();
-  MockChannelReceive mock_channel;
-  scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
-      make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          mock_channel.callback(), mock_frame_transformer,
-          main_thread.task_queue());
-  const uint8_t data[] = {1, 2, 3, 4};
-  std::span<const uint8_t> packet(data, sizeof(data));
-  RTPHeader header;
-
-  TaskQueueForTest off_thread("ShortCircuitQueue");
-  off_thread.SendTask([&]() { delegate->StartShortCircuiting(); });
-  main_thread.Flush();
-
-  EXPECT_CALL(*mock_frame_transformer, Transform).Times(0);
-  EXPECT_CALL(mock_channel, ReceiveFrame);
-  delegate->Transform(packet, header, /*ssrc=*/1111,
-                      /*codec_mime_type=*/"audio/opus", kFakeReceiveTimestamp);
-}
-
-TEST(ChannelReceiveFrameTransformerDelegateTest,
-     ResetSafelyClearsCallbackOnReceiveThread) {
-  test::RunLoop main_thread;
-  scoped_refptr<MockFrameTransformer> mock_frame_transformer =
-      make_ref_counted<NiceMock<MockFrameTransformer>>();
-  MockChannelReceive mock_channel;
-  scoped_refptr<ChannelReceiveFrameTransformerDelegate> delegate =
-      make_ref_counted<ChannelReceiveFrameTransformerDelegate>(
-          mock_channel.callback(), mock_frame_transformer,
-          main_thread.task_queue());
-
-  delegate->Reset();
-
-  EXPECT_CALL(mock_channel, ReceiveFrame).Times(0);
-  delegate->OnTransformedFrame(std::make_unique<MockTransformableAudioFrame>());
-  main_thread.Flush();
 }
 
 }  // namespace

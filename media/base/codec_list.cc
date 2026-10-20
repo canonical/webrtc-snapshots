@@ -13,8 +13,6 @@
 #include <cstddef>
 #include <map>
 #include <span>
-#include <utility>
-#include <vector>
 
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
@@ -29,12 +27,10 @@ namespace webrtc {
 
 namespace {
 
-// Checks that no two codecs in `codecs` use the same payload type, and fills
-// `pt_to_index` with the payload type of each codec that has one. This
-// invariant holds both while a codec list is being built and once it is
-// complete.
-RTCError CheckPayloadTypesAreUnique(std::span<const Codec> codecs,
-                                    std::map<int, int>& pt_to_index) {
+RTCError CheckInputConsistency(std::span<const Codec> codecs) {
+  std::map<int, int> pt_to_index;
+  // Create a map of payload type to index, and ensure
+  // that there are no duplicates.
   for (size_t i = 0; i < codecs.size(); i++) {
     const Codec& codec = codecs[i];
     if (codec.id != PayloadType::NotSet()) {
@@ -48,15 +44,6 @@ RTCError CheckPayloadTypesAreUnique(std::span<const Codec> codecs,
       }
     }
   }
-  return RTCError::OK();
-}
-
-// Checks that the codecs referred to by RTX codecs are present in `codecs`.
-// This invariant only holds for a complete codec list: while a list is being
-// built, an RTX codec can be added before the codec that it refers to.
-RTCError CheckReferencedCodecsArePresent(
-    std::span<const Codec> codecs,
-    const std::map<int, int>& pt_to_index) {
   for (const Codec& codec : codecs) {
     switch (codec.GetResiliencyType()) {
       case Codec::ResiliencyType::kRed:
@@ -120,15 +107,6 @@ RTCError CheckReferencedCodecsArePresent(
   return RTCError::OK();
 }
 
-RTCError CheckInputConsistency(std::span<const Codec> codecs) {
-  std::map<int, int> pt_to_index;
-  RTCError error = CheckPayloadTypesAreUnique(codecs, pt_to_index);
-  if (!error.ok()) {
-    return error;
-  }
-  return CheckReferencedCodecsArePresent(codecs, pt_to_index);
-}
-
 }  // namespace
 
 // static
@@ -140,45 +118,19 @@ RTCErrorOr<CodecList> CodecList::Create(std::span<const Codec> codecs) {
   return CodecList(codecs);
 }
 
-CodecList::PushResult CodecList::PushIfNotPresent(const Codec& codec) {
+bool CodecList::PushIfNotPresent(const Codec& codec) {
   for (const Codec& present_codec : codecs_) {
     if (present_codec.id == codec.id) {
-      if (present_codec != codec) {
-        RTC_LOG(LS_ERROR) << "Payload type " << codec.id
-                          << " is already used by " << present_codec
-                          << ", not adding " << codec;
-        return PushResult::kConflict;
-      }
-      return PushResult::kDuplicate;
+      RTC_DCHECK(present_codec == codec);
+      return false;
     }
   }
   push_back(codec);
-  return PushResult::kInserted;
-}
-
-void CodecList::push_back(const Codec& codec) {
-  codecs_.push_back(codec);
-  // Only the payload types are checked here. A codec list that is under
-  // construction may contain an RTX codec that refers to a codec that has not
-  // been added yet; that is checked by CheckConsistency().
-#if RTC_DCHECK_IS_ON
-  std::map<int, int> pt_to_index;
-  RTC_DCHECK(CheckPayloadTypesAreUnique(codecs_, pt_to_index).ok());
-#endif
+  return true;
 }
 
 void CodecList::CheckConsistency() {
   RTC_DCHECK(CheckInputConsistency(codecs_).ok());
-}
-
-RTCErrorOr<std::vector<Codec>> CodecList::Finalize() && {
-  std::vector<Codec> codecs = std::move(codecs_);
-  codecs_.clear();
-  RTCError error = CheckInputConsistency(codecs);
-  if (!error.ok()) {
-    return error;
-  }
-  return codecs;
 }
 
 }  // namespace webrtc

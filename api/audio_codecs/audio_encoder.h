@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_view.h"
 #include "api/call/bitrate_allocation.h"
@@ -193,7 +194,7 @@ class AudioEncoder {
   // Tells the encoder what average bitrate we'd like it to produce. The
   // encoder is free to adjust or disregard the given bitrate (the default
   // implementation does the latter).
-  [[deprecated("Use OnReceivedTargetAudioBitrate instead")]]
+  ABSL_DEPRECATED("Use OnReceivedTargetAudioBitrate instead")
   virtual void SetTargetBitrate(int target_bps);
 
   // Causes this encoder to let go of any other encoders it contains, and
@@ -215,7 +216,7 @@ class AudioEncoder {
   virtual void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction);
 
-  [[deprecated]]
+  ABSL_DEPRECATED("")
   virtual void OnReceivedUplinkRecoverablePacketLossFraction(
       float uplink_recoverable_packet_loss_fraction);
 

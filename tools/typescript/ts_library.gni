@@ -3,7 +3,11 @@
 # found in the LICENSE file.
 
 import("//third_party/node/node.gni")
-import("//third_party/typescript/tsgo.gni")
+import("//ui/webui/webui_features.gni")
+
+if (use_typescript_go) {
+  import("//third_party/typescript/tsgo.gni")
+}
 
 template("ts_library") {
   node(target_name) {
@@ -21,11 +25,14 @@ template("ts_library") {
                            ])
 
     inputs = [
-               "//package.json",
-               "//tools/typescript/path_utils.py",
-               "//tools/typescript/tsconfig_base.json",
-               "//tools/typescript/validate_tsconfig.py",
-             ] + tsgo_inputs
+      "//package.json",
+      "//tools/typescript/path_utils.py",
+      "//tools/typescript/tsconfig_base.json",
+      "//tools/typescript/validate_tsconfig.py",
+    ]
+    if (use_typescript_go) {
+      inputs += tsgo_inputs
+    }
 
     outputs = [ "$target_gen_dir/tsconfig_$target_name.json" ]
 
@@ -76,6 +83,10 @@ template("ts_library") {
       "--output_suffix",
       target_name,
     ]
+
+    if (use_typescript_go) {
+      args += [ "--use_typescript_go" ]
+    }
 
     if (defined(in_files)) {
       args += [ "--in_files" ] + in_files

@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "absl/base/nullability.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
@@ -395,14 +394,6 @@ class RTC_EXPORT CreateSessionDescriptionObserver : public RefCountInterface {
   // is removed; its functionality was the same as passing
   // error.message.
   virtual void OnFailure(RTCError error) = 0;
-
-  // Called after OnSuccess() or OnFailure(). An embedding that delivers the
-  // observer result asynchronously may defer invoking `callback` until the
-  // result has reached its API consumer. The callback must be invoked exactly
-  // once on the operation's sequence.
-  virtual void OnOperationComplete(absl::AnyInvocable<void() &&> callback) {
-    std::move(callback)();
-  }
 
  protected:
   ~CreateSessionDescriptionObserver() override = default;

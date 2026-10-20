@@ -60,6 +60,9 @@
                 "abridged": false,
                 "pageset_repeat": 2
             },
+            "ad_frames.fencedframe": {
+                "abridged": false
+            },
             "jetstream2": {
                 "abridged": false,
                 "pageset_repeat": 11

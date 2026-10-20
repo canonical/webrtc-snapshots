@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <set>
 #include <span>
 #include <utility>
 #include <variant>
@@ -155,13 +154,11 @@ StaticEncoderSettingsBuilder& StaticEncoderSettingsBuilder::CqpRcMode() {
 
 StaticEncoderSettingsBuilder& StaticEncoderSettingsBuilder::CbrRcMode(
     TimeDelta max_buffer_size,
-    TimeDelta target_buffer_size,
-    double max_intra_bitrate_factor) {
+    TimeDelta target_buffer_size) {
   settings_.set_rc_mode(
       VideoEncoderFactoryInterface::StaticEncoderSettings::Cbr{
           .max_buffer_size = max_buffer_size,
-          .target_buffer_size = target_buffer_size,
-          .max_intra_bitrate_factor = max_intra_bitrate_factor});
+          .target_buffer_size = target_buffer_size});
   return *this;
 }
 
@@ -218,7 +215,7 @@ PredictionConstraintsBuilder& PredictionConstraintsBuilder::ScalingFactors(
 }
 
 PredictionConstraintsBuilder& PredictionConstraintsBuilder::SupportedFrameTypes(
-    std::set<VideoEncoderInterface::FrameType> supported_frame_types) {
+    std::vector<VideoEncoderInterface::FrameType> supported_frame_types) {
   constraints_.set_supported_frame_types(std::move(supported_frame_types));
   return *this;
 }

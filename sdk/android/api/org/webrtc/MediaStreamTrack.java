@@ -71,42 +71,55 @@ public class MediaStreamTrack {
     }
   }
 
-  final NativeLifecycleLock lifecycleLock;
+  private long nativeTrack;
 
   public MediaStreamTrack(long nativeTrack) {
     if (nativeTrack == 0) {
       throw new IllegalArgumentException("nativeTrack may not be null");
     }
-    this.lifecycleLock = new NativeLifecycleLock("MediaStreamTrack", nativeTrack);
+    this.nativeTrack = nativeTrack;
   }
 
   public String id() {
-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getId(nativeTrack));
+    checkMediaStreamTrackExists();
+    return MediaStreamTrackJni.get().getId(nativeTrack);
   }
 
   public String kind() {
-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getKind(nativeTrack));
+    checkMediaStreamTrackExists();
+    return MediaStreamTrackJni.get().getKind(nativeTrack);
   }
 
   public boolean enabled() {
-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getEnabled(nativeTrack));
+    checkMediaStreamTrackExists();
+    return MediaStreamTrackJni.get().getEnabled(nativeTrack);
   }
 
   public boolean setEnabled(boolean enable) {
-    return lifecycleLock.call(
-        nativeTrack -> MediaStreamTrackJni.get().setEnabled(nativeTrack, enable));
+    checkMediaStreamTrackExists();
+    return MediaStreamTrackJni.get().setEnabled(nativeTrack, enable);
   }
 
   public State state() {
-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getState(nativeTrack));
+    checkMediaStreamTrackExists();
+    return MediaStreamTrackJni.get().getState(nativeTrack);
   }
 
   public void dispose() {
-    lifecycleLock.dispose(JniCommon::nativeReleaseRef);
+    checkMediaStreamTrackExists();
+    JniCommon.nativeReleaseRef(nativeTrack);
+    nativeTrack = 0;
   }
 
   long getNativeMediaStreamTrack() {
-    return lifecycleLock.getNativePointer();
+    checkMediaStreamTrackExists();
+    return nativeTrack;
+  }
+
+  private void checkMediaStreamTrackExists() {
+    if (nativeTrack == 0) {
+      throw new IllegalStateException("MediaStreamTrack has been disposed.");
+    }
   }
 
   @NativeMethods

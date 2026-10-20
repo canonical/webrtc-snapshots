@@ -80,13 +80,7 @@ def main():
             if matches_any(path, partition.get('patterns', [])):
                 filtered.append(path)
                 matched_files.add(path)
-        # atomic_output preserves the mtime of an unchanged output, which is
-        # load bearing: this action reruns on every java edit, and rewriting
-        # each partition JSON would invalidate every shard. The lists change
-        # only when a java target is added or removed.
-        with action_helpers.atomic_output(
-            outputs_map[name], mode='w', encoding='utf-8'
-        ) as f:
+        with open(outputs_map[name], 'w', encoding='utf-8') as f:
             json.dump({'all_dex_files': filtered}, f)
 
     # Process fallback partition last
@@ -96,9 +90,7 @@ def main():
             filtered = [
                 path for path in all_dex_files if path not in matched_files
             ]
-            with action_helpers.atomic_output(
-                outputs_map[name], mode='w', encoding='utf-8'
-            ) as f:
+            with open(outputs_map[name], 'w', encoding='utf-8') as f:
                 json.dump({'all_dex_files': filtered}, f)
 
 

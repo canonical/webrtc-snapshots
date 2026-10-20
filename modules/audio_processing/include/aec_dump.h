@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 
+#include "absl/base/attributes.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio/audio_view.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
@@ -75,7 +76,7 @@ class AecDump {
   // Logs Event::Type INIT message.
   virtual void WriteInitMessage(const ProcessingConfig& api_format,
                                 int64_t time_now_ms) = 0;
-  [[deprecated]]
+  ABSL_DEPRECATED("")
   void WriteInitMessage(const ProcessingConfig& api_format) {
     WriteInitMessage(api_format, 0);
   }

@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <set>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -194,7 +193,9 @@ inline TestConfig CreateTestConfig(
   RTC_DCHECK(!rc_modes.empty()) << "Encoder must support at least one RC mode.";
 
   TestConfig config;
-  if (rc_modes.contains(VideoEncoderFactoryInterface::RateControlMode::kCqp)) {
+  if (std::find(rc_modes.begin(), rc_modes.end(),
+                VideoEncoderFactoryInterface::RateControlMode::kCqp) !=
+      rc_modes.end()) {
     config.static_settings =
         StaticEncoderSettingsBuilder()
             .MaxEncodeDimensions({.width = 640, .height = 360})
@@ -212,8 +213,7 @@ inline TestConfig CreateTestConfig(
             .MaxEncodeDimensions({.width = 640, .height = 360})
             .EncodingFormat({.sub_sampling = EncodingFormat::SubSampling::k420,
                              .bit_depth = 8})
-            .CbrRcMode(TimeDelta::Millis(1000), TimeDelta::Millis(600),
-                       /*max_intra_bitrate_factor=*/3.0)
+            .CbrRcMode(TimeDelta::Millis(1000), TimeDelta::Millis(600))
             .MaxNumberOfThreads(1)
             .Build();
     config.rate_options = VideoEncoderInterface::FrameEncodeSettings::Cbr{

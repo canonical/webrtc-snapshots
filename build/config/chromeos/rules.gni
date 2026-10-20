@@ -7,7 +7,6 @@ import("//build/config/chromeos/args.gni")
 import("//build/config/dcheck_always_on.gni")
 import("//build/config/gclient_args.gni")
 import("//build/config/python.gni")
-import("//build/config/vpython.gni")
 import("//build/util/generate_wrapper.gni")
 
 assert(is_chromeos)
@@ -452,15 +451,17 @@ template("generate_runner_script") {
       deps += invoker.deps
     }
     data = [
-             # We use android test-runner's results libs to construct gtest
-             # output json.
-             "//build/android/pylib/__init__.py",
-             "//build/android/pylib/base/",
-             "//build/android/pylib/results/",
-             "//build/chromeos/",
-             "//build/util/",
-             "//third_party/chromite/",
-           ] + vpython_spec_files
+      "//.vpython3",
+
+      # We use android test-runner's results libs to construct gtest output
+      # json.
+      "//build/android/pylib/__init__.py",
+      "//build/android/pylib/base/",
+      "//build/android/pylib/results/",
+      "//build/chromeos/",
+      "//build/util/",
+      "//third_party/chromite/",
+    ]
 
     if (defined(invoker.data)) {
       data += invoker.data

@@ -21,17 +21,10 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
-#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
-
-using ::testing::ElementsAre;
-using ::testing::IsEmpty;
-using ::testing::Pointee;
-using ::testing::Property;
-using ::testing::SizeIs;
 
 constexpr uint32_t kDefaultSsrc = 123;
 constexpr int kDefaultPayloadSize = 789;
@@ -400,12 +393,9 @@ TEST(PrioritizedPacketQueue, ClearsPackets) {
   EXPECT_EQ(queue.SizeInPackets(), 2 * int{kNumMediaTypes});
 
   // Remove all of them.
-  EXPECT_THAT(queue.RemovePacketsForSsrc(kSsrc),
-              SizeIs(2 * size_t{kNumMediaTypes}));
+  queue.RemovePacketsForSsrc(kSsrc);
   EXPECT_TRUE(queue.Empty());
-
-  // There should be no more packets removed when called again.
-  EXPECT_THAT(queue.RemovePacketsForSsrc(kSsrc), IsEmpty());
+  queue.RemovePacketsForSsrc(kSsrc);
   EXPECT_TRUE(queue.Empty());
 }
 
@@ -433,18 +423,13 @@ TEST(PrioritizedPacketQueue, ClearPacketsAffectsOnlySpecifiedSsrc) {
   EXPECT_EQ(queue.SizeInPackets(), 4);
 
   // Clear the first two packets.
-  EXPECT_THAT(
-      queue.RemovePacketsForSsrc(kRemovingSsrc),
-      ElementsAre(Pointee(Property(&RtpPacketToSend::SequenceNumber, 1)),
-                  Pointee(Property(&RtpPacketToSend::SequenceNumber, 2))));
+  queue.RemovePacketsForSsrc(kRemovingSsrc);
   EXPECT_EQ(queue.SizeInPackets(), 2);
 
   // We should get the single remaining retransmission first, then the video
   // packet.
-  EXPECT_THAT(queue.Pop(),
-              Pointee(Property(&RtpPacketToSend::SequenceNumber, 4)));
-  EXPECT_THAT(queue.Pop(),
-              Pointee(Property(&RtpPacketToSend::SequenceNumber, 3)));
+  EXPECT_EQ(queue.Pop()->SequenceNumber(), 4);
+  EXPECT_EQ(queue.Pop()->SequenceNumber(), 3);
   EXPECT_TRUE(queue.Empty());
 }
 

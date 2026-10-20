@@ -78,7 +78,6 @@ class ViewNode {
     this.parent = parent;
     this.depth = depth;
     this.isLastChild = isLastChild;
-    this.expanded = true;
     this.children = [];
 
     this.className = xmlNode.getAttribute('class');

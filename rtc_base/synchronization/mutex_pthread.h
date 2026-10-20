@@ -15,6 +15,7 @@
 
 #include <pthread.h>
 
+#include "absl/base/attributes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
@@ -45,7 +46,7 @@ class RTC_LOCKABLE MutexImpl final {
     pthread_mutex_lock(&mutex_);
     owner_.SetOwner();
   }
-  [[nodiscard]] bool TryLock() RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+  ABSL_MUST_USE_RESULT bool TryLock() RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     if (pthread_mutex_trylock(&mutex_) != 0) {
       return false;
     }

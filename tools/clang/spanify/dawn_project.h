@@ -72,9 +72,6 @@ class DawnProject : public Project {
   std::string_view GetUnsafeTodoMacroName() const override {
     return "DAWN_UNSAFE_TODO";
   }
-  std::string_view GetUnsafeBuffersMacroName() const override {
-    return "DAWN_UNSAFE_BUFFERS";
-  }
   std::string_view GetUnsafeTodoIncludePath() const override {
     return "src/utils/compiler.h";
   }
@@ -92,8 +89,8 @@ class DawnProject : public Project {
         source_manager, raw_ptr_plugin::getRepresentativeLocation(Node),
         raw_ptr_plugin::FilenameLocationType::kSpellingLoc);
 
-    return IsExcludedFromSubmodule(filename, "third_party/dawn/",
-                                   "tools/clang/spanify/tests/dawn/");
+    llvm::StringRef file(filename);
+    return file.contains("third_party");
   }
 
   bool SupportsStaticExtent() const override {

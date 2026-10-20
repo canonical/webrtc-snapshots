@@ -4,8 +4,6 @@
 
 
 def CheckChangeOnCommit(input_api, output_api):
-  if not input_api.HasAffectedFiles(extensions='.py'):
-    return []
   results = []
 
   # Run the unit tests.

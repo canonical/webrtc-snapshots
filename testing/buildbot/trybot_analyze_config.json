@@ -8,7 +8,6 @@
     "exclusions": [
       ".*isolate",
       ".vpython",
-      "vpython\\.toml.*",
       "build/check_gn_headers.py",
       "build/check_gn_headers_allowlist.txt",
       "build/config/siso/.*",

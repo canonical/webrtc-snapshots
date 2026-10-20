@@ -11,7 +11,6 @@
 #ifndef PC_TEST_MOCK_RTP_SENDER_INTERNAL_H_
 #define PC_TEST_MOCK_RTP_SENDER_INTERNAL_H_
 
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -125,7 +124,7 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_METHOD(void, SetSsrc, (uint32_t), (override));
   MOCK_METHOD(ScopedOperationsBatcher::BatchTaskWithFinalizer,
               SetSsrcTask,
-              (uint32_t, size_t),
+              (uint32_t),
               (override));
   MOCK_METHOD(void,
               set_stream_ids,

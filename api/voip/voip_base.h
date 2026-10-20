@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "absl/base/attributes.h"
 
 namespace webrtc {
 
@@ -37,7 +38,7 @@ class Transport;
 
 enum class ChannelId : int {};
 
-enum class [[nodiscard]] VoipResult {
+enum class ABSL_MUST_USE_RESULT VoipResult {
   // kOk indicates the function was successfully invoked with no error.
   kOk,
   // kInvalidArgument indicates the caller specified an invalid argument, such
