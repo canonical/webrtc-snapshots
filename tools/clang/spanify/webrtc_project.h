@@ -61,8 +61,8 @@ class WebrtcProject : public Project {
         source_manager, raw_ptr_plugin::getRepresentativeLocation(Node),
         raw_ptr_plugin::FilenameLocationType::kSpellingLoc);
 
-    llvm::StringRef file(filename);
-    return file.contains("third_party");
+    return IsExcludedFromSubmodule(filename, "third_party/webrtc/",
+                                   "tools/clang/spanify/tests/webrtc/");
   }
 };
 

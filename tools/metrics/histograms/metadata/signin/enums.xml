@@ -208,6 +208,24 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//components/signin/core/browser/account_management_type_metrics_recorder.h:AccountManagementTypesSummary) -->
 
+<!-- LINT.IfChange(AccountMenuEvent) -->
+
+<enum name="AccountMenuEvent">
+  <int value="0" label="User signed out, sign-in promo card shown"/>
+  <int value="1"
+      label="User signed out, sign-in disallowed, no promo card shown"/>
+  <int value="2" label="User signed in, account card shown"/>
+  <int value="3" label="User signed in with an error, account card shown"/>
+  <int value="4" label="Sign-in button on promo card clicked"/>
+  <int value="5" label="Passwords and autofill clicked"/>
+  <int value="6" label="New Incognito tab clicked"/>
+  <int value="7" label="New Incognito window clicked"/>
+  <int value="8" label="Manage your Google Account clicked"/>
+  <int value="9" label="Account settings clicked"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/account_menu/AccountMenuMediator.java:AccountMenuEvent) -->
+
 <!-- LINT.IfChange(AccountMoveDecision) -->
 
 <enum name="AccountMoveDecision">
@@ -338,11 +356,6 @@ chromium-metrics-reviews@google.com.
 <enum name="BooleanSignoutFromManagedAccount">
   <int value="0" label="Cancel sign-out"/>
   <int value="1" label="Continue with sign-out"/>
-</enum>
-
-<enum name="BooleanWasDeferred">
-  <int value="0" label="Was not deferred"/>
-  <int value="1" label="Was deferred"/>
 </enum>
 
 <enum name="BoundSessionCredentialsCookieRotationGenerateAssertionResult">
@@ -1047,7 +1060,7 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Batch Upload - Regular"/>
   <int value="2" label="Batch Upload - Bookmarks deduplication"/>
   <int value="3" label="Batch Upload - Windows10 Depreciation"/>
-  <int value="4" label="Sync Promo"/>
+  <int value="4" label="(Obsolete) Sync Promo"/>
   <int value="5" label="Signin Promo"/>
 </enum>
 
@@ -1170,7 +1183,7 @@ chromium-metrics-reviews@google.com.
   <int value="72" label="Drive file picker (iOS only)"/>
   <int value="73" label="Share collaboration tab group authentication"/>
   <int value="74" label="Glic launch button"/>
-  <int value="75" label="History page (Android only)"/>
+  <int value="75" label="History page"/>
   <int value="76" label="Join collaboration tab group authentication"/>
   <int value="77" label="History Sync Opt-in Expanded Pill on startup"/>
   <int value="78" label="Widget (iOS only)"/>
@@ -1211,6 +1224,8 @@ chromium-metrics-reviews@google.com.
   <int value="108" label="Undo button from the signout snackbar (iOS only)"/>
   <int value="109" label="Composebox Drive context menu option (Desktop only)"/>
   <int value="110" label="Skills (Desktop only)"/>
+  <int value="111"
+      label="Account menu signed out state (Android desktop only)"/>
 </enum>
 
 <enum name="SigninAccountReconcilorState">
