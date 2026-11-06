@@ -105,6 +105,9 @@ def _install(
     # Set up JAVA_HOME for the mvn command to find the JDK.
     env = os.environ.copy()
     env['JAVA_HOME'] = common.path_within_checkout('third_party/jdk/current')
+    # Prevent mvn from sourcing /etc/mavenrc on Goobuntu workstations, which
+    # forces Corp Airlock proxy settings and breaks local-test.
+    env['MAVEN_SKIP_RC'] = '1'
 
     # Ensure that mvn works and the environment is set up correctly.
     subprocess.run(['mvn', '-v'], check=True, env=env)
@@ -131,6 +134,8 @@ def main(
     maven_url='https://dl.google.com/android/maven2',
     post_process_func=None,
     version_override=None,
+    runtime_deps=(),
+    version_deps=None,
 ):
     """3pp entry point for fetch.py.
 
@@ -140,6 +145,9 @@ def main(
       maven_url: URL of Maven repository.
       post_process_func: Called to finish. Args: src_jar_path, dst_jar_path
       version_override: Use this version instead of the latest one.
+      runtime_deps: Extra paths to copy into the checkout for use by
+          post_process_func. See common.main().
+      version_deps: Extra paths to hash into the version. See common.main().
     """
 
     def do_latest():
@@ -159,5 +167,8 @@ def main(
     common.main(
         do_latest=do_latest,
         do_install=do_install,
-        runtime_deps=['//third_party/jdk/current'],
+        runtime_deps=['//third_party/jdk/current'] + list(runtime_deps),
+        # common.main() requires version_deps whenever runtime_deps is set
+        # (the JDK is always a runtime dep here, but is not part of the version).
+        version_deps=list(version_deps or []),
     )

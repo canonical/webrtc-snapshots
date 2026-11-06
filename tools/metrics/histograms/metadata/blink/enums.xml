@@ -129,6 +129,82 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="Software Composited Direct 2D (deprecated)"/>
 </enum>
 
+<!-- LINT.IfChange(CapabilityElementGeolocationAccuracyMode) -->
+
+<enum name="CapabilityElementGeolocationAccuracyMode">
+  <int value="0" label="Default"/>
+  <int value="1" label="Precise"/>
+  <int value="2" label="Approximate"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementGeolocationAccuracyMode) -->
+
+<!-- LINT.IfChange(CapabilityElementGeolocationPositionErrorReason) -->
+
+<enum name="CapabilityElementGeolocationPositionErrorReason">
+  <int value="0" label="Permission Denied"/>
+  <int value="1" label="Position Unavailable"/>
+  <int value="2" label="Timeout"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementGeolocationPositionErrorReason) -->
+
+<!-- LINT.IfChange(CapabilityElementGeolocationRequestFlow) -->
+
+<enum name="CapabilityElementGeolocationRequestFlow">
+  <int value="0" label="Click with permission already granted"/>
+  <int value="1" label="Click with prompt granted"/>
+  <int value="2" label="Autolocate on load"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementGeolocationRequestFlow) -->
+
+<!-- LINT.IfChange(CapabilityElementGeolocationResult) -->
+
+<enum name="CapabilityElementGeolocationResult">
+  <int value="0" label="Success"/>
+  <int value="1" label="Error"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementGeolocationResult) -->
+
+<!-- LINT.IfChange(CapabilityElementMediaConstraintsValidationError) -->
+
+<enum name="CapabilityElementMediaConstraintsValidationError">
+  <int value="0" label="No Error"/>
+  <int value="1" label="Audio Missing"/>
+  <int value="2" label="Video Missing"/>
+  <int value="3" label="Both Missing"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementMediaConstraintsValidationError) -->
+
+<!-- LINT.IfChange(CapabilityElementMediaRequestFlow) -->
+
+<enum name="CapabilityElementMediaRequestFlow">
+  <int value="0" label="Click with permission already granted"/>
+  <int value="1" label="Click with prompt granted"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementMediaRequestFlow) -->
+
+<!-- LINT.IfChange(CapabilityElementMediaRequestOutcome) -->
+
+<enum name="CapabilityElementMediaRequestOutcome">
+  <int value="0" label="Success"/>
+  <int value="1" label="Constraints Validation Error"/>
+  <int value="2" label="Activation Failed (e.g. missing user gesture)"/>
+  <int value="3" label="NotAllowedError (Permission denied or dismissed)"/>
+  <int value="4" label="NotFoundError (No device found)"/>
+  <int value="5" label="NotReadableError (Device in use or OS/hardware error)"/>
+  <int value="6" label="OverconstrainedError"/>
+  <int value="7" label="SecurityError"/>
+  <int value="8" label="AbortError"/>
+  <int value="9" label="Other Error"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/core/html/html_capability_element_metrics_util.h:CapabilityElementMediaRequestOutcome) -->
+
 <enum name="CompositorAnimationsFailureReason">
   <int value="0" label="No failure"/>
   <int value="1" label="Accelerated animations disabled"/>
@@ -160,6 +236,9 @@ chromium-metrics-reviews@google.com.
       label="Target SVG element uses an individual transform property"/>
   <int value="21"
       label="Effect has an iteration composite mode other than 'replace'"/>
+  <int value="22"
+      label="Unsupported inheritance: a descendant inherits the animated
+             value"/>
 </enum>
 
 <enum name="CompressionStreamsFormat">
@@ -3303,7 +3382,7 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="2832" label="RefreshHeader"/>
   <int value="2833" label="SearchEventFired"/>
   <int value="2834" label="IdleDetectionStart"/>
-  <int value="2835" label="TargetCurrent"/>
+  <int value="2835" label="OBSOLETE_TargetCurrent"/>
   <int value="2836" label="SandboxBackForwardStaysWithinSubtree"/>
   <int value="2837" label="SandboxBackForwardAffectsFramesOutsideSubtree"/>
   <int value="2838" label="DownloadPrePolicyCheck"/>
@@ -4881,7 +4960,8 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="4329" label="ReplacedElementPaintedWithLargeOverflow"/>
   <int value="4330" label="FlexboxAbsPosJustifyContent"/>
   <int value="4331" label="MultipleFetchHandlersInServiceWorker"/>
-  <int value="4332" label="StorageAccessAPI_requestStorageAccessFor_Method"/>
+  <int value="4332"
+      label="OBSOLETE_StorageAccessAPI_requestStorageAccessFor_Method"/>
   <int value="4333" label="OBSOLETE_PrivateAggregationApiAll"/>
   <int value="4334" label="OBSOLETE_PrivateAggregationApiFledge"/>
   <int value="4335" label="OBSOLETE_PrivateAggregationApiSharedStorage"/>
@@ -6435,7 +6515,7 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="5717" label="AnimationSvgCompositedTypes"/>
   <int value="5718" label="AttributionReportingXhr"/>
   <int value="5719" label="DidUseServerHttpAuthOnCrossPartitionRequest"/>
-  <int value="5720" label="LcpCandidateRemovedWhilePaintTimePending"/>
+  <int value="5720" label="OBSOLETE_LcpCandidateRemovedWhilePaintTimePending"/>
   <int value="5721" label="GetBBoxForElementWithZeroWidthOrHeight"/>
   <int value="5722" label="GetBBoxForNestedSVGElementWithZeroWidthOrHeight"/>
   <int value="5723" label="OBSOLETE_kXMLExternalResourceLoadEntitiesOnly"/>
@@ -6494,7 +6574,7 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="5771" label="SetCookieWithEmptyName"/>
   <int value="5772" label="SetCookieWithEmptyNameAndAmbiguousValue"/>
   <int value="5773"
-      label="StorageAccessAPI_requestStorageAccessFor_Method_AsyncSuccess"/>
+      label="OBSOLETE_StorageAccessAPI_requestStorageAccessFor_Method_AsyncSuccess"/>
   <int value="5774" label="WebAudioRenderSizeHint"/>
   <int value="5775" label="WebAudioRenderQuantumSize"/>
   <int value="5776" label="ImageElementTimingNotImageOrVideoNode"/>
@@ -6716,7 +6796,8 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="5980" label="UAReplaceEndAddListener"/>
   <int value="5981" label="AdImageHDR"/>
   <int value="5982" label="AdVideoHDR"/>
-  <int value="5983" label="LocalNetworkAccessShouldTreatAsPublicAddressCsp"/>
+  <int value="5983"
+      label="OBSOLETE_LocalNetworkAccessShouldTreatAsPublicAddressCsp"/>
   <int value="5984" label="CreateBytesModuleScript"/>
   <int value="5985" label="V8ModuleNamespaceMissingDefaultWithStarExport"/>
   <int value="5986" label="V8WasmGCAllocation"/>
@@ -6761,6 +6842,25 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="6023" label="StickyVideoAdDetected"/>
   <int value="6024" label="CSSTimelineTreeScopeMismatch"/>
   <int value="6025" label="WorkerScriptURLFetchBlockedByCrossOrigin"/>
+  <int value="6026" label="CSSValuePositionVisibilityAnchorVisible"/>
+  <int value="6027" label="CSSValuePositionVisibilityAnchorsVisible"/>
+  <int value="6028" label="CSSValuePositionVisibilityAnchorValid"/>
+  <int value="6029" label="EditContextUpdateTextRangeExceedsTextRange"/>
+  <int value="6030" label="EditContextUpdateSelectionRangeExceedsTextRange"/>
+  <int value="6031" label="EditContextUpdateCharacterBoundsExceedsTextRange"/>
+  <int value="6032" label="CSPModuleMapMismatch"/>
+  <int value="6033" label="TextDetectorCreate"/>
+  <int value="6034" label="DecisionModel_Availability"/>
+  <int value="6035" label="DecisionModel_Create"/>
+  <int value="6036" label="DecisionModel_Decide"/>
+  <int value="6037" label="DecisionModel_Destroy"/>
+  <int value="6038" label="SVGPathElementGetPathSegmentAtLength"/>
+  <int value="6039" label="OpaqueRangeDisconnect"/>
+  <int value="6040" label="HTMLSelectedContentElement"/>
+  <int value="6041" label="WebTransportExportKeyingMaterial"/>
+  <int value="6042" label="OfflineAudioContextClose"/>
+  <int value="6043" label="ViewTransitionPreventSvgFilterPaint"/>
+  <int value="6044" label="MulticastControllerJoinGroupWithSourceAddress"/>
 </enum>
 
 <!-- LINT.ThenChange(//third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom:WebFeature) -->
@@ -6920,6 +7020,8 @@ Called by update_permissions_policy_enum.py.-->
   <int value="146" label="Tools"/>
   <int value="147" label="WebNN"/>
   <int value="148" label="Haptics"/>
+  <int value="149" label="PublicKeyCredentialsRemoteClientDataJson"/>
+  <int value="150" label="UnboundedElement"/>
 </enum>
 
 <!-- LINT.IfChange(FedCmAccountChooserResult) -->
@@ -7193,18 +7295,6 @@ Called by update_permissions_policy_enum.py.-->
 </enum>
 
 <!-- LINT.ThenChange(//content/browser/webid/metrics.h:IdpSigninMatchStatus) -->
-
-<!-- LINT.IfChange(FedCmJavaObjectCreationOutcome) -->
-
-<enum name="FedCmJavaObjectCreationOutcome">
-  <int value="0" label="New Java object created"/>
-  <int value="1" label="Existing Java object reused"/>
-  <int value="2" label="New Java object creation failed"/>
-  <int value="3" label="No native view"/>
-  <int value="4" label="No window"/>
-</enum>
-
-<!-- LINT.ThenChange(//chrome/browser/ui/android/webid/account_selection_view_android.cc:FedCmJavaObjectCreationOutcome) -->
 
 <!-- LINT.IfChange(FedCmLifecycleStateFailureReason) -->
 
@@ -8508,7 +8598,7 @@ Called by update_use_counter_css.py.-->
   <int value="805" label="text-wrap-mode"/>
   <int value="806" label="text-wrap-style"/>
   <int value="807" label="masonry-track (obsolete)"/>
-  <int value="808" label="flow-tolerance"/>
+  <int value="808" label="fit-tolerance"/>
   <int value="809" label="caret-animation"/>
   <int value="810" label="view-transition-capture-mode (obsolete)"/>
   <int value="811" label="interactivity"/>
@@ -8667,6 +8757,14 @@ Called by update_use_counter_css.py.-->
   <int value="964" label="text-decoration-inset"/>
   <int value="965" label="overscroll-container-type"/>
   <int value="966" label="link-parameters"/>
+  <int value="967" label="border-block-end-radius"/>
+  <int value="968" label="border-block-start-radius"/>
+  <int value="969" label="border-inline-end-radius"/>
+  <int value="970" label="border-inline-start-radius"/>
+  <int value="971" label="border-bottom-radius"/>
+  <int value="972" label="border-left-radius"/>
+  <int value="973" label="border-right-radius"/>
+  <int value="974" label="border-top-radius"/>
 </enum>
 
 <!-- LINT.ThenChange(//third_party/blink/public/mojom/use_counter/metrics/css_property_id.mojom:CSSSampleId) -->
@@ -8751,6 +8849,20 @@ Called by update_use_counter_css.py.-->
   <int value="6" label="Immediate"/>
   <int value="7" label="ForceDefer (Deprecated 2023)"/>
 </enum>
+
+<!-- LINT.IfChange(ScriptValueDeserializationEvent) -->
+
+<enum name="ScriptValueDeserializationEvent">
+  <int value="0" label="Deserialization attempted"/>
+  <int value="1" label="Deserialization succeeded"/>
+  <int value="2" label="Deserialization failed"/>
+  <int value="3" label="A missing Blob handle caused deserialization failure"/>
+  <int value="4" label="A missing File handle caused deserialization failure"/>
+  <int value="5" label="At least one Blob deserialization succeeded"/>
+  <int value="6" label="At least one File deserialization succeeded"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/bindings/core/v8/serialization/v8_script_value_deserializer.cc:ScriptValueDeserializationEvent) -->
 
 <!-- LINT.IfChange(SharedDictionaryHintType)-->
 
@@ -9233,7 +9345,7 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="421" label="Proofreader"/>
   <int value="422" label="Rewriter"/>
   <int value="423" label="Writer"/>
-  <int value="424" label="DRAFT_InstallElement"/>
+  <int value="424" label="Install"/>
   <int value="425" label="Languagedetector"/>
   <int value="426" label="Translator"/>
   <int value="427" label="DocumentModelcontext"/>
@@ -9255,7 +9367,7 @@ Called by update_use_counter_feature_enum.py.-->
   <int value="443" label="DRAFT_HTMLSetterMethods"/>
   <int value="444" label="DRAFT_HTMLStreamMethods"/>
   <int value="445" label="CanvasHtml"/>
-  <int value="446" label="DRAFT_Symbols"/>
+  <int value="446" label="SymbolsFunction"/>
   <int value="447" label="JSSelfProfilingMarkers"/>
   <int value="448" label="DRAFT_Haptics"/>
   <int value="449" label="LargestContentfulPaint"/>

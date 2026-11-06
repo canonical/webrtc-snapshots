@@ -40,7 +40,7 @@ recorded_artifacts = []
 
 def Tee(output, logfile):
   logfile.write(output)
-  print(output, end=' ')
+  print(output, end='')
 
 
 def TeeCmd(cmd, logfile, fail_hard=True):
@@ -50,19 +50,16 @@ def TeeCmd(cmd, logfile, fail_hard=True):
   # its stdout buffer and don't give it a stdin.
   # shell=True is required in cmd.exe since depot_tools has an svn.bat, and
   # bat files only work with shell=True set.
-  proc = subprocess.Popen(
+  with subprocess.Popen(
     cmd,
-    bufsize=1,
     shell=sys.platform == 'win32',
-    stdin=open(os.devnull),
+    stdin=subprocess.DEVNULL,
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
-  )
-  for line in iter(proc.stdout.readline, ''):
-    Tee(str(line.decode()), logfile)
-    if proc.poll() is not None:
-      break
-  exit_code = proc.wait()
+  ) as proc:
+    for line in iter(proc.stdout.readline, b''):
+      Tee(line.decode(), logfile)
+    exit_code = proc.wait()
   if exit_code != 0 and fail_hard:
     print('Failed:', cmd)
     sys.exit(1)
@@ -74,7 +71,7 @@ def PrintTarProgress(tarinfo):
 
 
 def GetGsutilPath():
-  if not 'find_depot_tools' in sys.modules:
+  if 'find_depot_tools' not in sys.modules:
     sys.path.insert(0, os.path.join(CHROMIUM_DIR, 'build'))
     global find_depot_tools
     import find_depot_tools
@@ -119,7 +116,7 @@ def VerifyPackageDoesntExist(gcs_bucket, filename, gcs_platform):
   """Verifies that the package doesn't already exist on GCS, exiting if so."""
   gcs_path = f'gs://{gcs_bucket}/{gcs_platform}/{filename}'
   print(f'Checking if {gcs_path} already exists...')
-  if (RunGsutil(['stat', gcs_path]) == 0):
+  if RunGsutil(['stat', gcs_path]) == 0:
     print(f'Package {gcs_path} already exists!')
     print('Did you forget to update the sub-revision?')
     sys.exit(1)
@@ -171,7 +168,8 @@ def UploadPDBsToSymbolServer(binaries):
   #   but tools/symsrc/pdb_fingerprint_from_img.py can compute it already, so
   #   again just use that.
   sys.path.insert(0, os.path.join(CHROMIUM_DIR, 'tools', 'symsrc'))
-  import img_fingerprint, pdb_fingerprint_from_img
+  import img_fingerprint
+  import pdb_fingerprint_from_img
 
   files = []
   for binary_path in binaries:
@@ -217,7 +215,9 @@ def UploadPDBsToSymbolServer(binaries):
     exit_code = RunGsutil(gsutil_args)
     if exit_code != 0:
       print("gsutil failed, exit_code: %s" % exit_code)
-      print("If a precondition did not hold, a package at this revision likely aready exists.")
+      print(
+        "If a precondition did not hold, a package at this revision likely aready exists."
+      )
       sys.exit(exit_code)
 
 

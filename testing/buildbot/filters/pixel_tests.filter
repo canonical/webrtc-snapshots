@@ -29,6 +29,7 @@ BrowserViewTabbedLayoutImplUiTest.*
 BubbleFrameViewBrowserTest.*
 BubbleSignInPromoInteractiveUITest.*
 CaptionBubbleBrowserTest.*
+CastBrowserControllerTest.*
 ChromeLabs*UiTest.*
 ChromeSignoutConfirmationPromptPixelTest.*
 ChromeSignoutConfirmationPromptWithExtensionsPixelTest.*
@@ -40,6 +41,7 @@ CookieClearOnExitMigrationNoticePixelTest.*
 CookieControlsBubbleViewPixelTest.*
 *CreatePopupRowViewTest.*
 *CreatePopupRowViewWithNoUserEducationRateLimitTest.*
+CrossDeviceSigninQrBubbleUIPixelTest.*
 CryptoModulePasswordDialogTest.*
 *DataControlsDialogUiTest.*
 DashboardKombuchaInteractiveUITest.*
@@ -55,7 +57,7 @@ DesktopMediaPickerViewsBrowserTest.*
 DesktopPaymentsWindowManagerInteractiveUiTest*
 *DeviceSignalsDisclaimerModalPixelTest.*
 *DeviceSignalsDisclaimerProfilePickerPixelTest.*
-DocumentPictureInPicturePixelTest.*
+*DocumentPictureInPicturePixelTest.*
 EditAddressProfileDialogControllerImplTest.InvokeUi_*
 *EmbeddedPermissionPromptUiTest.InvokeUi_*
 MahiMenuPixelBrowserTest.*
@@ -102,6 +104,7 @@ NtpPromoVisualUiTest.*
 NtpRealboxUiScreenshotTest.*
 OfferNotificationBubbleViewPixelBrowserTest.*
 OmniboxAimWebUiInteractiveTest.QueryWithTabContext*
+OrganizerPanelPixelTest.*
 OutdatedUpgradeBubbleTest.*
 PageActionPixelIconsHiddenTest.*
 PageActionPixelShowIconTest.*
@@ -187,6 +190,7 @@ WebAppConfirmViewBrowserTest.*
 WebAppInstallDialogBrowserTest.*
 WebAppMenuBrowserTest.*
 WebAppUpdateReviewDialog.*
+WebUIToolbarGlicPixelInteractiveUiTest.*
 WebUIToolbarPixelInteractiveUiTest.*
 ZoomBubbleDialogTest.*
 

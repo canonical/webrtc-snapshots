@@ -11,11 +11,11 @@ use crate::{
 
 use anyhow::{bail, Context, Result};
 use guppy::{
-    graph::cargo::{CargoOptions, CargoSet},
+    graph::cargo::{CargoLinkContext, CargoOptions, CargoResolverVersion, CargoSet},
     graph::feature::{FeatureSet, StandardFeatures},
     graph::{
         BuildTargetId, BuildTargetKind, DependencyDirection, PackageGraph, PackageLink,
-        PackageMetadata, PackageQuery, PackageSet,
+        PackageMetadata, PackageSet,
     },
     platform::PlatformStatus,
 };
@@ -220,7 +220,8 @@ impl LibType {
 
         // All the other
         // [crate types](https://doc.rust-lang.org/nightly/cargo/reference/cargo-targets.html#the-crate-type-field)
-        // should be either handled earlier by `get_build_targets` or unsupported:
+        // should be either handled earlier by `get_build_targets` or
+        // unsupported:
         // - `bin` - handled via `BuildTargetKind::Binary` and
         //   `BuildTargetId::Binary(_)`
         // - `dylib` - currently not supported by `cargo_crate.gni`
@@ -259,13 +260,25 @@ pub fn collect_dependencies(
     // Ask `guppy` to run Cargo feature/dependency resolution.
     let mut memoization_tables = MemoizationTables::new();
     let cargo_set = {
-        let cargo_options = CargoOptions::new();
+        let mut cargo_options = CargoOptions::new();
+
+        // Match the feature resolver that `cargo` uses for the root manifests
+        // that `gnrt` works with:
+        // * `third_party/rust/chromium_crates_io/Cargo.toml`
+        // * `build/rust/std/fake_root/Cargo.toml.template`
+        // Both use `edition = "2021"`, which implies the version 2 resolver.
+        //
+        // This is set explicitly (rather than relying on `guppy`'s default)
+        // so that `guppy` upgrades cannot silently change how Chromium's
+        // dependencies are resolved.
+        cargo_options.set_resolver(CargoResolverVersion::V2);
+
         let initials = resolve_root_package_set(graph, root_package_name)?
             .to_feature_set(StandardFeatures::Default);
         let no_extra_features = graph.resolve_none().to_feature_set(StandardFeatures::Default);
-        let resolver =
-            PackageResolver { extra_config, memoization_tables: &mut memoization_tables };
-        CargoSet::with_package_resolver(initials, no_extra_features, resolver, &cargo_options)?
+        let visitor =
+            ChromiumLinkVisitor { extra_config, memoization_tables: &mut memoization_tables };
+        CargoSet::with_cargo_link_visitor(initials, no_extra_features, visitor, &cargo_options)?
     };
     let cargo_set_links = cargo_set
         .build_dep_links()
@@ -291,6 +304,9 @@ pub fn collect_dependencies(
     let is_toplevel_dep = |package: &PackageMetadata| -> bool {
         package.reverse_direct_links().any(|link| link.from().name() == root_package_name)
     };
+    let is_replaced = |package: &PackageMetadata| -> bool {
+        extra_config.get_replacement_target(package.name(), package.version()).is_some()
+    };
     let mut get_dependency_condition =
         |link: &PackageLink, dep_kind: DependencyKind| -> Condition {
             let key = get_link_key(link);
@@ -306,6 +322,7 @@ pub fn collect_dependencies(
     let mut packages = package_set
         .packages(DependencyDirection::Forward)
         .filter(|package| package.name() != root_package_name)
+        .filter(|package| !is_replaced(package))
         .map(|package| {
             let err_context = || format!("Error processing `{}`", package.name());
             let dependencies = get_package_dependencies(&package, |link| {
@@ -367,9 +384,9 @@ fn resolve_root_package_set<'g>(
     }
 }
 
-/// Graph traversal resolver that rejects dependency links that would have been
+/// Graph traversal visitor that rejects dependency links that would have been
 /// `Condition::is_always_false` on Chromium platforms.
-struct PackageResolver<'a> {
+struct ChromiumLinkVisitor<'a> {
     extra_config: &'a BuildConfig,
     memoization_tables: &'a mut MemoizationTables,
 }
@@ -437,8 +454,8 @@ impl MemoizationTables {
     }
 }
 
-impl<'g> guppy::graph::PackageResolver<'g> for PackageResolver<'_> {
-    fn accept(&mut self, _query: &PackageQuery<'g>, link: PackageLink<'g>) -> bool {
+impl<'g> guppy::graph::cargo::CargoLinkVisitor<'g> for ChromiumLinkVisitor<'_> {
+    fn visit_link(&mut self, _cx: &CargoLinkContext<'_, 'g>, link: PackageLink<'g>) -> bool {
         // Remove dependency links rejected by `gnrt_config.toml`.
         if self.extra_config.resolve.remove_crates.contains(link.to().name()) {
             return false;
@@ -448,6 +465,16 @@ impl<'g> guppy::graph::PackageResolver<'g> for PackageResolver<'_> {
                 &cfg.remove_deps
             });
         if remove_deps.contains(link.to().name()) {
+            return false;
+        }
+
+        // Do not traverse dependencies of crates that are replaced by a custom
+        // GN target in `gnrt_config.toml`.
+        if self
+            .extra_config
+            .get_replacement_target(link.from().name(), link.from().version())
+            .is_some()
+        {
             return false;
         }
 
@@ -480,7 +507,8 @@ fn adjust_reverse_condition_if_crossing_target_to_host(
     };
     let link_applies_to_chromium = !condition.is_always_false();
     if link_applies_to_chromium && link_is_present && link_crosses_from_target_to_host {
-        // Reverse condition for `link.to()` needs to support it on all host platforms.
+        // Reverse condition for `link.to()` needs to support it on all host
+        // platforms.
         condition = Condition::always_true();
     }
 
@@ -933,7 +961,8 @@ mod tests {
 
         assert_eq!(dependencies[i].package_name, "time");
         assert_eq!(dependencies[i].version, Version::new(0, 3, 14));
-        // `time` is a dependency of `foo`, so should also get classified as `Test`:
+        // `time` is a dependency of `foo`, so should also get classified as
+        // `Test`:
         assert_eq!(dependencies[i].group, Group::Test);
         assert_eq!(
             dependencies[i].dependency_kinds.get(&DependencyKind::Normal).unwrap().features,
@@ -1195,10 +1224,10 @@ mod tests {
             Some("current_cpu == \"arm64\"".to_string()),
         );
 
-        // We can cross-compile for arm64 **target** when building on x86 **host**.
-        // Therefore the arm64 condition should *not* propagate 1) into when
-        // `prost` is enabled via its reverse dependencies, nor 2) into transitive
-        // dependnecies of `prost`.
+        // We can cross-compile for arm64 **target** when building on x86
+        // **host**. Therefore the arm64 condition should *not*
+        // propagate 1) into when `prost` is enabled via its reverse
+        // dependencies, nor 2) into transitive dependnecies of `prost`.
         let prost = &dependencies["prost-derive"];
         assert_eq!(prost.dependencies.len(), 5);
         assert_eq!(prost.dependencies[0].package_name, "anyhow");
@@ -1210,4 +1239,129 @@ mod tests {
     // `gnrt/sample_package4` directory.  See the `Cargo.toml` for more
     // information.
     static SAMPLE_CARGO_METADATA4: &str = include_str!("test_metadata4.json");
+
+    #[test]
+    fn collect_dependencies_on_sample_output5() {
+        let config = BuildConfig::default();
+        let metadata = PackageGraph::from_json(SAMPLE_CARGO_METADATA5).unwrap();
+        let dependencies = collect_dependencies(&metadata, "sample_package5", &config).unwrap();
+        let dependencies = dependencies
+            .into_iter()
+            .map(|package| (package.package_name.to_string(), package))
+            .collect::<HashMap<_, _>>();
+
+        // The version 2 resolver (implied by `edition = "2021"`) does not
+        // unify features across normal and build dependencies.  Therefore
+        // `target_only` should only be enabled for the normal dependency.
+        let shared = &dependencies["shared"];
+        assert_eq!(shared.dependency_kinds[&DependencyKind::Normal].features, &["target_only"]);
+        let empty_str_slice: &'static [&'static str] = &[];
+        assert_eq!(shared.dependency_kinds[&DependencyKind::Build].features, empty_str_slice);
+    }
+
+    // `test_metadata5.json` contains the output of `cargo metadata` run in
+    // `gnrt/sample_package5` directory.  See the `Cargo.toml` for more
+    // information.
+    static SAMPLE_CARGO_METADATA5: &str = include_str!("test_metadata5.json");
+
+    #[test]
+    fn dependencies_replaced_by_config_file() {
+        let mut config = BuildConfig::default();
+        // `icu_properties_data` is an enabled optional dependency of
+        // `icu_properties` (enabled via `compiled_data`).
+        config.insert_crate_config_for_testing(
+            "icu_properties_data",
+            CrateConfig {
+                replace_with: Some("//third_party/rust/icu4x_data:lib".to_string()),
+                ..CrateConfig::default()
+            },
+        );
+        // `databake` is a disabled optional dependency and should NOT be
+        // included even when configured with `replace_with`.
+        config.insert_crate_config_for_testing(
+            "databake",
+            CrateConfig {
+                replace_with: Some("//third_party/rust/databake_custom:lib".to_string()),
+                ..CrateConfig::default()
+            },
+        );
+        // `icu_experimental` has its own exclusive dependency
+        // (`icu_experimental_data`), which should also be pruned when
+        // `icu_experimental` is replaced.
+        config.insert_crate_config_for_testing(
+            "icu_experimental",
+            CrateConfig {
+                replace_with: Some("//third_party/rust/icu_experimental_custom:lib".to_string()),
+                ..CrateConfig::default()
+            },
+        );
+
+        let metadata = PackageGraph::from_json(SAMPLE_CARGO_METADATA2).unwrap();
+
+        // When `icu_properties_data` and `databake` have `replace_with`,
+        // `icu_properties_data` is pruned from `dependencies` while
+        // `icu_properties` still retains `icu_properties_data` in its outgoing
+        // `dependencies` list (and excludes disabled optional `databake`).
+        let mut config_leaf = BuildConfig::default();
+        config_leaf.insert_crate_config_for_testing(
+            "icu_properties_data",
+            CrateConfig {
+                replace_with: Some("//third_party/rust/icu4x_data:lib".to_string()),
+                ..CrateConfig::default()
+            },
+        );
+        config_leaf.insert_crate_config_for_testing(
+            "databake",
+            CrateConfig {
+                replace_with: Some("//third_party/rust/databake_custom:lib".to_string()),
+                ..CrateConfig::default()
+            },
+        );
+        let dependencies =
+            collect_dependencies(&metadata, "sample_package2", &config_leaf).unwrap();
+        let dependencies = dependencies
+            .into_iter()
+            .map(|package| (package.package_name.to_string(), package))
+            .collect::<HashMap<_, _>>();
+
+        assert!(!dependencies.contains_key("icu_properties_data"));
+        let icu_properties = &dependencies["icu_properties"];
+        assert_eq!(
+            icu_properties
+                .dependencies
+                .iter()
+                .map(|d| d.package_name.clone())
+                .sorted()
+                .collect_vec(),
+            &[
+                "displaydoc",
+                "icu_collections",
+                "icu_locale_core",
+                "icu_properties_data",
+                "icu_provider",
+                "potential_utf",
+                "zerotrie",
+                "zerovec",
+            ],
+        );
+
+        // When `icu_experimental` is also replaced, its exclusive transitive
+        // dependencies (`icu_experimental_data`, `icu_properties`, etc.) are
+        // pruned as well, while `icu_capi` retains `icu_experimental` in its
+        // outgoing `dependencies`.
+        let dependencies = collect_dependencies(&metadata, "sample_package2", &config).unwrap();
+        let dependencies = dependencies
+            .into_iter()
+            .map(|package| (package.package_name.to_string(), package))
+            .collect::<HashMap<_, _>>();
+
+        assert!(!dependencies.contains_key("icu_experimental"));
+        assert!(!dependencies.contains_key("icu_experimental_data"));
+        assert!(!dependencies.contains_key("icu_properties"));
+        assert!(!dependencies.contains_key("icu_properties_data"));
+        assert!(dependencies["icu_capi"]
+            .dependencies
+            .iter()
+            .any(|d| d.package_name == "icu_experimental"));
+    }
 }

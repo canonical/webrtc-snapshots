@@ -59,7 +59,13 @@ class PluginConsumer : public FilteredASTConsumer {
   PluginConsumer(CompilerInstance* instance,
                  const Options& options,
                  const RawPtrPluginConfig& config)
-      : options_(options), config_(config), instance_(*instance) {}
+      : options_(options), config_(config), instance_(*instance) {
+    // All checks except for the bad cast check ignore everything that is
+    // spelled in a system header.
+    if (!options_.check_bad_raw_ptr_cast) {
+      SkipSystemHeaders(instance->getPreprocessor());
+    }
+  }
 
   void HandleTranslationUnit(clang::ASTContext& context) override {
     llvm::TimeTraceScope TimeScope("HandleTranslationUnit for raw-ptr plugin");
@@ -172,6 +178,8 @@ bool RawPtrPlugin::ParseArgs(const CompilerInstance& instance,
       options_.enable_match_profiling = true;
     } else if (arg == "no-special-treatment-for-oilpanized-paths") {
       options_.explicitly_ignore_oilpanized_paths = false;
+    } else if (arg == "check-raw-ptr-in-blink") {
+      options_.check_raw_ptr_in_blink = true;
     } else if (arg == "check-containers") {
       check_containers = true;
     } else {

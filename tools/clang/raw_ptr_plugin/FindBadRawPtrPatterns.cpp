@@ -408,11 +408,11 @@ class SpanFieldMatcher : public MatchFinder::MatchCallback {
     auto container_of_span_type =
         qualType(hasCanonicalType(anyOf(
                      qualType(hasDeclaration(classTemplateSpecializationDecl(
-                         container_methods, template_arguments))),
+                         template_arguments, container_methods))),
                      qualType(type(templateSpecializationType(
+                         template_arguments,
                          hasDeclaration(classTemplateDecl(
-                             has(cxxRecordDecl(container_methods)))),
-                         template_arguments))))))
+                             has(cxxRecordDecl(container_methods))))))))))
             .bind("container_type");
 
     auto field_decl_matcher =
@@ -462,7 +462,8 @@ void FindBadRawPtrPatterns(const Options& options,
   std::vector<std::string> check_bad_raw_ptr_cast_exclude_paths;
 
   AddManualPathsToIgnore(paths_to_exclude_lines,
-                         options.explicitly_ignore_oilpanized_paths);
+                         options.explicitly_ignore_oilpanized_paths,
+                         options.check_raw_ptr_in_blink);
   for (auto* const line : kSeparateRepositoryPaths) {
     paths_to_exclude_lines.push_back(line);
     check_bad_raw_ptr_cast_exclude_paths.push_back(line);

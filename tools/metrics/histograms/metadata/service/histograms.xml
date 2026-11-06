@@ -107,6 +107,7 @@ chromium-metrics-reviews@google.com.
   <variant name="BACKGROUND_FETCH_FAIL"/>
   <variant name="BACKGROUND_FETCH_SUCCESS"/>
   <variant name="COOKIE_CHANGE"/>
+  <variant name="EXTERNAL_REQUEST"/>
   <variant name="FETCH_FENCED_FRAME"/>
   <variant name="FETCH_MAIN_FRAME"/>
   <variant name="FETCH_SHARED_WORKER"/>
@@ -251,6 +252,31 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="ServiceWorker.BackgroundFetch.FetchStatus"
+    enum="ServiceWorkerBackgroundFetchStatus" expires_after="2027-03-17">
+  <owner>yyanagisawa@chromium.org</owner>
+  <owner>sisidovski@chromium.org</owner>
+  <summary>
+    Records the execution context and feature configuration status when
+    BackgroundFetchManager.fetch() is called. Used to measure usage of
+    Background Fetch across different execution contexts.
+  </summary>
+</histogram>
+
+<histogram name="ServiceWorker.BackgroundFetch.{Method}CalledFromServiceWorker"
+    enum="Boolean" expires_after="2027-03-17">
+  <owner>yyanagisawa@chromium.org</owner>
+  <owner>sisidovski@chromium.org</owner>
+  <summary>
+    Records whether BackgroundFetchManager.{Method}() was called from a Service
+    Worker execution context (true) or another context such as Window (false).
+  </summary>
+  <token key="Method">
+    <variant name="Get"/>
+    <variant name="GetIds"/>
+  </token>
+</histogram>
+
 <histogram name="ServiceWorker.CacheStorageInstalledScript.CachedMetadataSize"
     units="bytes" expires_after="2026-07-05">
   <owner>yyanagisawa@chromium.org</owner>
@@ -368,7 +394,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.CountUse.WebFeature" units="WebFeature"
-    expires_after="2027-01-17">
+    expires_after="2027-04-18">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -463,7 +489,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.ExtendableMessageEvent.Time" units="ms"
-    expires_after="2027-01-10">
+    expires_after="2027-03-28">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>chikamune@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
@@ -490,7 +516,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.FetchEvent.HasResponse.Time" units="ms"
-    expires_after="2027-01-10">
+    expires_after="2027-03-28">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>chikamune@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
@@ -576,7 +602,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ServiceWorker.FetchEvent.{Resource}.RaceNetworkRequest.DataTransferResult"
-    enum="RaceNetworkRequestDataTransferResult" expires_after="2027-02-07">
+    enum="RaceNetworkRequestDataTransferResult" expires_after="2027-04-11">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -896,7 +922,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ServiceWorker.LoadTiming.MainFrame.MainResource.AutoPreloadResponseReceivedToFetchHandlerEnd.{ServiceWorkerFetchResponseFromName}"
-    units="ms" expires_after="2027-01-31">
+    units="ms" expires_after="2027-04-04">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1056,7 +1082,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ServiceWorker.LoadTiming.MainFrame.MainResource.ForwardServiceWorkerToWorkerReady2{EmbeddedWorkerInitialStatus}{NavigationType}"
-    units="ms" expires_after="2027-02-07">
+    units="ms" expires_after="2027-04-11">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1322,6 +1348,19 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="ServiceWorker.LoadTiming.Subresource.StartToCompleted"
+    units="ms" expires_after="2027-03-14">
+  <owner>sisidovski@chromium.org</owner>
+  <owner>chrome-worker@google.com</owner>
+  <improvement direction="LOWER_IS_BETTER"/>
+  <summary>
+    The time taken from (a) a subresource request starts, to (b) the response is
+    completed, when a service worker controller exists and has a fetch event
+    handler. Recorded for each subresource request regardless of whether the
+    response came from the service worker or from RaceNetworkRequest.
+  </summary>
+</histogram>
+
 <histogram
     name="ServiceWorker.LoadTiming.Subresource.WorkerReadyToFetchHandlerEnd"
     units="ms" expires_after="2027-01-10">
@@ -1400,7 +1439,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.MaybeStartWorker.RunningStatus"
-    enum="EmbeddedWorkerStatus" expires_after="2027-02-07">
+    enum="EmbeddedWorkerStatus" expires_after="2027-04-11">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -1645,7 +1684,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.RouterEvaluator.EvaluationTime"
-    units="microseconds" expires_after="2027-02-07">
+    units="microseconds" expires_after="2027-04-11">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2229,7 +2268,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.SyntheticResponse.BypassRedirectChecks"
-    enum="Boolean" expires_after="2027-01-24">
+    enum="Boolean" expires_after="2027-03-28">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2298,7 +2337,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ServiceWorker.SyntheticResponse.IsValidBodyStreamProvided.{Status}"
-    enum="Boolean" expires_after="2027-02-07">
+    enum="Boolean" expires_after="2027-04-11">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2319,7 +2358,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.SyntheticResponse.ReceiveResponseToComplete"
-    units="ms" expires_after="2027-02-07">
+    units="ms" expires_after="2027-04-11">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2332,7 +2371,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.SyntheticResponse.ReloadReason"
-    enum="SyntheticResponseReloadReason" expires_after="2027-01-24">
+    enum="SyntheticResponseReloadReason" expires_after="2027-03-28">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2346,7 +2385,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.SyntheticResponse.StartRequestToReceiveResponse"
-    units="ms" expires_after="2027-02-07">
+    units="ms" expires_after="2027-04-11">
   <owner>sisidovski@chromium.org</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2359,7 +2398,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ServiceWorker.SyntheticResponse.WriteFallbackBodyResult"
-    enum="MojoResult" expires_after="2027-02-14">
+    enum="MojoResult" expires_after="2027-04-18">
   <owner>sisidovski@google.com</owner>
   <owner>chrome-worker@google.com</owner>
   <summary>
@@ -2547,7 +2586,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="ServiceWorkerCache.CacheStorage.{ServiceWorkerCacheProcessType}.{ProcessOps}"
-    units="ms" expires_after="2027-02-07">
+    units="ms" expires_after="2027-04-11">
   <owner>ayui@chromium.org</owner>
   <owner>chrome-owp-storage@google.com</owner>
   <summary>

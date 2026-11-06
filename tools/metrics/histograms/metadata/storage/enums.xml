@@ -45,6 +45,33 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//content/browser/interest_group/interest_group_storage.cc:AdProtoDecompressionOutcome) -->
 
+<!-- LINT.IfChange(BlobSideDataAccessType) -->
+
+<enum name="BlobSideDataAccessType">
+  <int value="0" label="Blob URL loaded without side data"/>
+  <int value="1" label="Blob URL loaded with side data"/>
+  <int value="2" label="CacheStorage side data read"/>
+</enum>
+
+<!-- LINT.ThenChange(//storage/browser/blob/blob_side_data_access_type.h:BlobSideDataAccessType) -->
+
+<!-- LINT.IfChange(BlobUuidAccess) -->
+
+<enum name="BlobUuidAccess">
+  <int value="0"
+      label="UUID was known synchronously (when Blob was connected in
+             renderer)"/>
+  <int value="1"
+      label="UUID was retrieved asynchronously, but was ready before needed"/>
+  <int value="2"
+      label="UUID was needed and renderer thread blocked to wait for it"/>
+  <int value="3"
+      label="UUID was unavailable because the Blob's remote connection was
+             not valid"/>
+</enum>
+
+<!-- LINT.ThenChange(//third_party/blink/renderer/platform/blob/blob_data.cc:BlobUuidAccess) -->
+
 <enum name="BooleanInherited">
   <int value="0" label="Not inherited"/>
   <int value="1" label="Inherited"/>
@@ -260,6 +287,19 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//third_party/blink/public/mojom/indexeddb/indexeddb.mojom:IDBTransactionMode) -->
 
+<!-- LINT.IfChange(IndexedDbBackingStoreResetReason) -->
+
+<enum name="IndexedDbBackingStoreResetReason">
+  <int value="0" label="Profile shutdown"/>
+  <int value="1" label="Bucket deletion"/>
+  <int value="2" label="Forced closed by internals UI"/>
+  <int value="3" label="No open connections for 2+ seconds"/>
+  <int value="4" label="Backing store error: catastrophic/corruption"/>
+  <int value="5" label="Backing store error: transient/non-corruption"/>
+</enum>
+
+<!-- LINT.ThenChange(//content/browser/indexed_db/instance/bucket_context.h:BackingStoreResetReason) -->
+
 <!-- LINT.IfChange(IndexedDBBadMessageReason) -->
 
 <enum name="IndexedDBBadMessageReason">
@@ -378,6 +418,26 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//content/browser/indexed_db/status.h:Type) -->
 
+<!-- LINT.IfChange(InMemoryFileRegistryFindResult) -->
+
+<enum name="InMemoryFileRegistryFindResult">
+  <int value="0" label="Found"/>
+  <int value="1" label="Not found"/>
+  <int value="2" label="Evicted under memory pressure"/>
+</enum>
+
+<!-- LINT.ThenChange(//storage/browser/file_system/in_memory_file_registry.h:InMemoryFileRegistryFindResult) -->
+
+<!-- LINT.IfChange(InMemoryFileRegistryRegisterResult) -->
+
+<enum name="InMemoryFileRegistryRegisterResult">
+  <int value="0" label="Success"/>
+  <int value="1" label="Exceeds memory limit"/>
+  <int value="2" label="File system registration failed"/>
+</enum>
+
+<!-- LINT.ThenChange(//storage/browser/file_system/in_memory_file_registry.h:InMemoryFileRegistryRegisterResult) -->
+
 <!-- LINT.IfChange(InterestGroupStorageInitializationResult) -->
 
 <enum name="InterestGroupStorageInitializationResult">
@@ -444,25 +504,6 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//content/browser/interest_group/interest_group_storage.cc:InterestGroupStorageVacuumResult) -->
-
-<enum name="RequestStorageResult">
-  <int value="0" label="Approved due to existing storage access"/>
-  <int value="1" label="Approved with new grant"/>
-  <int value="2" label="Rejected with missing user gesture"/>
-  <int value="3" label="Rejected due to missing origin"/>
-  <int value="4" label="Rejected due to opaque origin"/>
-  <int value="5" label="Rejected due to existing denial"/>
-  <int value="6" label="Rejected due to missing sandbox token"/>
-  <int value="7" label="Rejected due to denied prompt"/>
-  <int value="8"
-      label="Rejected due to a call being made from an invalid context"/>
-  <int value="9" label="Rejected due to insecure context"/>
-  <int value="10" label="Approved due to being called from top-level frame"/>
-  <int value="11" label="Rejected due to credentialless iframe"/>
-  <int value="12" label="Approved with a new or existing grant"/>
-  <int value="13" label="Rejected due to fenced frame"/>
-  <int value="14" label="Rejected due to invalid origin"/>
-</enum>
 
 <enum name="SqliteResultCode">
   <summary>

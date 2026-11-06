@@ -68,7 +68,6 @@ void ScaleRowDown2_16_C(const uint16_t* src_ptr,
   }
 }
 
-
 void ScaleRowDown2Linear_C(const uint8_t* src_ptr,
                            ptrdiff_t src_stride,
                            uint8_t* dst,
@@ -104,7 +103,6 @@ void ScaleRowDown2Linear_16_C(const uint16_t* src_ptr,
     dst[0] = (s[0] + s[1] + 1) >> 1;
   }
 }
-
 
 void ScaleRowDown2Box_C(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
@@ -167,7 +165,6 @@ void ScaleRowDown2Box_16_C(const uint16_t* src_ptr,
     dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
   }
 }
-
 
 void ScaleRowDown4_C(const uint8_t* src_ptr,
                      ptrdiff_t src_stride,
@@ -1414,6 +1411,11 @@ void ScalePlaneVertical(int src_height,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    InterpolateRow = InterpolateRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     InterpolateRow = InterpolateRow_Any_NEON;
@@ -1443,6 +1445,14 @@ void ScalePlaneVertical(int src_height,
 #if defined(HAS_INTERPOLATEROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    InterpolateRow = InterpolateRow_Any_WASMSIMD;
+    if (IS_ALIGNED(dst_width_bytes, 16)) {
+      InterpolateRow = InterpolateRow_WASMSIMD;
+    }
   }
 #endif
 
@@ -1524,6 +1534,14 @@ void ScalePlaneVertical_16(int src_height,
 #if defined(HAS_INTERPOLATEROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     InterpolateRow = InterpolateRow_16_SME;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    InterpolateRow = InterpolateRow_16_Any_WASMSIMD;
+    if (IS_ALIGNED(dst_width_words, 8)) {
+      InterpolateRow = InterpolateRow_16_WASMSIMD;
+    }
   }
 #endif
   for (j = 0; j < dst_height; ++j) {
