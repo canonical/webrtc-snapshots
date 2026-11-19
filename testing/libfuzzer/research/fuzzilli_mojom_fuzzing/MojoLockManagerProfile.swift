@@ -40,10 +40,7 @@ extension ILType {
         withMethods: [
           "close",
           "isBound",
-          "associateAndPassReceiver",
         ])
-    fileprivate static let jsBlinkMojomLockHandlePendingAssociatedReceiver: ILType = .object(
-        ofGroup: "blink.mojom.LockHandlePendingAssociatedReceiver")
 
     // LockRequest
     fileprivate static let jsBlinkMojomLockRequestCallbackRouter: ILType = .object(
@@ -56,9 +53,11 @@ extension ILType {
     fileprivate static let jsBlinkMojomLockRequestCallbackRouterReceiverHelper: ILType = .object(
         ofGroup: "blink.mojom.LockRequestCallbackRouterReceiverHelper",
         withMethods: [
-          "closeBindings",
+          "close",
           "associateAndPassRemote",
         ])
+    fileprivate static let jsBlinkMojomLockRequestPendingAssociatedReceiver: ILType = .object(
+        ofGroup: "blink.mojom.LockRequestPendingAssociatedReceiver")
     fileprivate static let jsBlinkMojomLockRequestPendingAssociatedRemote: ILType = .object(
         ofGroup: "blink.mojom.LockRequestPendingAssociatedRemote",
         withProperties: ["$"])
@@ -69,8 +68,6 @@ extension ILType {
           "isBound",
           "associateAndPassReceiver",
         ])
-    fileprivate static let jsBlinkMojomLockRequestPendingAssociatedReceiver: ILType = .object(
-        ofGroup: "blink.mojom.LockRequestPendingAssociatedReceiver")
     fileprivate static let jsBlinkMojomLockRequestGrantedCallbackReceiver: ILType = .object(
         ofGroup: "BlinkMojomLockRequestGrantedCallbackReceiver",
         withMethods: ["addListener"])
@@ -121,14 +118,7 @@ extension ObjectGroup {
         methods: [
             "close": [] => .undefined,
             "isBound": [] => .boolean,
-            "associateAndPassReceiver": [] => .jsBlinkMojomLockHandlePendingAssociatedReceiver,
         ])
-    fileprivate static let blinkMojomLockHandlePendingAssociatedReceiver = ObjectGroup(
-        name: "blink.mojom.LockHandlePendingAssociatedReceiver",
-        instanceType: .jsBlinkMojomLockHandlePendingAssociatedReceiver,
-        properties: [:],
-        methods: [:]
-    )
 
     // LockRequest
     fileprivate static let blinkMojomLockRequestCallbackRouter = ObjectGroup(
@@ -141,13 +131,12 @@ extension ObjectGroup {
         ],
         methods: [:]
     )
-
     fileprivate static let blinkMojomLockRequestCallbackRouterReceiverHelper = ObjectGroup(
         name: "blink.mojom.LockRequestCallbackRouterReceiverHelper",
         instanceType: .jsBlinkMojomLockRequestCallbackRouterReceiverHelper,
         properties: [:],
         methods: [
-            "closeBindings": [] => .undefined,
+            "close": [] => .undefined,
             "associateAndPassRemote": [] => .jsBlinkMojomLockRequestPendingAssociatedRemote,
         ])
 
@@ -177,14 +166,18 @@ extension ObjectGroup {
                         ] => .undefined))
             ] => .integer,
         ])
-
+    fileprivate static let blinkMojomLockRequestPendingAssociatedReceiver = ObjectGroup(
+        name: "blink.mojom.LockRequestPendingAssociatedReceiver",
+        instanceType: .jsBlinkMojomLockRequestPendingAssociatedReceiver,
+        properties: [:],
+        methods: [:]
+    )
     fileprivate static let blinkMojomLockRequestPendingAssociatedRemote = ObjectGroup(
         name: "blink.mojom.LockRequestPendingAssociatedRemote",
         instanceType: .jsBlinkMojomLockRequestPendingAssociatedRemote,
         properties: ["$": .jsBlinkMojomLockRequestRemoteWrapper],
         methods: [:]
     )
-
     fileprivate static let blinkMojomLockRequestRemoteWrapper = ObjectGroup(
         name: "blink.mojom.LockRequestRemoteWrapper",
         instanceType: .jsBlinkMojomLockRequestRemoteWrapper,
@@ -194,13 +187,6 @@ extension ObjectGroup {
             "isBound": [] => .boolean,
             "associateAndPassReceiver": [] => .jsBlinkMojomLockRequestPendingAssociatedReceiver,
         ])
-
-    fileprivate static let blinkMojomLockRequestPendingAssociatedReceiver = ObjectGroup(
-        name: "blink.mojom.LockRequestPendingAssociatedReceiver",
-        instanceType: .jsBlinkMojomLockRequestPendingAssociatedReceiver,
-        properties: [:],
-        methods: [:]
-    )
 }
 
 ///
@@ -214,11 +200,6 @@ extension ILType {
             "mode",
             "clientId",
         ])
-    fileprivate static let jsBlinkMojomLockInfoConstructor: ILType = .constructor([
-        .plain(.string),
-        .plain(.jsBlinkMojomLockMode),
-        .plain(.string),
-    ] => .jsBlinkMojomLockInfo)
     fileprivate static let jsBlinkMojomLockManager_QueryState_ResponseParams: ILType = .object(
         ofGroup: "blink.mojom.LockManager_QueryState_ResponseParams",
         withProperties: [
@@ -257,27 +238,6 @@ extension ILType {
         .createJsArrayType(ofElementType: .jsBlinkMojomLockInfo)
 }
 
-/// As Fuzzilli runs, the OperationMutator and VariadicInputReducer will modify
-/// the `CreateArray` operation to increase or decrease the element count. This
-/// allows arrays to be arbitrarily long.
-///
-/// `findOrGenerateType` is preferred over specifying `inputs` because
-/// Fuzzilli only uses CodeGenerators to produce types in `inputs`, while
-/// `findOrGenerateType` uses a variety of sources (e.g. `builtins`, other
-/// method properties and methods). An input is specified (i.e. `.one`)
-/// to prevent the CodeGenerator from being scheduled first when there are
-/// no visible variables, as `findOrGenerateType` causes a crash if there
-/// are no visibile variables.
-private let MojoBlinkMojomLockInfoMojoArrayGenerator = CodeGenerator(
-    "MojoBlinkMojomLockInfoMojoArrayGenerator",
-    inputs: .one,
-    produces: [.jsBlinkMojomLockInfoMojoArray]
-) { b, _ in
-    let elem = b.findOrGenerateType(.jsBlinkMojomLockInfo)
-    var elements: [Variable] = [elem]
-    b.createArray(with: elements)
-}
-
 ///
 /// Enumerations
 ///
@@ -301,29 +261,108 @@ private func isTargetObject(type: ILType) -> Bool {
     return mojoTargetGroups.contains(group)
 }
 
+/// Whether `type` is an interface endpoint: a remote or a pending endpoint.
+private func isEndpoint(type: ILType) -> Bool {
+    guard let group = type.group else { return false }
+    return group.hasSuffix("Remote") || group.hasSuffix("PendingReceiver")
+        || group.hasSuffix("PendingAssociatedReceiver")
+}
+
+/// Sending an endpoint moves its pipe to the other side. Hides the endpoints
+/// among the `arguments` of a call, so that Fuzzilli does not send or call
+/// them again.
+private func hideEndpoints(_ b: ProgramBuilder, in arguments: [Variable]) {
+    for argument in Set(arguments) where isEndpoint(type: b.type(of: argument)) {
+        b.hide(argument)
+    }
+}
+
+/// Maps every interface that JS both calls and implements to the methods that
+/// take a receiver for it. Each method is given as `(group of the object to
+/// call, method, receiver index)`. Calling one of them binds a new remote,
+/// which JS can then send.
+private let mojoRemoteBinders: [String: [(owner: String, method: String, index: Int)]] = [:
+]
+
+/// Binds a new remote for each parameter of `signature` that is a remote JS
+/// sends. Parameters for which no such object is in scope are left out.
+private func bindRemoteArguments(
+    _ b: ProgramBuilder, for signature: Signature
+) -> [Int: Variable] {
+    var remotes = [Int: Variable]()
+    for (i, parameter) in signature.parameters.enumerated() {
+        // Extract the underlying type from the `Parameter` enum.
+        let type: ILType
+        switch parameter {
+        case .plain(let t), .opt(let t), .rest(let t), .either(let t, _):
+            type = t
+        }
+
+        guard let group = type.group, let binders = mojoRemoteBinders[group] else { continue }
+        // Find all variables that provide binders for this type
+        let available = binders.compactMap { binder in
+            b.findVariable { b.type(of: $0).group == binder.owner }.map { ($0, binder) }
+        }
+        guard let (owner, binder) = available.randomElement() else { continue }
+
+        let remote = b.construct(b.createNamedVariable(forBuiltin: group), withArgs: [])
+        let receiver = b.callMethod(
+            "bindNewPipeAndPassReceiver", on: b.getProperty("$", of: remote), withArgs: [])
+        let bindSignature = b.methodSignatures(of: binder.method, on: owner)[0]
+        var bindArguments = b.findOrGenerateArguments(
+            forSignature: bindSignature, maxNumberOfVariablesToGenerate: 1000)
+        bindArguments[binder.index] = receiver
+        hideEndpoints(b, in: bindArguments)
+        b.callMethod(binder.method, on: owner, withArgs: bindArguments, guard: false)
+        remotes[i] = remote
+    }
+    return remotes
+}
+
+/// Finds or generates arguments for a call with `signature`, binding the remotes
+/// JS sends (see `bindRemoteArguments`).
+private func findOrGenerateMojoArguments(
+    _ b: ProgramBuilder, forSignature signature: Signature
+) -> [Variable] {
+    let remotes = bindRemoteArguments(b, for: signature)
+    var arguments = b.findOrGenerateArguments(
+        forSignature: signature, maxNumberOfVariablesToGenerate: 1000)
+    for (i, remote) in remotes {
+        arguments[i] = remote
+    }
+    return arguments
+}
+
 /// Mojo variant of the builtin `MethodCallGenerator` that operates only on
 /// "Mojo" objects instead of all the objects in the JavaScript environment,
 /// most of which are unrelated to the interface. This generator emits random
 /// method calls, generating any arguments that are not available.
 private let MojoMethodCallGenerator = CodeGenerator("MojoMethodCallGenerator") {
     b in
-    // Pick a variable among all Mojo variables with methods
-    var targetVar = b.findVariable {
-        let type = b.type(of: $0)
-        return isTargetObject(type: type) && !type.methods.isEmpty
-    }
+    // Pick an object group among all Mojo variables with methods, and then a
+    // variable of that group. This gives each interface in scope the same
+    // share of calls, however many variables hold it (e.g. one per
+    // `getOrCreatePrimaryRemote()` call). `addListener` calls are left to the
+    // router listener generators, which build proper listeners.
+    let groups = Set(b.visibleVariables.compactMap { v -> String? in
+        let type = b.type(of: v)
+        let methods = type.methods.subtracting(["addListener"])
+        return isTargetObject(type: type) && !methods.isEmpty ? type.group : nil
+    })
 
     // If we can't find a Mojo object in scope, create the LockManager remote
-    guard let obj = targetVar else {
+    guard let group = groups.randomElement() else {
         let getRemoteFunc = b.createNamedVariable(forBuiltin: "getOrCreatePrimaryRemote")
         b.callFunction(getRemoteFunc, withArgs: [])
         return
     }
+    let obj = b.findVariable { b.type(of: $0).group == group }!
 
     let methodName = b.type(of: obj).randomMethod()!
     let signatures = b.methodSignatures(of: methodName, on: obj)
     let signature = chooseUniform(from: signatures)
-    let arguments = b.findOrGenerateArguments(forSignature: signature, maxNumberOfVariablesToGenerate: 1000)
+    let arguments = findOrGenerateMojoArguments(b, forSignature: signature)
+    hideEndpoints(b, in: arguments)
     b.callMethod(methodName, on: obj, withArgs: arguments, guard: false)
 }
 
@@ -346,6 +385,7 @@ private let MojoPropertyRetrievalGenerator = CodeGenerator(
 ///
 /// The callback has one parameter, specified with `.parameters(n: 1)`. `build(n: 5)`
 /// then tells Fuzzilli to populate the callback body with five random expressions.
+/// For methods with a response, the callback returns the response parameters.
 private let MojoBlinkMojomLockRequestRouterListenerGenerator = CodeGenerator(
     "MojoBlinkMojomLockRequestRouterListenerGenerator",
     inputs: .required(.jsBlinkMojomLockRequestCallbackRouter)
@@ -378,11 +418,10 @@ private let mojoObjectGroups: [ObjectGroup] = [
     .blinkMojomLockManagerRemoteWrapper,
     .blinkMojomLockHandleRemote,
     .blinkMojomLockHandleRemoteWrapper,
-    .blinkMojomLockHandlePendingAssociatedReceiver,
     .blinkMojomLockRequestCallbackRouter,
     .blinkMojomLockRequestCallbackRouterReceiverHelper,
-    .blinkMojomLockRequestPendingAssociatedRemote,
     .blinkMojomLockRequestPendingAssociatedReceiver,
+    .blinkMojomLockRequestPendingAssociatedRemote,
     .blinkMojomLockRequestRemoteWrapper,
     .blinkMojomLockRequestGrantedCallbackReceiver,
     .blinkMojomLockRequestFailedCallbackReceiver,
@@ -396,15 +435,17 @@ private let mojoBuiltins: [String: ILType] = [
     /// is only called once, and (2) the remote is saved to a global variable so it
     /// can be closed at the end of the program.
     "getOrCreatePrimaryRemote": .function([] => .jsBlinkMojomLockManagerRemote),
+    /// Declared in `codePrefix`. `MojoAsyncFunctionGenerator` pushes the promise
+    /// of every async function it emits, and `codeSuffix` awaits them all. Typed
+    /// as an opaque object Fuzzilli does not use it as a general-purpose array.
+    "mojoAsyncFunctionPromises": .object(withMethods: ["push"]),
     "blink.mojom.LockRequestCallbackRouter":
        .constructor([] => .jsBlinkMojomLockRequestCallbackRouter),
-    "blink.mojom.LockInfo": .jsBlinkMojomLockInfoConstructor,
 ]
 
 private let keepGenerators = [
     "IntegerGenerator", "StringGenerator", "TernaryOperationGenerator",
-    "PlainFunctionGenerator", "AsyncFunctionGenerator", "AwaitGenerator",
-    "SubroutineReturnGenerator", "TryCatchGenerator",
+    "PlainFunctionGenerator", "SubroutineReturnGenerator", "TryCatchGenerator",
 ]
 
 private let mojoDisabledGenerators: [String] = CodeGenerators.map { $0.name }
@@ -420,9 +461,13 @@ let mojoLockManagerProfile = Profile(
     ],
     maxExecsBeforeRespawn: 50,
     timeout: Timeout.interval(11000, 11000),
+    // The first statement tells js_in_process_fuzzer which Mojo scripts page to
+    // load before running the program.
     codePrefix: """
         // --- Begin program prefix ---
+        'mojo-scripts-page: /gen/third_party/blink/public/mojom/locks/lock_manager.mojom-scripts-page.html';
         let globalRemote = null;
+        const mojoAsyncFunctionPromises = [];
         function getOrCreatePrimaryRemote() {
             if (!globalRemote) {
                 globalRemote = blink.mojom.LockManager.getRemote();
@@ -433,7 +478,25 @@ let mojoLockManagerProfile = Profile(
         """,
     codeSuffix: """
         // --- Begin program suffix ---
-        if (globalRemote) {globalRemote.$.close()}
+        // ExecJs awaits the promise returned by the last statement, so the
+        // async functions run to completion (including code after `await`)
+        // before the primary remote is closed. The leading `;` stops this from
+        // being parsed as a call on the program's last line.
+        //
+        // Errors thrown in async functions do not fail the program on their
+        // own. Without rethrowing them here, Fuzzilli would keep programs,
+        // accepting mutations and minimizations on them.
+        ;(async () => {
+            const results = await Promise.allSettled(mojoAsyncFunctionPromises);
+            if (globalRemote) {globalRemote.$.close()}
+            for (const result of results) {
+                const error = result.reason
+                if (result.status === 'rejected' &&
+                    (error instanceof TypeError || error instanceof ReferenceError)) {
+                    throw result.reason;
+                }
+            }
+        })();
         // --- End program suffix ---
         """,
     ecmaVersion: v8Profile.ecmaVersion,
@@ -452,7 +515,6 @@ let mojoLockManagerProfile = Profile(
         (MojoMethodCallGenerator, 10000),
         (MojoPropertyRetrievalGenerator, 10000),
         (MojoBlinkMojomLockRequestRouterListenerGenerator, 5000),
-        (MojoBlinkMojomLockInfoMojoArrayGenerator, 1),
     ] + commonMojoCodeGenerators,
     additionalProgramTemplates: WeightedList([]),
     disabledCodeGenerators: mojoDisabledGenerators,

@@ -72,6 +72,7 @@ nikhilcn@google.com
 reillyg@chromium.org
 # bookmarks
 emshack@chromium.org
+mastiz@chromium.org
 mschillaci@google.com
 # borealis
 # see crostini
@@ -175,6 +176,8 @@ ljjlee@google.com
 # fastpair
 jackshira@google.com
 dclasson@google.com
+# favicons
+mastiz@chromium.org
 # feature_engagement
 mschillaci@google.com
 nyquist@chromium.org
@@ -227,11 +230,11 @@ shend@chromium.org
 cthomp@chromium.org
 # ios
 ginnyhuang@chromium.org
-ajuma@chromium.org
 guiperez@google.com
 olivierrobin@chromium.org
 sebsg@chromium.org
 rkgibson@google.com
+adamta@google.com
 # language
 perrier@chromium.org
 curranmax@chromium.org
@@ -301,11 +304,15 @@ jdonnelly@chromium.org
 julietlevesque@google.com
 mahmadi@chromium.org
 manukh@chromium.org
+mfacey@chromium.org
 niharm@google.com
 toyoshim@chromium.org
 # on_device_model
 cduvall@chromium.org
 xinghuilu@chromium.org
+# one_time_tokens
+kazinova@google.com
+salmaabdelaziz@google.com
 # oobe
 bohdanty@google.com
 ziegltrum@google.com
@@ -474,7 +481,7 @@ leimy@chromium.org
 csharrison@chromium.org
 tbansal@chromium.org
 # sync
-mmoskvitin@google.com
+mastiz@chromium.org
 rushans@google.com
 treib@chromium.org
 # tab
@@ -490,6 +497,8 @@ perrier@chromium.org
 curranmax@chromium.org
 tbansal@chromium.org
 toyoshim@chromium.org
+# trusted_vault
+mastiz@chromium.org
 # ui
 koretadaniel@chromium.org
 # update_engine
@@ -500,6 +509,8 @@ mickeyburks@chromium.org
 # v8
 emaxx@google.com
 mlippautz@chromium.org
+# voice_typing
+amyasinghal@google.com
 # web_apk
 eirage@chromium.org
 hartmanng@chromium.org

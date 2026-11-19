@@ -34,7 +34,6 @@ TODO(crbug.com/40196262): Do a proper 3-stage build
 '''
 
 import argparse
-import base64
 import collections
 import functools
 import hashlib
@@ -64,7 +63,7 @@ from build import (
     CheckoutGitRepo,
     CopyFile,
     DownloadDebianSysroot,
-    FetchUrl,
+    FetchGitFile,
     GetLibXml2Dirs,
     GitCherryPick,
     GitRevert,
@@ -147,6 +146,8 @@ RUST_BOOTSTRAP_DIST_RS = os.path.join(
     RUST_SRC_DIR, 'src', 'bootstrap', 'dist.rs'
 )
 STAGE0_JSON_PATH = os.path.join(RUST_SRC_DIR, 'src', 'stage0')
+# `STAGE0_JSON_PATH` relative to the root of the Rust repo, in git's format.
+STAGE0_JSON_GIT_PATH = 'src/stage0'
 # Download crates.io dependencies to rust-src subdir (rather than $HOME/.cargo)
 CARGO_HOME_DIR = os.path.join(RUST_SRC_DIR, 'cargo-home')
 RUST_SRC_VERSION_FILE_PATH = os.path.join(RUST_SRC_DIR, 'src', 'version')
@@ -262,13 +263,20 @@ def AddOpenSSLToEnv():
     return ssl_dir
 
 
-def VerifyStage0JsonHash(stage0_json_url=None):
+def VerifyStage0JsonHash(git_url=None, git_hash=None):
+    '''Exits if the hash of `src/stage0` differs from `STAGE0_JSON_SHA256`.
+
+    If `git_url` and `git_hash` are given, `src/stage0` is fetched from the
+    remote `git_url` at commit `git_hash`, without a checkout.  Otherwise, the
+    local checkout at `STAGE0_JSON_PATH` is used.
+    '''
+    assert (git_url is None) == (git_hash is None), (
+        '`git_url` and `git_hash` must be given together'
+    )
     hasher = hashlib.sha256()
-    if stage0_json_url:
-        print(stage0_json_url)
-        base64_text = FetchUrl(stage0_json_url).decode("utf-8")
-        stage0 = base64.b64decode(base64_text)
-        hasher.update(stage0)
+    if git_url:
+        print(f'Fetching {STAGE0_JSON_GIT_PATH} at {git_hash} from {git_url}')
+        hasher.update(FetchGitFile(git_url, git_hash, STAGE0_JSON_GIT_PATH))
     else:
         with open(STAGE0_JSON_PATH, 'rb') as input:
             hasher.update(input.read())
@@ -634,11 +642,7 @@ def MakeVersionStamp(
 
 def GetLatestRustCommit():
     """Get the latest commit hash in the Rust repo."""
-    url = (
-        'https://chromium.googlesource.com/external/'
-        + 'github.com/rust-lang/rust/+/refs/heads/main?format=JSON'  # nocheck
-    )
-    return GetLatestCommit(url)
+    return GetLatestCommit(RUST_GIT_URL)
 
 
 def RustTargetTriple():
@@ -774,20 +778,6 @@ def GitApplyCherryPicks():
     # # TODO(crbug.com/12345678): Remove once fixed upstream.
     # GitRevert(RUST_SRC_DIR, 'fedcba9876543210fedcba9876543210fedcba98')
 
-    # TODO(crbug.com/556516031): Remove once
-    # https://github.com/rust-lang/rust/pull/162230 and
-    # https://github.com/rust-lang/rust/pull/162236 roll into rust.
-    GitCherryPick(
-        RUST_SRC_DIR,
-        'c5c326ba70147a51f20e6f8ae530c6784ed7f644',
-        'https://github.com/rust-lang/rust.git',
-    )
-    GitCherryPick(
-        RUST_SRC_DIR,
-        'aa97bab747e287d1fc7cfdc9f8c49333fd9d76f7',
-        'https://github.com/rust-lang/rust.git',
-    )
-
     print('Finished applying cherry-picks.')
 
 
@@ -827,6 +817,23 @@ def GitApplyLLVMDependentCherryPicks():
             '937145bcebff9cafefdbad652b7463a8ed04fe1f',
             'https://github.com/rust-lang/rust.git',
         )
+
+    # TODO(crbug.com/575030918): Remove once
+    # https://github.com/rust-lang/rust/pull/164591 rolls into rust.
+    if IsGitAncestorToHead(
+        LLVM_DIR, 'eb5c3a2dde4ea6d51a36e3df25bfc1b6503fd61c'
+    ):
+        for commit in [
+            '2b90db31f806d8aa5168ed6c0c9a701e6e052eb8',
+            '7aa8cbec90eec97dcc24d4fef08c31b936b111ab',
+            '2b46ff9a850e100213eb5c593355143e66350aa6',
+            'e44056b967f96d3200e184aa7903c81c894749bb',
+        ]:
+            GitCherryPick(
+                RUST_SRC_DIR,
+                commit,
+                'https://github.com/rust-lang/rust.git',
+            )
 
     print('Finished applying LLVM-dependent cherry-picks.')
 
@@ -1035,12 +1042,7 @@ def main():
 
     if not args.skip_checkout:
         if args.verify_stage0_hash:
-            VerifyStage0JsonHash(
-                'https://chromium.googlesource.com/external/github.com/'
-                'rust-lang/rust/+/{}/src/stage0?format=TEXT'.format(
-                    checkout_revision
-                )
-            )
+            VerifyStage0JsonHash(RUST_GIT_URL, checkout_revision)
             # The above function exits and prints the actual hash if
             # verification failed so we just quit here; if we reach this point,
             # the hash is valid.
@@ -1070,10 +1072,10 @@ def main():
         # Create git-commit-info in the source directory so that builds from
         # tarballs (which lack `.git`) can set rustc's version info.  `tz=None`
         # matches rustc's bootstrap. We use `checkout_revision` rather than
-        # `HEAD`, because the cherry-picks below (if any) commit with a dummy
-        # date (see `GIT_METADATA_OVERRIDES`). The date ends up in `rustc
-        # --version`, where `#[rustversion::since(...)]` in Crubit reads it, so
-        # tarball and git builds have to agree.
+        # `HEAD`, because `HEAD` may be one of the local cherry-picks below.
+        # The date ends up in `rustc --version`, where
+        # `#[rustversion::since(...)]` in Crubit reads it, so tarball and git
+        # builds have to agree (see also `GetGitMetadataEnv`).
         WriteGitCommitInfo(RUST_SRC_DIR, checkout_revision, tz=None)
 
         # This happens after initializing submodules, so that we can include

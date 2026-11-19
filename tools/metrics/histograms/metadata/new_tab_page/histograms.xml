@@ -220,7 +220,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.ActionChips.Shown2" enum="ActionChipIconType"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>giannich@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>Logged when any Action Chips was shown to the user.</summary>
@@ -421,15 +421,20 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Composebox.FromNTPLoadToSessionStart" units="ms"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>niharm@google.com</owner>
   <owner>rtatum@google.com</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>
     Histogram of the time, in milliseconds since navigation start, it took a
-    Compose Plate session to start. Recorded when the user clicks on the compose
+    Compose Plate session to start. Recorded when the composebox opens (after
+    lazy loading completes, if applicable) following a click on the compose
     entrypoint on desktop. This only gets recorded if the compose button leads
     to a compose session starting (i.e. the composebox opening).
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -466,9 +471,11 @@ chromium-metrics-reviews@google.com.
   <summary>
     Records an impression of each button shown on the composeplate on the New
     Tab Page: the AI Mode button, the incognito button and, if shown, the
-    optional button (e.g. create image or gallery). One sample is logged each
-    time the NTP impression (UserAction.Counts MobileNTPShown) is logged while
-    the composeplate is visible. Replaces
+    optional button (e.g. create image or gallery). In the beside-MVT layout of
+    NTP Aurora V2, only the AI Mode button is recorded, since the AI Mode card
+    beside the Most Visited Tiles has no incognito or optional button. One
+    sample is logged each time the NTP impression (UserAction.Counts
+    MobileNTPShown) is logged while the composeplate is visible. Replaces
     NewTabPage.FakeSearchBox.ComposeplateButton.Impression2. The histogram is
     Android-only.
   </summary>
@@ -673,7 +680,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="NewTabPage.Customization.Theme.ThemeCollection.DailyRefresh.TurnOff"
-    enum="NTPCollectionId" expires_after="2027-02-28">
+    enum="NTPCollectionId" expires_after="2027-05-02">
   <owner>hanxi@chromium.org</owner>
   <owner>yyanting@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -686,7 +693,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="NewTabPage.Customization.Theme.ThemeCollection.DailyRefresh.TurnOn"
-    enum="NTPCollectionId" expires_after="2027-02-28">
+    enum="NTPCollectionId" expires_after="2027-05-02">
   <owner>hanxi@chromium.org</owner>
   <owner>yyanting@google.com</owner>
   <owner>clank-start@google.com</owner>
@@ -974,7 +981,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Footer.Click" enum="FooterElement"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>Logged when the Footer was clicked.</summary>
@@ -1023,7 +1030,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Footer.ToggledVisibility{FooterToggleSource}"
-    enum="BooleanVisible" expires_after="2027-02-28">
+    enum="BooleanVisible" expires_after="2027-05-02">
   <owner>pauladedeji@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1062,7 +1069,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Footer.WebUI.LoadDocumentTime" units="ms"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>pauladedeji@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1213,7 +1220,12 @@ chromium-metrics-reviews@google.com.
   <improvement direction="LOWER_IS_BETTER"/>
   <summary>
     Histogram of the time, in milliseconds, it took for the NTP to load all of
-    its tiles since navigation start. {NewTabPageTimings}
+    its tiles since navigation start.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
+    {NewTabPageTimings}
   </summary>
   <token key="NewTabPageTimings">
     <variant name=""/>
@@ -1311,6 +1323,10 @@ chromium-metrics-reviews@google.com.
   <summary>
     The amount of time between opening an NTP and the logo appearing. Only
     recorded when there is a logo, and only recorded once per NTP.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -1341,6 +1357,10 @@ chromium-metrics-reviews@google.com.
     Records the time until the top-level ntp-app Custom Element's |ready|
     callback is called. The intention is to measure how quickly the contents of
     new_tab_page.rollup.js (main JS bundle) are rendered.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -1766,7 +1786,12 @@ chromium-metrics-reviews@google.com.
     an NTP module header is mostly visible in the window's content area
     (viewport). If the module header is mostly below the page fold, the time
     delta will include the time it takes for the user to scroll the module into
-    view. {NewTabPageModules}
+    view.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
+    {NewTabPageModules}
   </summary>
   <token key="NewTabPageModules" variants="NewTabPageModules">
     <variant name=""/>
@@ -1824,6 +1849,10 @@ chromium-metrics-reviews@google.com.
     an NTP module loaded.
 
     Logged for modules that were loaded after the initial NTP load.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -1850,6 +1879,10 @@ chromium-metrics-reviews@google.com.
     an NTP module loaded.
 
     Logged for modules that were loaded during the initial NTP load.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -1887,6 +1920,10 @@ chromium-metrics-reviews@google.com.
     an NTP module loaded.
 
     Logged by all modules, regardless of if they loaded at or before NTP load.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
     {NewTabPageModules}
   </summary>
   <token key="NewTabPageModules" variants="NewTabPageModules">
@@ -1959,6 +1996,10 @@ chromium-metrics-reviews@google.com.
   <summary>
     Histogram of the time, in milliseconds since navigation start, it took until
     the modules showed up on the NTP.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -2151,13 +2192,17 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.OneGoogleBar.ShownTime" units="ms"
-    expires_after="2027-02-21">
+    expires_after="2027-04-25">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>
     Histogram of the time, in milliseconds since navigation start, it took until
     the OneGoogleBar showed up on the NTP. Recorded only on the local NTP.
+
+    Note: https://crrev.com/c/8710958 switched this from subtracting a
+    browser-captured base::Time::Now() navigation start from renderer Date.now()
+    to renderer performance.now(), which may slightly shift recorded values.
   </summary>
 </histogram>
 
@@ -2297,18 +2342,6 @@ chromium-metrics-reviews@google.com.
 
     This histogram is of special interest to the chrome-analysis-team@. Do not
     change its semantics or retire it without talking to them first.
-  </summary>
-</histogram>
-
-<histogram name="NewTabPage.Promos.PromoBrowserCommand"
-    enum="PromoBrowserCommandEnum" expires_after="2026-09-06">
-  <owner>mahmadi@chromium.org</owner>
-  <owner>tiborg@chromium.org</owner>
-  <owner>chrome-desktop-ntp@google.com</owner>
-  <summary>
-    Logs how many times various promo browser commands are executed. Triggered
-    when a supported and enabled promo browser commandis executed by the
-    BrowserCommandHandler.
   </summary>
 </histogram>
 

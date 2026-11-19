@@ -99,6 +99,25 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/ui/android/bottombar/java/src/org/chromium/chrome/browser/ui/bottombar/BottomBarMetrics.java:AndroidBottomBarCandidateAction) -->
 
+<!-- LINT.IfChange(AndroidBottomBarEducationOnboardingEvent) -->
+
+<enum name="AndroidBottomBarEducationOnboardingEvent">
+  <int value="0" label="Shown"/>
+  <int value="1" label="Accepted"/>
+  <int value="2" label="Declined"/>
+  <int value="3" label="SettingsClicked"/>
+  <int value="4" label="DismissedOther"/>
+  <int value="5" label="TappedScrim">
+    Tapped outside the bubble, not on the bottom bar
+  </int>
+  <int value="6" label="TappedBottomBar">
+    Tapped the bottom bar, outside the bubble
+  </int>
+  <int value="7" label="BackPressed">Closed with system back</int>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/bottombar/java/src/org/chromium/chrome/browser/ui/bottombar/BottomBarMetrics.java:AndroidBottomBarEducationOnboardingEvent) -->
+
 <!-- LINT.IfChange(AndroidBottomBarGlicButtonState) -->
 
 <enum name="AndroidBottomBarGlicButtonState">
@@ -135,19 +154,10 @@ chromium-metrics-reviews@google.com.
 <enum name="AndroidBottomBarIphEvent">
   <int value="0" label="Shown"/>
   <int value="1" label="Dismissed"/>
+  <int value="2" label="MovedToBottom"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/browser/ui/android/bottombar/java/src/org/chromium/chrome/browser/ui/bottombar/BottomBarMetrics.java:IphEvent) -->
-
-<!-- LINT.IfChange(AndroidBottomBarPromoEvent) -->
-
-<enum name="AndroidBottomBarPromoEvent">
-  <int value="0" label="Shown"/>
-  <int value="1" label="Accepted"/>
-  <int value="2" label="Dismissed"/>
-</enum>
-
-<!-- LINT.ThenChange(//chrome/browser/ui/android/bottombar/java/src/org/chromium/chrome/browser/ui/bottombar/BottomBarMetrics.java:PromoEvent) -->
+<!-- LINT.ThenChange(//chrome/browser/ui/android/bottombar/java/src/org/chromium/chrome/browser/ui/bottombar/BottomBarMetrics.java:AndroidBottomBarIphEvent) -->
 
 <enum name="AndroidChildProcessConnectionEvents">
   <int value="0" label="SCHEDULE_TIMEOUT_SANDBOXED"/>
@@ -220,12 +230,16 @@ chromium-metrics-reviews@google.com.
   <int value="16" label="NEW_DOWNLOAD_TAB_OPEN_BUTTON"/>
 </enum>
 
+<!-- LINT.IfChange(AndroidDownloadOpenTarget) -->
+
 <enum name="AndroidDownloadOpenTarget">
   <int value="0" label="CHROME_DEFAULT"/>
   <int value="1" label="CHROME_FALLBACK"/>
   <int value="2" label="OTHER_APP_DEFAULT"/>
   <int value="3" label="OS_CHOOSER"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/download/DownloadMetrics.java:DownloadOpenTarget) -->
 
 <!-- LINT.IfChange(AndroidDragTargetType) -->
 
@@ -511,6 +525,8 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Disable: App Menu"/>
   <int value="4" label="Disable: Tab Context Menu"/>
   <int value="5" label="Disable: Tab Strip Context Menu"/>
+  <int value="6" label="Enable: Settings"/>
+  <int value="7" label="Disable: Settings"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/vertical_tabs/android/java/src/org/chromium/chrome/browser/ui/vertical_tabs/VerticalTabUtils.java:AndroidVerticalTabsLayoutToggleSourceAndDirection)-->
@@ -733,6 +749,26 @@ chromium-metrics-reviews@google.com.
   <int value="4" label="TIMEOUT"/>
   <int value="5" label="UNKNOWN_ERROR"/>
 </enum>
+
+<!-- LINT.IfChange(AndroidXWebApiCall) -->
+
+<enum name="AndroidXWebApiCall">
+  <int value="0" label="WebProviderFactory.buildWebContent"/>
+  <int value="1" label="WebContent.executeViewFactory"/>
+  <int value="2" label="WebContent.destroy"/>
+</enum>
+
+<!-- LINT.ThenChange(/android_webview/support_library/java/src/org/chromium/support_lib_glue/WebApiCallLogger.java:WebApiCall) -->
+
+<!-- LINT.IfChange(AndroidXWebComposeApiCall) -->
+
+<enum name="AndroidXWebComposeApiCall">
+  <int value="0" label="WebProviderFactory.createWebSurface"/>
+  <int value="1" label="WebSurface.setWebContent"/>
+  <int value="2" label="WebSurface.destroy"/>
+</enum>
+
+<!-- LINT.ThenChange(/android_webview/support_library/java/src/org/chromium/support_lib_glue/WebApiCallLogger.java:WebComposeApiCall) -->
 
 <enum name="AndroidXWebkitApiCall">
 <!-- LINT.IfChange(AndroidXWebkitApiCall) -->
@@ -981,11 +1017,11 @@ chromium-metrics-reviews@google.com.
   <int value="204" label="Profile.setCrossOriginIsolatedAllowList"/>
   <int value="205" label="Profile.getCrossOriginIsolatedAllowList"/>
   <int value="206" label="Navigation.getResponseHeaders"/>
-  <int value="207" label="WebViewProviderFactory.buildWebContent"/>
+  <int value="207" label="(Obsolete) WebViewProviderFactory.buildWebContent"/>
   <int value="208" label="Navigation.getNavigationStartUptimeMillis"/>
   <int value="209" label="WebViewCompat.createSharedArrayBuffer"/>
   <int value="210" label="WebMessagePayload.getAsSharedArrayBuffer"/>
-  <int value="211" label="WebViewProviderFactory.createWebSurface"/>
+  <int value="211" label="(Obsolete) WebViewProviderFactory.createWebSurface"/>
   <int value="212" label="NavigationRedirectParameters.getResponseHeaders"/>
   <int value="213" label="NavigationRedirectParameters.getStatusCode"/>
   <int value="214" label="NavigationState.getUrl"/>
@@ -1015,6 +1051,9 @@ chromium-metrics-reviews@google.com.
   <int value="238" label="GoogleAccountsEvent.getActionType"/>
   <int value="239" label="GoogleAccountsEvent.getContinueUrl"/>
   <int value="240" label="GoogleAccountsEvent.isOutermostMainFrame"/>
+  <int value="241" label="GoogleAccountsEvent.isNavigationRequest"/>
+  <int value="242" label="Profile.configureIsolatedSites"/>
+  <int value="243" label="Profile.canConfigureIsolatedSites"/>
 <!-- LINT.ThenChange(/android_webview/support_library/java/src/org/chromium/support_lib_glue/SupportLibWebViewChromiumFactory.java:ApiCall) -->
 
 </enum>
@@ -1760,12 +1799,6 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="App is minimized and current tab is closed"/>
 </enum>
 
-<enum name="MissingDeviceLockDialogEvent">
-  <int value="0" label="Dialog shown"/>
-  <int value="1" label="Continue without a device lock"/>
-  <int value="2" label="Device lock restored"/>
-</enum>
-
 <enum name="MissingNavbarInsetsReason">
   <int value="0" label="Other"/>
   <int value="1" label="InMultiWindow"/>
@@ -2091,6 +2124,7 @@ chromium-metrics-reviews@google.com.
   <int value="6" label="SETTINGS_ACTIVITY"/>
   <int value="7" label="BOOKMARK_ACTIVITY"/>
   <int value="8" label="FUSEBOX_POPUP"/>
+  <int value="9" label="FIRST_RUN_ACTIVITY"/>
 </enum>
 
 <!-- LINT.ThenChange(//components/browser_ui/widget/android/java/src/org/chromium/components/browser_ui/widget/scrim/ScrimManager.java:ScrimClient) -->
@@ -3293,6 +3327,8 @@ chromium-metrics-reviews@google.com.
   <int value="146" label="webViewInstanceAddJavaScriptOnEvent"/>
   <int value="147" label="webViewInstanceGetJavaScriptWorld"/>
   <int value="148" label="webViewInstanceGetProfile"/>
+  <int value="149" label="profileConfigureIsolatedSites"/>
+  <int value="150" label="profileCanConfigureIsolatedSites"/>
 </enum>
 
 <!-- LINT.ThenChange(//base/tracing/protos/chrome_track_event.proto:WebViewStartup,//android_webview/java/src/org/chromium/android_webview/StartupCallSite.java:StartupCallSite) -->

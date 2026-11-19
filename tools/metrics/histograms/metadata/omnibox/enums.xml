@@ -112,11 +112,6 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Non-null"/>
 </enum>
 
-<enum name="BooleanOffered">
-  <int value="0" label="Not offered"/>
-  <int value="1" label="Offered"/>
-</enum>
-
 <enum name="BooleanOffTheRecord">
   <int value="0" label="Regular"/>
   <int value="1" label="Off the record"/>
@@ -256,6 +251,20 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/FuseboxMetrics.java:FuseboxAttachmentButtonType,//ios/chrome/browser/composebox/shared/metrics/composebox_metrics_constants.h:FuseboxAttachmentButtonType) -->
 
+<!-- LINT.IfChange(FuseboxAttachmentReadResult) -->
+
+<enum name="FuseboxAttachmentReadResult">
+  <int value="0" label="Success"/>
+  <int value="1" label="Success after retry"/>
+  <int value="2" label="Empty (no stream or zero bytes)"/>
+  <int value="3" label="Short read (fewer bytes than provider-reported size)"/>
+  <int value="4" label="IOException while reading"/>
+  <int value="5" label="OutOfMemoryError while reading"/>
+  <int value="6" label="Bytes read but not decodable by platform decoder"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/FuseboxMetrics.java:FuseboxAttachmentReadResult) -->
+
 <!-- LINT.IfChange(FuseboxAttachmentSizeLimitCheck) -->
 
 <enum name="FuseboxAttachmentSizeLimitCheck">
@@ -266,6 +275,24 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/FuseboxMetrics.java:FuseboxAttachmentSizeLimitCheck) -->
+
+<!-- LINT.IfChange(FuseboxSniffedImageFormat) -->
+
+<enum name="FuseboxSniffedImageFormat">
+  <int value="0" label="Unknown / unrecognised signature"/>
+  <int value="1" label="JPEG"/>
+  <int value="2" label="PNG"/>
+  <int value="3" label="GIF"/>
+  <int value="4" label="WebP"/>
+  <int value="5" label="BMP"/>
+  <int value="6" label="ICO / CUR"/>
+  <int value="7" label="AVIF"/>
+  <int value="8" label="HEIF / HEIC"/>
+  <int value="9" label="TIFF (incl. DNG)"/>
+  <int value="10" label="JPEG XL"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/ImageFormatSniffer.java:FuseboxSniffedImageFormat) -->
 
 <!-- LINT.IfChange(FuseboxTabAttachStartFailureReason) -->
 
@@ -443,14 +470,20 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(//components/omnibox/browser/geolocation_header_service.h:OmniboxInlineLocationSuggestionShown) -->
 
-<enum name="OmniboxInputType">
-  <int value="0" label="empty"/>
-  <int value="1" label="unknown"/>
-  <int value="2" label="deprecated: requested url"/>
-  <int value="3" label="url"/>
-  <int value="4" label="query"/>
-  <int value="5" label="forced query"/>
+<!-- LINT.IfChange(OmniboxInputSource) -->
+
+<enum name="OmniboxInputSource">
+  <int value="0" label="Unspecified"/>
+  <int value="1" label="Gallery"/>
+  <int value="2" label="Camera"/>
+  <int value="3" label="FilePicker"/>
+  <int value="4" label="Drive"/>
+  <int value="5" label="TabPicker"/>
+  <int value="6" label="Voice"/>
+  <int value="7" label="SearchLive"/>
 </enum>
+
+<!-- LINT.ThenChange(//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/FuseboxMetrics.java:InputSource) -->
 
 <!-- LINT.IfChange(OmniboxModelMode) -->
 
@@ -463,6 +496,16 @@ chromium-metrics-reviews@google.com.
   <int value="5" label="GeminiFlashLatest"/>
   <int value="6" label="GeminiProLatest"/>
   <int value="7" label="GeminiPreview"/>
+  <int value="8" label="AimModelAlfa"/>
+  <int value="9" label="AimModelBravo"/>
+  <int value="10" label="AimModelCharlie"/>
+  <int value="11" label="AimModelDelta"/>
+  <int value="12" label="AimModelEcho"/>
+  <int value="13" label="AimModelFoxtrot"/>
+  <int value="14" label="AimModelGolf"/>
+  <int value="15" label="AimModelHotel"/>
+  <int value="16" label="AimModelIndia"/>
+  <int value="17" label="AimModelJuliett"/>
 </enum>
 
 <!-- LINT.ThenChange(//components/omnibox/common/omnibox_metrics_utils.cc:ModelMode,//chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/fusebox/FuseboxMetrics.java:ModelMode) -->
@@ -795,6 +838,35 @@ chromium-metrics-reviews@google.com.
 </enum>
 
 <!-- TODO(b/501544449): Remove NewTabPageVoiceAction and NewTabPageVoiceError in tools/metrics/histograms/metadata/new_tab_page/enums.xml. -->
+
+<enum name="VoicePlateEligibility">
+  <summary>
+    Eligibility of a voice search request to use the Google app Voice Plate.
+  </summary>
+  <int value="0" label="Eligible"/>
+  <int value="1" label="No profile"/>
+  <int value="2" label="Incognito profile"/>
+  <int value="3" label="Non-Google default search engine"/>
+  <int value="4" label="AGSA not installed"/>
+  <int value="5" label="AGSA version below minimum"/>
+  <int value="6" label="Service previously refused"/>
+  <int value="7" label="AGSA invalid package"/>
+</enum>
+
+<enum name="VoicePlateResult">
+  <summary>Outcome returned by the Google app Voice Plate activity.</summary>
+  <int value="0" label="Success (auto-endpointed)"/>
+  <int value="1" label="Aborted: User canceled"/>
+  <int value="2" label="Aborted: Navigated away"/>
+  <int value="3" label="Aborted: Permission denied"/>
+  <int value="4" label="Refused: Account consent declined"/>
+  <int value="5" label="Refused: Account mismatch"/>
+  <int value="6" label="Refused: Error"/>
+  <int value="7" label="Refused: Other or missing reason"/>
+  <int value="8" label="Success (submitted)"/>
+  <int value="9" label="Success (stopped)"/>
+  <int value="10" label="Aborted: Stopped with empty transcript"/>
+</enum>
 
 <!-- LINT.IfChange(VoiceSearchAction) -->
 

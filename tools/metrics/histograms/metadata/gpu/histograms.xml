@@ -142,7 +142,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ConfigureDisplays.Internal.Modeset.AttemptSucceeded"
-    enum="BooleanSuccess" expires_after="2027-01-21">
+    enum="BooleanSuccess" expires_after="2027-04-25">
   <owner>gildekel@chromium.org</owner>
   <owner>chromeos-gfx-display@chromium.org</owner>
   <summary>
@@ -473,13 +473,17 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.BlocklistFeatureTestResults.{GPUBlocklistPerFeature}"
-    enum="GPUBlocklistFeatureTestResults" expires_after="2026-09-27">
+    enum="GPUBlocklistFeatureTestResults" expires_after="2028-04-27">
   <owner>vmiura@chromium.org</owner>
   <owner>kylechar@chromium.org</owner>
+  <owner>arthursonzogni@chromium.org</owner>
+  <owner>cwallez@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
-    Counts number of browser invocations for which a GPU feature is
-    allowed/blocklisted/disabled.
+    Status of {GPUBlocklistPerFeature}. Recorded once per feature after each GPU
+    process launch (including relaunches) or fallback to software compositing.
+    See gpu::ComputeGpuFeatureInfo() and UpdateFeatureStats() in
+    content/browser/gpu/gpu_data_manager_impl_private.cc for bucket precedence.
   </summary>
   <token key="GPUBlocklistPerFeature">
     <variant name="Accelerated2dCanvas" summary="Accelerated2dCanvas"/>
@@ -522,18 +526,6 @@ chromium-metrics-reviews@google.com.
     Records the SharedImageBackingType to which data is copied during content
     synchronization within CompoundImageBacking. This helps identify the
     destination of data in copy operations.
-  </summary>
-</histogram>
-
-<histogram name="GPU.CompoundImageBacking.ContentSync.InitialSharedImageUsage"
-    units="SharedImageUsage" expires_after="2027-04-11">
-  <owner>vikassoni@chromium.org</owner>
-  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
-  <summary>
-    Records the initial SharedImageUsage of the CompoundImageBacking when a
-    content synchronization (copy) occurs. This helps identify if specific
-    initial usage configurations are prone to excessive copying. Recorded as a
-    sparse histogram of the usage bitmask.
   </summary>
 </histogram>
 
@@ -581,6 +573,48 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="GPU.CompoundImageBacking.ContentSync.{CopyType}.CopyInfo"
+    units="encoded_copy_info" expires_after="2027-04-11">
+  <owner>vikassoni@chromium.org</owner>
+  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
+  <summary>
+    Records the combined source backing type, destination backing type, and
+    triggering access stream for a {CopyType} content synchronization (copy)
+    operation within CompoundImageBacking. Recorded as a sparse histogram of the
+    decimal value `src_type * 10000 + dst_type * 100 + stream` (`SSDDAA`), where
+    `SS` and `DD` are `SharedImageBackingType` values and `AA` is the
+    `SharedImageAccessStream` value.
+  </summary>
+  <token key="CopyType">
+    <variant name="Dynamic"
+        summary="copy where the source and/or destination backing was
+                 dynamically allocated"/>
+    <variant name="Static"
+        summary="copy solely between initial static or lazily created
+                 backings"/>
+  </token>
+</histogram>
+
+<histogram
+    name="GPU.CompoundImageBacking.ContentSync.{CopyType}.InitialSharedImageUsage"
+    units="SharedImageUsage" expires_after="2027-04-11">
+  <owner>vikassoni@chromium.org</owner>
+  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
+  <summary>
+    Records the initial SharedImageUsage of the CompoundImageBacking when a
+    {CopyType} content synchronization (copy) occurs. Recorded as a sparse
+    histogram of the usage bitmask.
+  </summary>
+  <token key="CopyType">
+    <variant name="Dynamic"
+        summary="copy where the source and/or destination backing was
+                 dynamically allocated"/>
+    <variant name="Static"
+        summary="copy solely between initial static or lazily created
+                 backings"/>
+  </token>
+</histogram>
+
 <histogram name="GPU.CompoundImageBacking.DynamicAllocation.AccessStream"
     enum="SharedImageAccessStream" expires_after="2027-04-11">
   <owner>vikassoni@chromium.org</owner>
@@ -604,6 +638,30 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram
+    name="GPU.CompoundImageBacking.DynamicAllocation.HasSharedMemoryBacking"
+    enum="Boolean" expires_after="2027-04-11">
+  <owner>vikassoni@chromium.org</owner>
+  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
+  <summary>
+    Records whether the CompoundImageBacking was created with a shared memory
+    backing when a dynamic backing allocation occurs.
+  </summary>
+</histogram>
+
+<histogram
+    name="GPU.CompoundImageBacking.DynamicAllocation.IncompatibleExistingBackingType"
+    enum="SharedImageBackingType" expires_after="2027-04-11">
+  <owner>vikassoni@chromium.org</owner>
+  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
+  <summary>
+    Records the SharedImageBackingType of the existing element in
+    CompoundImageBacking that was incompatible with the requested access stream
+    and parameters (returned false from SupportsAccess), triggering a dynamic
+    backing allocation.
+  </summary>
+</histogram>
+
+<histogram
     name="GPU.CompoundImageBacking.DynamicAllocation.InitialSharedImageUsage"
     units="SharedImageUsage" expires_after="2027-04-11">
   <owner>vikassoni@chromium.org</owner>
@@ -613,6 +671,28 @@ chromium-metrics-reviews@google.com.
     dynamic allocation occurs. This helps identify which initial usage
     configurations are most likely to require additional backings later.
     Recorded as a sparse histogram of the usage bitmask.
+  </summary>
+</histogram>
+
+<histogram name="GPU.CompoundImageBacking.DynamicAllocation.IsTransientBacking"
+    enum="Boolean" expires_after="2027-04-11">
+  <owner>vikassoni@chromium.org</owner>
+  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
+  <summary>
+    Records whether a dynamically allocated backing in CompoundImageBacking is
+    transient (owned by the representation and destroyed after access) or
+    retained permanently in the compound backing's elements list.
+  </summary>
+</histogram>
+
+<histogram name="GPU.CompoundImageBacking.DynamicAllocation.Success"
+    enum="BooleanSuccess" expires_after="2027-04-11">
+  <owner>vikassoni@chromium.org</owner>
+  <owner>chrome-gpu-metric-alerts@chromium.org</owner>
+  <summary>
+    Records whether dynamic backing allocation succeeded when
+    CompoundImageBacking attempted to allocate a new backing for an access
+    stream not supported by existing elements.
   </summary>
 </histogram>
 
@@ -701,7 +781,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.D3D12FeatureLevel" enum="D3D12FeatureLevel"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>magchen@chromium.org</owner>
   <owner>zmo@chromium.org</owner>
   <summary>
@@ -758,7 +838,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.DirectComposition.CommitAndClearPendingOverlaysDuration"
-    units="microseconds" expires_after="2027-02-28">
+    units="microseconds" expires_after="2027-05-02">
   <owner>vasilyt@chromium.org</owner>
   <owner>tangm@microsoft.com</owner>
   <summary>
@@ -821,7 +901,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.DirectComposition.DCompCommitDuration"
-    units="microseconds" expires_after="2027-02-28">
+    units="microseconds" expires_after="2027-05-02">
   <owner>vasilyt@chromium.org</owner>
   <owner>tangm@microsoft.com</owner>
   <summary>
@@ -1374,7 +1454,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Gpu.GraphiteSharedContext.LockAcquireTimeUs"
-    units="microseconds" expires_after="2027-02-28">
+    units="microseconds" expires_after="2027-05-02">
   <owner>magchen@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1387,7 +1467,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Gpu.GraphiteSharedContext.LockAcquireTimeUs.LockedThreadInInsertRecording"
-    units="microseconds" expires_after="2027-02-28">
+    units="microseconds" expires_after="2027-05-02">
   <owner>magchen@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1401,7 +1481,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Gpu.GraphiteSharedContext.LockAcquireTimeUs.LockedThreadInSubmit"
-    units="microseconds" expires_after="2027-02-28">
+    units="microseconds" expires_after="2027-05-02">
   <owner>magchen@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <improvement direction="LOWER_IS_BETTER"/>
@@ -1623,7 +1703,7 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="GPU.Output.HDR" enum="Boolean" expires_after="2027-02-28">
+<histogram name="GPU.Output.HDR" enum="Boolean" expires_after="2027-05-02">
   <owner>hubbe@chromium.org</owner>
   <owner>cassew@chromium.org</owner>
   <owner>media-dev-uma@chromium.org</owner>
@@ -1660,7 +1740,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.PaintOpReader.DeserializationError"
-    enum="PaintOpDeserializationError" expires_after="2027-02-22">
+    enum="PaintOpDeserializationError" expires_after="2027-04-25">
   <owner>jonross@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
@@ -1672,7 +1752,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.PersistentCache.StaleCacheDeleted" enum="Boolean"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>geofflang@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <owner>mdb.webgpu-dev-team@google.com</owner>
@@ -1683,7 +1763,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.PersistentCache.{GpuPersistentCacheType}.KeySize2"
-    units="bytes" expires_after="2027-02-28">
+    units="bytes" expires_after="2027-05-02">
   <owner>geofflang@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <owner>mdb.webgpu-dev-team@google.com</owner>
@@ -1744,7 +1824,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.PersistentCache.{GpuPersistentCacheType}.ValueSize2"
-    units="bytes" expires_after="2027-02-28">
+    units="bytes" expires_after="2027-05-02">
   <owner>geofflang@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <owner>mdb.webgpu-dev-team@google.com</owner>
@@ -1854,7 +1934,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.RequestAdapterStatus.WebGPU"
-    enum="WebGPURequestAdapterStatus" expires_after="2027-01-17">
+    enum="WebGPURequestAdapterStatus" expires_after="2027-04-25">
   <owner>olivierli@chromium.org</owner>
   <owner>fdoray@chromium.org</owner>
   <summary>
@@ -1862,7 +1942,10 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="GPU.Sandboxed" enum="Boolean" expires_after="2027-04-04">
+<histogram name="GPU.Sandboxed" enum="Boolean" expires_after="never">
+<!-- expires-never: Needed to measure how often the GPU process sandbox fails
+     to engage across the ecosystem when making sandbox decisions. -->
+
   <owner>akhna@google.com</owner>
   <owner>chromeos-hardening@google.com</owner>
   <summary>
@@ -2046,7 +2129,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.TransferCache.EntryFound" enum="BooleanYesNo"
-    expires_after="2027-03-01">
+    expires_after="2027-05-02">
   <owner>boliu@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
@@ -2056,7 +2139,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.TransferCache.MaxHistoricalTimeSinceLastUse" units="ms"
-    expires_after="2027-03-01">
+    expires_after="2027-05-02">
   <owner>boliu@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
@@ -2066,7 +2149,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.TransferCache.ReusedTimes" units="Reuses"
-    expires_after="2027-03-01">
+    expires_after="2027-05-02">
   <owner>boliu@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
@@ -2076,7 +2159,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.TransferCache.TimeSinceLastUse" units="ms"
-    expires_after="2027-03-01">
+    expires_after="2027-05-02">
   <owner>boliu@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
@@ -2087,7 +2170,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.TransferCache.TimeSinceLastUseOnDelete" units="ms"
-    expires_after="2027-03-01">
+    expires_after="2027-05-02">
   <owner>boliu@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>
@@ -2272,7 +2355,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="GPU.{GraphiteDawnOrWebGPU}.Support" enum="WebGPUSupport"
-    expires_after="2027-02-07">
+    expires_after="2027-04-25">
   <owner>cwallez@google.com</owner>
   <owner>enga@google.com</owner>
   <owner>kainino@google.com</owner>
@@ -2434,7 +2517,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NPU.Intel.DeviceId" enum="IntelNpuDeviceId"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>reillyg@chromium.org</owner>
   <owner>src/services/webnn/OWNERS</owner>
   <summary>
@@ -2631,7 +2714,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Viz.CreateFallbackImageResult"
-    enum="CreateFallbackImageResult" expires_after="2027-02-28">
+    enum="CreateFallbackImageResult" expires_after="2027-05-02">
   <owner>kylechar@chromium.org</owner>
   <owner>chrome-gpu-metric-alerts@chromium.org</owner>
   <summary>

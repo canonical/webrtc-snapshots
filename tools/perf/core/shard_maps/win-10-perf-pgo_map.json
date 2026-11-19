@@ -67,6 +67,9 @@
                 "begin": 54,
                 "abridged": false
             },
+            "blink_perf.service_worker": {
+                "abridged": false
+            },
             "blink_perf.owp_storage": {
                 "abridged": false
             }
@@ -213,9 +216,6 @@
                 "abridged": false
             },
             "rendering.desktop.notracing": {
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             },
             "speedometer3-future": {

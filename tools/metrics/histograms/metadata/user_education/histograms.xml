@@ -46,12 +46,17 @@ chromium-metrics-reviews@google.com.
       summary="Promotion for Glic in the context menu."/>
   <variant name="GlicKeyboardShortcutNewBadge"
       summary="Glic keyboard shortcut input on settings page."/>
+  <variant name="GlicSuggestionContextMenu"
+      summary="Glic smart suggestion item in the context menu."/>
   <variant name="IndigoContextMenu"
       summary="Shown on the Try it on context menu item."/>
   <variant name="LensOverlay"
       summary="Lens Overlay entry points in app and web context menus."/>
   <variant name="NewBadgeTestFeature"
       summary="Used for testing purposes only."/>
+  <variant name="NonGroupFocus"
+      summary="Promotion for focusing on ungrouped tab(s) in the tab context
+               menu."/>
   <variant name="PasswordManualFallbackAvailable"
       summary="For passwords manual fallback; shown in the context menu."/>
   <variant name="ReadAnythingLineFocus"
@@ -67,6 +72,8 @@ chromium-metrics-reviews@google.com.
                right clicking a link."/>
   <variant name="SkillsAndExtensionsAppMenu"
       summary="Shown on the Extensions and Skills item in the app menu."/>
+  <variant name="TabGroupsFocusing"
+      summary="Promotion for focusing on a tab group in the tab context menu."/>
   <variant name="TabstripDeclutter"
       summary="Promotion for Close Unused Tabs in the app menu."/>
   <variant name="VerticalTabsNewBadge"
@@ -130,6 +137,8 @@ chromium-metrics-reviews@google.com.
   <variant name="GenerativeThemes" summary="the module for Generative Themes"/>
   <variant name="GenerativeTheming"
       summary="the module for Generative Theming"/>
+  <variant name="GlicWhatsNewLuminous"
+      summary="the module for Gemini in Chrome: Luminous"/>
   <variant name="GlitterAIFeaturesVideo"
       summary="the module for Glitter AI Features Video"/>
   <variant name="GlitterAIMode" summary="the module for Glitter AI Mode"/>

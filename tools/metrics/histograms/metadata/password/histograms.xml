@@ -162,7 +162,7 @@ chromium-metrics-reviews@google.com.
 </variants>
 
 <histogram name="KeyboardAccessory.AccessoryActionImpression"
-    enum="AccessoryAction" expires_after="2027-02-28">
+    enum="AccessoryAction" expires_after="2027-05-02">
   <owner>friedrichh@chromium.org</owner>
   <owner>ioanap@chromium.org</owner>
   <summary>
@@ -172,7 +172,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="KeyboardAccessory.AccessoryActionSelected2"
-    enum="AccessoryAction" expires_after="2027-02-28">
+    enum="AccessoryAction" expires_after="2027-05-02">
   <owner>friedrichh@chromium.org</owner>
   <owner>ioanap@chromium.org</owner>
   <summary>
@@ -324,7 +324,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordBubble.DisplayDisposition"
-    enum="PasswordBubbleDisplayDisposition" expires_after="2027-02-28">
+    enum="PasswordBubbleDisplayDisposition" expires_after="2027-05-02">
   <owner>kazinova@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -501,7 +501,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.AcceptedSaveUpdateSubmissionIndicatorEvent"
-    enum="SubmissionIndicatorEvent" expires_after="2027-02-28">
+    enum="SubmissionIndicatorEvent" expires_after="2027-05-02">
   <owner>kazinova@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -612,7 +612,7 @@ chromium-metrics-reviews@google.com.
 <histogram
     name="PasswordManager.AcknowledgeGroupedAffiliationsWarning.ConfirmationResult"
     enum="AcknowledgeGroupedCredentialSheetBridgeDismissReason"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>atsvirchkova@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -709,7 +709,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.ActorLogin.TimeToPasswordFilled" units="ms"
-    expires_after="2026-12-16">
+    expires_after="2027-12-16">
   <owner>otara@google.com</owner>
   <owner>ioanap@chromium.org</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
@@ -763,7 +763,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.AffiliationDatabase.DatabaseSize" units="KB"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>vsemeniuk@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -892,7 +892,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.ApplySyncChangesState"
-    enum="PasswordApplyIncrementalSyncChangesState" expires_after="2026-10-25">
+    enum="PasswordApplyIncrementalSyncChangesState" expires_after="2027-10-25">
   <owner>mamir@chromium.org</owner>
   <owner>mastiz@chromium.org</owner>
   <summary>
@@ -920,16 +920,6 @@ chromium-metrics-reviews@google.com.
   <summary>
     The state of the windows hello authentication. Recorded before prompting the
     OS dialog, and after result is received.
-  </summary>
-</histogram>
-
-<histogram name="PasswordManager.AutoSignin" enum="BooleanEnabled"
-    expires_after="2026-09-08">
-  <owner>mamir@chromium.org</owner>
-  <owner>chrome-password-manager-metrics-alerts@google.com</owner>
-  <summary>
-    The state of the Auto Sign-in setting in the profile. Recorded 30 seconds
-    after PasswordStore is created at most once per day for regular profiles.
   </summary>
 </histogram>
 
@@ -1212,7 +1202,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.ChangePasswordFormDetected" enum="Boolean"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>atsvirchkova@google.com</owner>
   <owner>vsemeniuk@google.com</owner>
   <summary>
@@ -1223,7 +1213,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.ChangePasswordFormDetectionTime" units="ms"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>atsvirchkova@google.com</owner>
   <owner>vsemeniuk@google.com</owner>
   <summary>
@@ -1271,7 +1261,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.ClassificationCorrectness.CurrentPassword"
-    enum="PasswordManagerClassificationCorrectness" expires_after="2027-02-28">
+    enum="PasswordManagerClassificationCorrectness" expires_after="2027-05-02">
   <owner>kazinova@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -1705,7 +1695,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.FillSuggestionsGroupedMatchAccepted"
-    enum="Boolean" expires_after="2027-02-28">
+    enum="Boolean" expires_after="2027-05-02">
   <owner>atsvirchkova@google.com</owner>
   <owner>src/components/password_manager/OWNERS</owner>
   <summary>
@@ -1850,7 +1840,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.Import.PerFile.Notes.{Type}" units="units"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>natiahlyi@google.com</owner>
   <owner>markusheintz@google.com</owner>
   <summary>
@@ -1944,17 +1934,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="PasswordManager.iOS.FormSubmission.BlockedReason"
-    enum="SubmissionBlockedReasonIOS" expires_after="2026-11-29">
-  <owner>sugoi@chromium.org</owner>
-  <owner>bling-transactions@google.com</owner>
-  <summary>
-    Records the reason why a form submission was blocked or ignored by Password
-    Manager on iOS. Recorded when the browser process decides to ignore a form
-    submission.
-  </summary>
-</histogram>
-
 <histogram name="PasswordManager.iOS.HandleFormSubmitEvent"
     enum="HandleSubmittedFormStatus" expires_after="2026-09-06">
   <owner>vincb@google.com</owner>
@@ -1975,7 +1954,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="PasswordManager.iOS.InfoBar.{Type}Duration.{Moment}"
-    units="ms" expires_after="2027-02-28">
+    units="ms" expires_after="2027-05-02">
   <owner>vincb@google.com</owner>
   <owner>eic@google.com</owner>
   <owner>bling-transactions@google.com</owner>
@@ -2097,7 +2076,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.LeakDetection.Error"
-    enum="PasswordLeakDetectionError" expires_after="2027-02-28">
+    enum="PasswordLeakDetectionError" expires_after="2027-05-02">
   <owner>vsemeniuk@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -2259,7 +2238,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.MatchedFormType"
-    enum="PasswordManagerMatchedFormType" expires_after="2027-02-28">
+    enum="PasswordManagerMatchedFormType" expires_after="2027-05-02">
   <owner>vsemeniuk@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -2323,7 +2302,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.MergeSyncData.UpdateLoginSyncError"
-    enum="PasswordUpdateLoginSyncError" expires_after="2026-11-06">
+    enum="PasswordUpdateLoginSyncError" expires_after="2027-11-06">
   <owner>mamir@chromium.org</owner>
   <owner>mastiz@chromium.org</owner>
   <summary>
@@ -2415,7 +2394,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.ParserDetectedOtpFieldWithRegex"
-    enum="Boolean" expires_after="2027-02-28">
+    enum="Boolean" expires_after="2027-05-02">
   <owner>kazinova@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -2787,7 +2766,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.PasswordChangeVerificationTime" units="ms"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>atsvirchkova@google.com</owner>
   <owner>vsemeniuk@google.com</owner>
   <summary>
@@ -3008,7 +2987,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 <histogram
     name="PasswordManager.PasswordGenerationBottomSheet.InteractionResult"
     enum="PasswordManager.PasswordGenerationBottomSheet.InteractionResult"
-    expires_after="2027-02-24">
+    expires_after="2027-04-25">
   <owner>atsvirchkova@google.com</owner>
   <owner>ioanap@chromium.org</owner>
   <summary>
@@ -3408,7 +3387,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 
 <histogram
     name="PasswordManager.PasswordStoreAndroidBackend.{Type}.{Function}.ErrorCode"
-    enum="PasswordStoreAndroidBackendError" expires_after="2027-02-28">
+    enum="PasswordStoreAndroidBackendError" expires_after="2027-05-02">
   <owner>izuzic@google.com</owner>
   <owner>ioanap@chromium.org</owner>
   <summary>
@@ -3665,7 +3644,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.PromoCard.ActionButtonClicked"
-    enum="PasswordManagerPromoCard" expires_after="2027-02-28">
+    enum="PasswordManagerPromoCard" expires_after="2027-05-02">
   <owner>vsemeniuk@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -3729,6 +3708,26 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram
+    name="PasswordManager.RemoteActorCredentialSharing.{ActorType}.Result"
+    enum="RemoteActorCredentialSharingResult" expires_after="2027-04-28">
+  <owner>derinel@google.com</owner>
+  <owner>anki-team@google.com</owner>
+  <summary>
+    Records the outcome of a Remote Actor Credential Sharing request initiated
+    by {ActorType}. Recorded when the flow finishes (either successfully or with
+    a specific failure reason).
+  </summary>
+<!-- LINT.IfChange(RemoteActorTypeVariants) -->
+
+  <token key="ActorType">
+    <variant name="Gemini" summary="Gemini"/>
+    <variant name="Search" summary="Google Search"/>
+  </token>
+<!-- LINT.ThenChange(//components/password_manager/core/browser/remote_actor/remote_actor_credential_sharing_result.cc:RemoteActorTypeVariants) -->
+
+</histogram>
+
+<histogram
     name="PasswordManager.RemoteActorCredentialSharing.{Request}.Latency"
     units="ms" expires_after="2027-04-28">
   <owner>derinel@google.com</owner>
@@ -3747,7 +3746,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.RequestVerificationAsyncResult"
-    enum="AuthenticationResultStatusWin" expires_after="2027-02-28">
+    enum="AuthenticationResultStatusWin" expires_after="2027-05-02">
   <owner>sygiet@google.com</owner>
   <owner>vsemeniuk@google.com</owner>
   <summary>
@@ -3890,17 +3889,22 @@ useful for Chirp alerts (go/crca-alerts). -->
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
     Records the outcome of the password save prompt when saving is blocked by a
-    trusted vault error. Recorded when the message times out, when the user
-    dismisses the prompt, when the user selects never save, when device lock UI
-    is canceled, when key retrieval fails or is canceled, when the tab is
-    destroyed before resolution, when a new store error occurs, or when key
-    retrieval completes and the password is saved successfully.
+    trusted vault error.
 
-    Note: When key retrieval fails or is canceled, a reprompt is shown to allow
-    the user to retry. Therefore, 'Key retrieval failed or canceled' can be
-    recorded alongside a subsequent outcome (such as reprompt dismissal, tab
-    destruction, or successful save upon retry) if the flow continues. A single
-    dismissal event never logs multiple outcomes. Logged on Android only.
+    On Android, recorded when the message times out, when the user dismisses the
+    prompt, when the user selects never save, when device lock UI is canceled,
+    when key retrieval fails or is canceled, when the tab is destroyed before
+    resolution, when a new store error occurs, or when key retrieval completes
+    and the password is saved successfully. When key retrieval fails or is
+    canceled, a reprompt is shown to allow the user to retry; therefore, 'Key
+    retrieval failed or canceled' can be recorded alongside a subsequent outcome
+    (such as reprompt dismissal, tab destruction, or successful save upon retry)
+    if the flow continues.
+
+    On desktop, pre-recovery bubble dismissals are recorded in
+    PasswordManager.SaveUIDismissalReason.TrustedVaultError, and this histogram
+    is recorded once per 'Continue' click when the pending error-resolution save
+    concludes.
   </summary>
 </histogram>
 
@@ -4034,7 +4038,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.SuggestionPopupTriggerSource"
-    enum="AutofillSuggestionTriggerSource" expires_after="2027-02-28">
+    enum="AutofillSuggestionTriggerSource" expires_after="2027-05-02">
   <owner>kazinova@google.com</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>
@@ -4093,7 +4097,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.SyncMetadataReadError2"
-    enum="PasswordSyncMetadataReadError" expires_after="2026-11-01">
+    enum="PasswordSyncMetadataReadError" expires_after="2027-11-01">
   <owner>mamir@chromium.org</owner>
   <owner>mastiz@chromium.org</owner>
   <summary>
@@ -4116,14 +4120,15 @@ useful for Chirp alerts (go/crca-alerts). -->
   </summary>
 </histogram>
 
-<histogram name="PasswordManager.TimeBetweenStoreAndServer" units="ms"
+<histogram name="PasswordManager.TimeBetweenStoreAndServer2" units="ms"
     expires_after="2027-03-07">
   <owner>kazinova@google.com</owner>
   <owner>battre@chromium.org</owner>
   <summary>
     The time between receiving saved credentials from the password store and
-    predictions from the Autofill server. Recorded each time when predictions
-    for a form are received.
+    predictions from the Autofill server. Recorded at most once per password
+    form manager. Records zero if server predictions arrive before the stored
+    credentials, or if filling proceeds without waiting for server predictions.
   </summary>
 </histogram>
 
@@ -4159,7 +4164,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.TouchToFill.Outcome"
-    enum="TouchToFill.Outcome" expires_after="2027-02-28">
+    enum="TouchToFill.Outcome" expires_after="2027-05-02">
   <owner>ioanap@chromium.org</owner>
   <owner>friedrichh@chromium.org</owner>
   <summary>
@@ -4279,7 +4284,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.UpdateUIDismissalReason"
-    enum="PasswordManagerUIDismissalReason" expires_after="2027-02-28">
+    enum="PasswordManagerUIDismissalReason" expires_after="2027-05-02">
   <owner>mamir@chromium.org</owner>
   <owner>chrome-password-manager-metrics-alerts@google.com</owner>
   <summary>Why was the update password UI (bubble or infobar) closed?</summary>
@@ -4312,7 +4317,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.UPM.{DialogType}.DownloadCsvFlowLastStep"
-    enum="DownloadCsvFlowStep" expires_after="2027-01-03">
+    enum="DownloadCsvFlowStep" expires_after="2027-04-25">
   <owner>ioanap@chromium.org</owner>
   <owner>atsvirchkova@google.com</owner>
   <summary>
@@ -4563,7 +4568,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 </histogram>
 
 <histogram name="PasswordManager.{Store}PasswordNotes.CountNotesPerCredential3"
-    units="count" expires_after="2027-03-01">
+    units="count" expires_after="2027-05-02">
   <owner>derinel@google.com</owner>
   <owner>mamir@chromium.org</owner>
   <summary>
@@ -4587,7 +4592,7 @@ useful for Chirp alerts (go/crca-alerts). -->
 
 <histogram
     name="PasswordManager.{Store}TimesPasswordUsed3.{PasswordType}{CustomPassphraseStatus}"
-    units="PasswordUses" expires_after="2027-02-28">
+    units="PasswordUses" expires_after="2027-05-02">
   <owner>kazinova@google.com</owner>
   <owner>battre@chromium.org</owner>
   <owner>mamir@chromium.org</owner>

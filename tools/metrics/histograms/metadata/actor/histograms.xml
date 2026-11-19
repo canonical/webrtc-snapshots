@@ -50,6 +50,7 @@ chromium-metrics-reviews@google.com.
 <!-- LINT.IfChange(StoppedReason) -->
 
 <variants name="StoppedReason">
+  <variant name="AbortedByPolicy" summary="Aborted by policy."/>
   <variant name="Cancelled" summary="Stopped by user."/>
   <variant name="ChromeFailure"
       summary="Some error in chrome caused the task to stop."/>
@@ -92,6 +93,7 @@ chromium-metrics-reviews@google.com.
   <variant name="MoveMouse" summary="MoveMouse"/>
   <variant name="Navigate" summary="Navigate"/>
   <variant name="OpenKnownPage" summary="Open Known Page"/>
+  <variant name="OpenUrl" summary="Open URL"/>
   <variant name="PauseMedia" summary="Pause Media"/>
   <variant name="PerformSearch" summary="Perform Search"/>
   <variant name="PlayMedia" summary="Play Media"/>
@@ -371,7 +373,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.Login.AccountTypesShown" enum="ActorLoginAccountTypes"
-    expires_after="2027-02-25">
+    expires_after="2027-05-02">
   <owner>ioanap@google.com</owner>
   <owner>otara@google.com</owner>
   <owner>web-identity-eng@google.com</owner>
@@ -431,7 +433,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.Login.GetCredentialsCompletedToAccountChosen" units="ms"
-    expires_after="2027-02-25">
+    expires_after="2027-05-02">
   <owner>ioanap@google.com</owner>
   <owner>otara@google.com</owner>
   <owner>web-identity-eng@google.com</owner>
@@ -442,7 +444,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.Login.GetCredentialsLatency" units="ms"
-    expires_after="2027-02-25">
+    expires_after="2027-05-02">
   <owner>ioanap@google.com</owner>
   <owner>otara@google.com</owner>
   <owner>web-identity-eng@google.com</owner>
@@ -454,7 +456,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.Login.NumAccountsShown" units="count"
-    expires_after="2027-02-25">
+    expires_after="2027-05-02">
   <owner>ioanap@google.com</owner>
   <owner>otara@google.com</owner>
   <owner>web-identity-eng@google.com</owner>
@@ -466,7 +468,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.Login.SelectedAccountType"
-    enum="ActorLoginSelectedAccountType" expires_after="2027-02-25">
+    enum="ActorLoginSelectedAccountType" expires_after="2027-05-02">
   <owner>ioanap@google.com</owner>
   <owner>otara@google.com</owner>
   <owner>web-identity-eng@google.com</owner>
@@ -528,7 +530,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.NavigationGating.DarkLaunchConfirmationRequestLatency"
-    units="ms" expires_after="2027-02-14">
+    units="ms" expires_after="2027-05-02">
   <owner>masnoble@google.com</owner>
   <owner>dylancutler@google.com</owner>
   <summary>
@@ -539,7 +541,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.NavigationGating.GatingDecision2" enum="GatingDecision"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>tquintanilla@google.com</owner>
   <owner>dylancutler@google.com</owner>
   <summary>
@@ -582,7 +584,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.NavigationGating.TimeElapsedForGating2" units="ms"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>dylancutler@google.com</owner>
   <owner>johannhof@google.com</owner>
   <summary>
@@ -654,7 +656,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Actor.ObservationDelay.DidNavigate" enum="Boolean"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>dtapuska@google.com</owner>
   <owner>bokan@google.com</owner>
   <owner>chrome-synapse-team@google.com</owner>
@@ -701,6 +703,9 @@ chromium-metrics-reviews@google.com.
     <variant name="WaitForFederatedLogin"/>
     <variant name="WaitForLoadCompletion"/>
     <variant name="WaitForPageStability"/>
+    <variant name="WaitForScriptTools"
+        summary="WaitForScriptTools (only recorded when the page's tools
+                 weren't ready when the state was entered)"/>
     <variant name="WaitForVisualStateUpdate"/>
   </token>
 </histogram>

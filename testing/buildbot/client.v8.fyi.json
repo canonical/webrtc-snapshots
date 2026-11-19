@@ -52,7 +52,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=validating --force-online-connection-state-for-indicator",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -176,7 +175,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=validating --force-online-connection-state-for-indicator",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -405,8 +403,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -426,7 +424,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -450,8 +447,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -485,8 +482,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -520,8 +517,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -541,7 +538,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -565,8 +561,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -601,8 +597,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -636,8 +632,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -660,8 +656,7 @@
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
-          "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality"
+          "--git-revision=${got_cr_revision}"
         ],
         "ci_only": true,
         "merge": {
@@ -682,8 +677,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -717,8 +712,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -754,8 +749,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -791,8 +786,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -831,8 +826,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -852,7 +847,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -876,8 +870,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -911,8 +905,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -946,8 +940,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -967,7 +961,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -991,8 +984,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -1027,8 +1020,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -1062,8 +1055,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -1086,8 +1079,7 @@
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
-          "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality"
+          "--git-revision=${got_cr_revision}"
         ],
         "ci_only": true,
         "merge": {
@@ -1108,8 +1100,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -1143,8 +1135,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -1179,8 +1171,8 @@
         "swarming": {
           "dimensions": {
             "display_server": "x11",
-            "gpu": "10de:2184-535.183.01",
-            "os": "Ubuntu-22.04",
+            "gpu": "10de:2184-535.183.01|10de:2184-595.104.02",
+            "os": "Ubuntu-22.04|Ubuntu-24.04",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -1243,7 +1235,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle --use-angle=metal --enable-skia-graphite",
           "--enforce-browser-version",
           "--git-revision=${got_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -1409,7 +1400,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle --use-angle=metal --enable-skia-graphite",
           "--enforce-browser-version",
           "--git-revision=${got_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -1770,7 +1760,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle --use-angle=metal --enable-skia-graphite",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -1885,7 +1874,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle --use-angle=metal --enable-skia-graphite",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -2926,8 +2914,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -2961,8 +2949,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -2982,7 +2970,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle --enable-skia-graphite",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -3006,8 +2993,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3027,7 +3014,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -3051,8 +3037,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3086,8 +3072,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3121,8 +3107,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3142,7 +3128,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle --enable-skia-graphite",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -3166,8 +3151,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3187,7 +3172,6 @@
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=passthrough --use-gl=angle",
           "--enforce-browser-version",
           "--git-revision=${got_cr_revision}",
-          "--bypass-skia-gold-functionality",
           "--dont-restore-color-profile-after-test",
           "--test-machine-name",
           "${buildername}",
@@ -3211,8 +3195,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3247,8 +3231,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3283,8 +3267,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3318,8 +3302,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3353,8 +3337,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3389,8 +3373,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,
@@ -3425,8 +3409,8 @@
         "swarming": {
           "dimensions": {
             "display_attached": "1",
-            "gpu": "10de:2184-31.0.15.4601",
-            "os": "Windows-10-19045",
+            "gpu": "10de:2184-31.0.15.4601|10de:2184-32.0.16.1074",
+            "os": "Windows-10-19045|Windows-11-26200",
             "pool": "chromium.tests.gpu"
           },
           "idempotent": false,

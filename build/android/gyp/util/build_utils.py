@@ -38,7 +38,10 @@ DIR_SOURCE_ROOT = os.path.relpath(
         ),
     )
 )
-JAVA_HOME = os.path.join(DIR_SOURCE_ROOT, 'third_party', 'jdk', 'current')
+sys.path.append(os.path.join(DIR_SOURCE_ROOT, 'build', 'android'))
+import java_home  # noqa: E402
+
+JAVA_HOME = os.path.relpath(java_home.JAVA_HOME)
 JAVA_PATH = os.path.join(JAVA_HOME, 'bin', 'java')
 JAVA_PATH_FOR_INPUTS = f'{JAVA_PATH}.chromium'
 JAVAC_PATH = os.path.join(JAVA_HOME, 'bin', 'javac')
@@ -105,22 +108,6 @@ def CheckOptions(options, parser, required=None):
     for option_name in required:
         if getattr(options, option_name) is None:
             parser.error('--%s is required' % option_name.replace('_', '-'))
-
-
-def WriteJson(obj, path, only_if_changed=False):
-    old_dump = None
-    if only_if_changed:
-        try:
-            with open(path, 'r', encoding='utf-8') as oldfile:
-                old_dump = oldfile.read()
-        except FileNotFoundError:
-            pass
-
-    new_dump = json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
-
-    if not only_if_changed or old_dump != new_dump:
-        with open(path, 'w', encoding='utf-8') as outfile:
-            outfile.write(new_dump)
 
 
 class CalledProcessError(Exception):
@@ -243,6 +230,34 @@ def CheckOutput(
     if fail_func and fail_func(child.returncode, stderr):
         raise CalledProcessError(cwd, args, stdout + stderr)
 
+    HandleCommandOutput(
+        args,
+        stdout,
+        stderr,
+        cwd=cwd,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        fail_on_output=fail_on_output,
+    )
+    return stdout
+
+
+def HandleCommandOutput(
+    args,
+    stdout,
+    stderr,
+    cwd=None,
+    print_stdout=False,
+    print_stderr=True,
+    fail_on_output=True,
+):
+    """Prints the output of a successful command, as CheckOutput() does.
+
+    Raises a CalledProcessError if fail_on_output and output was printed.
+    """
+    if not cwd:
+        cwd = os.getcwd()
+
     if print_stdout:
         sys.stdout.write(stdout)
     if print_stderr:
@@ -270,8 +285,6 @@ failure (useful when developing locally).
         sys.stderr.write(
             f'\nThe above {stream_name} output was from: {short_cmd}\n'
         )
-
-    return stdout
 
 
 def GetModifiedTime(path):

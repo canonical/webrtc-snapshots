@@ -1686,9 +1686,9 @@ Unknown properties are collapsed to zero. -->
              desktop version of the site."/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/dom_distiller/ReaderModeManager.java:DistillationResult) -->
+<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/reader_mode/ReaderModeManager.java:DistillationResult) -->
 
-<!-- LINT.IfChange(DomDistillerEntryPoint)-->
+<!-- LINT.IfChange(ReaderModeEntryPoint)-->
 
 <enum name="DomDistillerEntryPoint">
   <summary>Describes the end-state of the distillation result.</summary>
@@ -1699,7 +1699,7 @@ Unknown properties are collapsed to zero. -->
   <int value="4" label="Through the context menu"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/dom_distiller/ReaderModeManager.java:DomDistillerEntryPoint) -->
+<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/reader_mode/ReaderModeManager.java:ReaderModeEntryPoint) -->
 
 <!-- LINT.IfChange(JAWSMajorVersion)-->
 
@@ -2446,6 +2446,7 @@ Unknown properties are collapsed to zero. -->
 
 <enum name="ReadAnythingSettingsAction">
   <int value="0" label="Translate entrypoint"/>
+  <int value="1" label="Send feedback"/>
 </enum>
 
 <!-- LINT.ThenChange(//chrome/browser/resources/side_panel/read_anything/shared/metrics_browser_proxy.ts:ReadAnythingSettingsAction) -->
@@ -2521,7 +2522,7 @@ Unknown properties are collapsed to zero. -->
   <int value="6" label="The action was clicked"/>
 </enum>
 
-<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/dom_distiller/ReaderModeMetrics.java:ReaderModeContextualPageActionEvent) -->
+<!-- LINT.ThenChange(//chrome/android/java/src/org/chromium/chrome/browser/reader_mode/ReaderModeMetrics.java:ReaderModeContextualPageActionEvent) -->
 
 <!-- LINT.IfChange(ReaderModePrefsFontFamily) -->
 
@@ -2586,6 +2587,18 @@ Unknown properties are collapsed to zero. -->
 </enum>
 
 <!-- LINT.ThenChange(//components/soda/constants.h:LanguageCode) -->
+
+<!-- LINT.IfChange(SodaTfLiteDelegateStatus) -->
+
+<enum name="SodaTfLiteDelegateStatus">
+  <int value="0" label="Not delegated (delegate not requested)"/>
+  <int value="1" label="Delegate success (all TFLite sessions delegated)"/>
+  <int value="2"
+      label="Delegate fallback (at least one TFLite session on built-in
+             kernels)"/>
+</enum>
+
+<!-- LINT.ThenChange(//chrome/services/speech/speech_recognition_recognizer_impl.cc:SodaTfLiteDelegateStatus) -->
 
 <!-- LINT.IfChange(TextToSpeechEvent) -->
 

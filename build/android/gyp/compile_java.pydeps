@@ -11,8 +11,8 @@
 ../../../third_party/catapult/devil/devil/constants/exit_codes.py
 ../../action_helpers.py
 ../../gn_helpers.py
-../../print_python_deps.py
 ../../zip_helpers.py
+../java_home.py
 ../list_java_targets.py
 ../pylib/__init__.py
 ../pylib/constants/__init__.py
@@ -23,5 +23,4 @@ util/build_utils.py
 util/dep_utils.py
 util/jar_info_utils.py
 util/jar_utils.py
-util/md5_check.py
 util/server_utils.py

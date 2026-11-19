@@ -39,6 +39,12 @@ Mojo instead, a **profile** tells Fuzzilli:
     `Sources/FuzzilliCli/Profiles/`.
 2.  Register the profile in Fuzzilli's profile dictionary in
     `Sources/FuzzilliCli/Profiles/Profile.swift`
+3.  If the primary interface is new, add the `<mojom target>_fuzzilli` target
+    of its mojom to the `data_deps` of `js_in_process_fuzzer` in
+    `//chrome/test/fuzzing/BUILD.gn`. This target generates the Mojo scripts
+    page of the mojom, which loads the MojoJS bindings of the mojom and of its
+    imports. The first statement of the profile's `codePrefix` tells
+    `js_in_process_fuzzer` to load that page.
 
 ### Adding a hand-written type to `common/`
 
@@ -76,7 +82,8 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
 | `handle<data_pipe_producer>` | `jsMojoDataPipeProducerHandle` | ✅ | |
 | `handle<data_pipe_consumer>` | `jsMojoDataPipeConsumerHandle` | ✅ | |
 | `handle<shared_buffer>` | `jsMojoSharedBufferHandle` | ✅ | |
-| `handle<message_pipe>`, `handle<platform>` | – | ❌ | |
+| `handle<platform>` | `jsMojoPlatformHandle` | ✅ | Receive-only: JS cannot create one, so no generator produces it. |
+| `handle<message_pipe>` | – | ❌ | |
 
 ### User-defined types
 
@@ -121,8 +128,8 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
 *   **Nearly all builtin CodeGenerators are disabled.**
     *   Only these builtin generators are kept: `IntegerGenerator`,
         `StringGenerator`, `TernaryOperationGenerator`,
-        `PlainFunctionGenerator`, `AsyncFunctionGenerator`, `AwaitGenerator`,
-        `SubroutineReturnGenerator` and `TryCatchGenerator`.
+        `PlainFunctionGenerator`, `SubroutineReturnGenerator`, and
+        `TryCatchGenerator`.
     *   Fuzzilli would otherwise spend too much time producing random
         JavaScript code instead of fuzzing the Mojo objects provided. It would
         have access to hundreds of objects in `JavaScriptEnvironment`, making
@@ -152,12 +159,17 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
     harmless.
 *   Two generators give Fuzzilli access to the responses of asynchronous
     methods, with all awaited values sharing one scope: `MojoAwaitGenerator`
-    and `MojoAsyncFunctionGenerator`.
+    and `MojoAsyncFunctionGenerator`. The first replaces the builtin
+    `AwaitGenerator`. It allows the profile to set a custom weight for the
+    generator. The `MojoAsyncFunctionGenerator` is used instead of the
+    `AsyncFunctionGenerator`, both for setting a custom weight and for ensuring
+    that the generated function is itself awaited.
 *   All type generators have a weight of 1. These are registered so that
     `findOrGenerateType` can use them.
-*   Most array and map generators generate a container with only one element.
-    Fuzzilli's `OperationMutator` and `VariadicInputReducer` add and remove
-    inputs, so long runs produce arbitrarily long containers.
+*   Arrays and maps used in the JS side get generators that generate the
+    container with only one element. Fuzzilli's `OperationMutator` and
+    `VariadicInputReducer` add and remove inputs, so long runs produce
+    arbitrarily long containers.
 
 ##### Issues:
 
@@ -171,9 +183,6 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
     available to use at the start of the program.
 *   The response from asynchronous methods can only be used in the scope where
     it is awaited.
-*   Since the outer functions emitted by `MojoAsyncFunctionGenerator` are never
-    awaited, the microtasks inside these async functions won't run until the
-    call stack empties, such as when the program finishes executing.
 
 #### Include every common definition
 
@@ -198,6 +207,21 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
     *   `codeSuffix` closes that remote after every test case.
     *   Fuzzilli never sees or mutates the prefix and suffix.
 
+#### Waiting for async functions
+
+*   `codePrefix` declares a `mojoAsyncFunctionPromises` array.
+    `MojoAsyncFunctionGenerator` pushes the promise of every async function it
+    emits into that array.
+*   `codeSuffix` awaits every promise in the array and only then closes the
+    primary remote. `ExecJs`, used by the in-process fuzzer, awaits the promise
+    returned by the program's last statement, so the program does not finish
+    until the async functions do.
+
+##### Issues:
+
+*   Mutators and program minimization can remove the `push` call emitted by
+    `MojoAsyncFunctionGenerator`.
+
 #### `maxExecsBeforeRespawn: 50`
 
 *   Respawns are important for restoring performance when the binary starts
@@ -212,8 +236,8 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
 *   Each struct gets:
     *   an `ILType` object listing its fields,
     *   an `ObjectGroup` with the field types,
-    *   a `.constructor([...fields])` builtin registered under the struct's
-        fully qualified name.
+*   Structs that are used in the JS side also get a `.constructor([...fields])`
+    builtin registered under the struct's fully qualified name.
 *   When `generate_fuzzing` (from `enable_mojom_fuzzer`) is set, the lite
     bindings' `struct_definition.tmpl` makes constructors take the fields as
     positional arguments. Side effect: `new Foo()` now gives fields that are
@@ -226,6 +250,7 @@ Legend: ✅ supported · ⚠️ partial / approximated · ❌ not supported
     `enable_mojom_fuzzer = true` have bindings with constructors for each union
     variant that output these object literals. Fuzzilli selects a constructor
     uniformly at random when generating the union.
+*   Only unions used in the JS side get the constructor definition.
 *   Each variant is exposed as a property on the union's `ILType` and
     `ObjectGroup`, so Fuzzilli can read the value back with type information.
 #### WebIDL dictionaries

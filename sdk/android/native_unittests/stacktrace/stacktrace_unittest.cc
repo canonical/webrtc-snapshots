@@ -30,6 +30,7 @@
 #include "rtc_base/system/inline.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
+#include "test/scoped_logging_config.h"
 
 namespace webrtc {
 namespace test {
@@ -203,21 +204,17 @@ void TestStacktrace(std::unique_ptr<DeadlockInterface> deadlock_impl) {
 
 class LookoutLogSink final : public webrtc::LogSink {
  public:
-  explicit LookoutLogSink(std::string look_for)
-      : look_for_(std::move(look_for)) {}
-  void OnLogMessage(const std::string& message) override {
-    OnLogMessage(absl::string_view(message));
-  }
-  void OnLogMessage(absl::string_view message) override {
-    if (message.find(look_for_) != std::string::npos) {
-      when_found_.Set();
+  LookoutLogSink(absl::string_view look_for, webrtc::Event* when_found)
+      : look_for_(look_for), when_found_(when_found) {}
+  void OnLogMessage(const webrtc::LogLineRef& line) override {
+    if (line.message().find(look_for_) != absl::string_view::npos) {
+      when_found_->Set();
     }
   }
-  webrtc::Event& WhenFound() { return when_found_; }
 
  private:
   const std::string look_for_;
-  webrtc::Event when_found_;
+  webrtc::Event* const when_found_;
 };
 
 }  // namespace
@@ -256,8 +253,12 @@ TEST(Stacktrace, TestRtcCriticalSection) {
 
 TEST(Stacktrace, TestRtcEventDeadlockDetection) {
   // Start looking for the expected log output.
-  LookoutLogSink sink(/*look_for=*/"Probable deadlock");
-  webrtc::LogMessage::AddLogToStream(&sink, webrtc::LS_WARNING);
+  webrtc::Event when_found;
+  LoggingConfig config;
+  config.set_min_severity(webrtc::LS_WARNING);
+  config.AddSink(
+      std::make_unique<LookoutLogSink>("Probable deadlock", &when_found));
+  ScopedLoggingConfig scoped_logging(std::move(config));
 
   // Start a thread that waits for an event.
   webrtc::Event ev;
@@ -267,12 +268,11 @@ TEST(Stacktrace, TestRtcEventDeadlockDetection) {
 
   // The message should appear after 3 sec. We'll wait up to 10 sec in an
   // attempt to not be flaky.
-  EXPECT_TRUE(sink.WhenFound().Wait(TimeDelta::Seconds(10)));
+  EXPECT_TRUE(when_found.Wait(TimeDelta::Seconds(10)));
 
-  // Unblock the thread and shut it down.
+  // Unblock the thread and shut it down before restoring logging config.
   ev.Set();
   thread.Finalize();
-  webrtc::LogMessage::RemoveLogToStream(&sink);
 }
 
 }  // namespace test

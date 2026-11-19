@@ -532,10 +532,11 @@ class ServiceWorkerRequestHandler(
 )
 class BlinkPerfServiceWorker(_BlinkPerfBenchmark):
   SUBDIR = 'service_worker'
+  TAGS = _BlinkPerfBenchmark.TAGS + ['all']
 
   @classmethod
   def Name(cls):
-    return 'UNSCHEDULED_blink_perf.service_worker'
+    return 'blink_perf.service_worker'
 
   def CreateStorySet(self, options):
     path = os.path.join(BLINK_PERF_BASE_DIR, self.SUBDIR)
@@ -567,6 +568,20 @@ class BlinkPerfBase64(_BlinkPerfBenchmark):
   @classmethod
   def Name(cls):
     return 'UNSCHEDULED_blink_perf.base64'
+
+
+@benchmark.Info(
+  emails=['yyanagisawa@chromium.org'],
+  component='Blink>Encoding',
+  documentation_url='https://bit.ly/blink-perf-benchmarks',
+)
+class BlinkPerfEncoding(_BlinkPerfBenchmark):
+  SUBDIR = 'encoding'
+  TAGS = _BlinkPerfBenchmark.TAGS + ['all']
+
+  @classmethod
+  def Name(cls):
+    return 'UNSCHEDULED_blink_perf.encoding'
 
 
 @benchmark.Info(

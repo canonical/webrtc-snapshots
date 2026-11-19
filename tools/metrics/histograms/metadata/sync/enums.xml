@@ -428,7 +428,7 @@ chromium-metrics-reviews@google.com.
   <int value="100013" label="HatsSurveyMetadata"/>
   <int value="100014" label="HomePage"/>
   <int value="100015" label="HomePageIsNewTabPage"/>
-  <int value="100016" label="NtpCustomBackgroundDict"/>
+  <int value="100016" label="(obsolete) NtpCustomBackgroundDict"/>
   <int value="100017" label="LiveCaptionBubbleExpanded"/>
   <int value="100018" label="(Obsolete) LiveCaptionBubblePinned"/>
   <int value="100019" label="LiveCaptionEnabled"/>
@@ -512,7 +512,7 @@ chromium-metrics-reviews@google.com.
   <int value="100090" label="ProjectorViewerOnboardingShowCount"/>
   <int value="100091" label="ShelfAlignment"/>
   <int value="100092" label="ShelfAutoHideBehavior"/>
-  <int value="100093" label="SuggestedContentEnabled"/>
+  <int value="100093" label="(obsolete) SuggestedContentEnabled"/>
   <int value="100094" label="SyncableWallpaperInfo"/>
   <int value="100095" label="TapDraggingEnabled"/>
   <int value="100096" label="TapToClickEnabled"/>
@@ -621,7 +621,7 @@ chromium-metrics-reviews@google.com.
   <int value="100193" label="ProfileDefaultContentSettingValuesPopups"/>
   <int value="100194"
       label="ProfileDefaultContentSettingValuesWindowPlacement"/>
-  <int value="100195" label="WebauthnCablev2Pairings"/>
+  <int value="100195" label="(obsolete) WebauthnCablev2Pairings"/>
   <int value="100196" label="DynamicColorColorScheme"/>
   <int value="100197" label="DynamicColorSeedColor"/>
   <int value="100198" label="LongPressDiacritics"/>
@@ -646,10 +646,10 @@ chromium-metrics-reviews@google.com.
   <int value="100216" label="SixPackKeyInsertNotificationsRemaining"/>
   <int value="100217" label="LiveCaptionMaskOffensiveWords"/>
   <int value="100218" label="AshSessionTimeOfLastActivation"/>
-  <int value="100219" label="BrowserColorScheme"/>
-  <int value="100220" label="BrowserColorVariant"/>
-  <int value="100221" label="GrayscaleThemeEnabled"/>
-  <int value="100222" label="UserColor"/>
+  <int value="100219" label="(obsolete) BrowserColorScheme"/>
+  <int value="100220" label="(obsolete) BrowserColorVariant"/>
+  <int value="100221" label="(obsolete) GrayscaleThemeEnabled"/>
+  <int value="100222" label="(obsolete) UserColor"/>
   <int value="100223" label="(Obsolete) BlockAll3pcToggleEnabled"/>
   <int value="100224" label="(Obsolete) TrackingProtectionLevel"/>
   <int value="100225" label="UserSpeakOnMuteDetectionEnabled"/>
@@ -1634,8 +1634,8 @@ chromium-metrics-reviews@google.com.
   <int value="104" label="kNigoriInvalidPassphraseTransition"/>
   <int value="105" label="kNigoriInvalidSpecifics"/>
   <int value="106" label="kNigoriMissingKeystoreKeysDuringInitialSync"/>
-  <int value="107" label="kNigoriMissingLastTrustedVaultKeyInKeybag"/>
-  <int value="108" label="kNigoriMissingNewDefaultKeyInKeybag"/>
+  <int value="107" label="kNigoriMissingLastPrimaryKeyInKeybag"/>
+  <int value="108" label="kNigoriMissingNewPrimaryKeyInKeybag"/>
   <int value="121" label="(Obsolete) kPlusAddressAddOrUpdateProfileFailed"/>
   <int value="122" label="(Obsolete) kPlusAddressClearProfilesFailed"/>
   <int value="123" label="(Obsolete) kPlusAddressDatabaseInitFailed"/>
@@ -1836,6 +1836,8 @@ chromium-metrics-reviews@google.com.
   <int value="7" label="Don't undo: already completed or not necessary"/>
   <int value="8" label="Migrate forced"/>
   <int value="9" label="Don't migrate, auth error"/>
+  <int value="10"
+      label="Don't migrate, UndoChromeOsUseConsentLevelSignin enabled"/>
 </enum>
 
 <!-- LINT.ThenChange(/components/browser_sync/sync_to_signin_migration.cc:SyncToSigninMigrationDecision) -->
@@ -1964,18 +1966,6 @@ chromium-metrics-reviews@google.com.
 
 <!-- LINT.ThenChange(/components/sync_user_events/user_event_service_impl.cc:SyncUserEventType) -->
 
-<!-- LINT.IfChange(ThemePrefInMigration) -->
-
-<enum name="ThemePrefInMigration">
-  <int value="0" label="kBrowserColorScheme"/>
-  <int value="1" label="kUserColor"/>
-  <int value="2" label="kBrowserColorVariant"/>
-  <int value="3" label="kGrayscaleThemeEnabled"/>
-  <int value="4" label="kNtpCustomBackgroundDict"/>
-</enum>
-
-<!-- LINT.ThenChange(/chrome/browser/themes/theme_syncable_service.h:ThemePrefInMigration) -->
-
 <!-- LINT.IfChange(TriggerRefreshSource) -->
 
 <enum name="TriggerRefreshSource">
@@ -2024,6 +2014,7 @@ chromium-metrics-reviews@google.com.
   <int value="10" label="Needs client upgrade"/>
   <int value="11" label="Bookmarks limit exceeded"/>
   <int value="12" label="Device Management error"/>
+  <int value="13" label="Passkeys locked"/>
 </enum>
 
 <!-- LINT.ThenChange(/components/sync/service/sync_service.h:UserActionableError) -->

@@ -24,7 +24,6 @@ import atexit
 import datetime
 import glob
 import io
-import json
 import multiprocessing
 import os
 import shlex
@@ -35,9 +34,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib
-import urllib.error
-import urllib.request
 
 from update import (
   CDS_URL,
@@ -97,6 +93,10 @@ GIT_EXE = 'git.bat' if sys.platform.startswith('win') else 'git'
 
 # Name of the file that `WriteGitCommitInfo` writes into a git checkout.
 GIT_COMMIT_INFO_FILENAME = 'git-commit-info'
+
+# Retry policy for `GitOutputWithRetry`.
+GIT_NETWORK_MAX_TRIES = 5
+GIT_NETWORK_INITIAL_RETRY_DELAY_SECONDS = 1
 
 BUG_REPORT_URL = (
   'https://crbug.com in the Tools>LLVM component,'
@@ -235,14 +235,33 @@ def CheckoutGitRepo(name, git_url, commit, dir):
 # Git commits include timing and author metadata in their hash.
 # To ensure we get a consistent hash when applying local changes,
 # set everything to fixed values via environment variable.
+# See also `GetGitMetadataEnv` which sets the dates.
 GIT_METADATA_OVERRIDES = {
   'GIT_AUTHOR_NAME': 'Dummy Author',
   'GIT_AUTHOR_EMAIL': 'none@none.com',
-  'GIT_AUTHOR_DATE': '2099-01-01 10:10:10 -0800',
   'GIT_COMMITTER_NAME': 'Dummy Committer',
   'GIT_COMMITTER_EMAIL': 'none@none.com',
-  'GIT_COMMITTER_DATE': '2099-01-01 10:10:10 -0800',
 }
+
+
+def GetGitMetadataEnv(git_repository):
+  """Returns the env for committing local changes in `git_repository`.
+
+  The author and committer dates are set to the committer date of `HEAD`.
+  This keeps the dates fixed (see `GIT_METADATA_OVERRIDES`), and it keeps the
+  date of the checked out upstream commit after local cherry-picks.  This is
+  important, because Rust's bootstrap puts the date of `HEAD` into
+  `rustc --version`, and `#[rustversion::since(...)]` in Crubit reads it.
+  """
+  head_date = subprocess.check_output(
+    [GIT_EXE, '-C', git_repository, 'log', '-1', '--format=%cI', 'HEAD'],
+    universal_newlines=True,
+  ).strip()
+  env = os.environ.copy()
+  env.update(GIT_METADATA_OVERRIDES)
+  env['GIT_AUTHOR_DATE'] = head_date
+  env['GIT_COMMITTER_DATE'] = head_date
+  return env
 
 
 def IsGitAncestorToHead(git_repository, commit):
@@ -278,8 +297,7 @@ def GitCherryPick(
     print('Commit already an ancestor; skipping.')
     return
 
-  env = os.environ.copy()
-  env.update(GIT_METADATA_OVERRIDES)
+  env = GetGitMetadataEnv(git_repository)
   RunCommand(
     [
       'git',
@@ -299,8 +317,7 @@ def GitRevert(git_repository, commit):
   if not IsGitAncestorToHead(git_repository, commit):
     print('Commit not an ancestor; skipping.')
     return
-  env = os.environ.copy()
-  env.update(GIT_METADATA_OVERRIDES)
+  env = GetGitMetadataEnv(git_repository)
   RunCommand(
     [
       'git',
@@ -315,43 +332,71 @@ def GitRevert(git_repository, commit):
   )
 
 
-def FetchUrl(url, max_tries=5, delay_seconds=1):
-  """Fetch content from a URL. If the fetch fails, retry several times after a
-  short delay."""
-  for i in range(max_tries):
-    try:
-      with urllib.request.urlopen(url) as response:
-        return response.read()
-    except (ConnectionError, urllib.error.URLError) as e:
-      # If this was the last try or a permanent 404 client error, re-raise.
-      if i >= max_tries - 1 or (
-        isinstance(e, urllib.error.HTTPError) and e.code == 404
-      ):
-        raise e
+def GitOutputWithRetry(git_args):
+  """Returns the stdout (as `bytes`) of `git <git_args>`.
 
-      reason = getattr(e, 'reason', e)
+  Network operations against Git can fail transiently,
+  so failures are retried with exponential backoff."""
+  delay_seconds = GIT_NETWORK_INITIAL_RETRY_DELAY_SECONDS
+  for i in range(GIT_NETWORK_MAX_TRIES):
+    try:
+      return subprocess.check_output([GIT_EXE] + git_args)
+    except subprocess.CalledProcessError as e:
+      if i >= GIT_NETWORK_MAX_TRIES - 1:
+        raise e
       print(
-        f"Failed to fetch {url}: {reason} (attempt {i + 1}/{max_tries}). "
-        f"Retrying in {delay_seconds}s..."
+        f'Failed to run `git {" ".join(git_args)}` '
+        f'(attempt {i + 1}/{GIT_NETWORK_MAX_TRIES}). '
+        f'Retrying in {delay_seconds}s...'
       )
       time.sleep(delay_seconds)
       delay_seconds *= 2
 
 
-def GetLatestCommit(url):
-  """Get the latest commit hash from a git repository's JSON output. If the
-  fetch fails, retry several times after a short delay."""
-  main = json.loads(FetchUrl(url).decode("utf-8").replace(")]}'", ""))
-  return main['commit']
+def GetLatestCommit(git_url, ref='refs/heads/main'):
+  """Returns the commit hash that `ref` points to in the remote `git_url`."""
+  output = GitOutputWithRetry(['ls-remote', git_url, ref]).decode('utf-8')
+  # Each line is `<hash>\t<ref>`.  `git ls-remote` matches patterns against the
+  # tail of ref names, so compare the full name to rule out e.g.
+  # `refs/heads/foo/refs/heads/main`.
+  for line in output.splitlines():
+    commit, remote_ref = line.split('\t')
+    if remote_ref == ref:
+      return commit
+  raise RuntimeError(f'`{ref}` not found in {git_url}')
+
+
+def FetchGitFile(git_url, commit, path):
+  """Returns the contents (as `bytes`) of `path` at `commit` in the remote
+  `git_url`, without cloning the whole repository.
+
+  A shallow, blobless fetch only downloads the commit and its trees; `git show`
+  then lazily fetches the single blob for `path`."""
+  git_dir = tempfile.mkdtemp()
+  try:
+    GitOutputWithRetry(['init', '--quiet', git_dir])
+    GitOutputWithRetry(
+      [
+        '-C',
+        git_dir,
+        'fetch',
+        '--quiet',
+        '--depth=1',
+        '--filter=blob:none',
+        git_url,
+        commit,
+      ]
+    )
+    return GitOutputWithRetry(['-C', git_dir, 'show', f'{commit}:{path}'])
+  finally:
+    # `RmTree` (rather than `tempfile.TemporaryDirectory`) handles the
+    # read-only files that git creates on Windows.
+    RmTree(git_dir)
 
 
 def GetLatestLLVMCommit():
   """Get the latest commit hash in the LLVM monorepo."""
-  url = (
-    'https://chromium.googlesource.com/external/'
-    + 'github.com/llvm/llvm-project/+/refs/heads/main?format=JSON'
-  )
-  return GetLatestCommit(url)
+  return GetLatestCommit(LLVM_GIT_URL)
 
 
 def GetCommitDescription(commit):
@@ -414,14 +459,14 @@ def WriteGitCommitInfo(git_repository, commit, tz):
 def AddCMakeToPath():
   """Download CMake and add it to PATH."""
   if sys.platform == 'win32':
-    zip_name = 'cmake-3.26.4-windows-x86_64.zip'
-    dir_name = ['cmake-3.26.4-windows-x86_64', 'bin']
+    zip_name = 'cmake-3.31.12-windows-x86_64.zip'
+    dir_name = ['cmake-3.31.12-windows-x86_64', 'bin']
   elif sys.platform == 'darwin':
-    zip_name = 'cmake-3.26.4-macos-universal.tar.gz'
-    dir_name = ['cmake-3.26.4-macos-universal', 'CMake.app', 'Contents', 'bin']
+    zip_name = 'cmake-3.31.12-macos-universal.tar.gz'
+    dir_name = ['cmake-3.31.12-macos-universal', 'CMake.app', 'Contents', 'bin']
   else:
-    zip_name = 'cmake-3.26.4-linux-x86_64.tar.gz'
-    dir_name = ['cmake-3.26.4-linux-x86_64', 'bin']
+    zip_name = 'cmake-3.31.12-linux-x86_64.tar.gz'
+    dir_name = ['cmake-3.31.12-linux-x86_64', 'bin']
 
   cmake_dir = os.path.join(LLVM_BUILD_TOOLS_DIR, *dir_name)
   if not os.path.exists(cmake_dir):
@@ -1123,10 +1168,9 @@ def main():
       )
       # Record the revision that we checked out, so that builds from a source
       # tarball (which has no `.git` directory) can still read it.  We use
-      # `checkout_revision` rather than `HEAD`, because the cherry-picks below
-      # (if any) commit with a dummy date (see `GIT_METADATA_OVERRIDES`).  The
-      # date has to be UTC, because that is what Crubit expects (see
-      # `crubit/cargo/build/get_llvm_commit_date.py`).
+      # `checkout_revision` rather than `HEAD`, because `HEAD` may be one of
+      # the local cherry-picks below.  The date has to be UTC, because that is
+      # what Crubit expects (see `crubit/cargo/build/get_llvm_commit_date.py`).
       WriteGitCommitInfo(LLVM_DIR, checkout_revision, tz=datetime.timezone.utc)
       # TODO(crbug.com/549080734): remove once we roll past this revision
       GitCherryPick(LLVM_DIR, '061865f32607cd064ab944407cc863186702d6f1')
@@ -1774,9 +1818,16 @@ def main():
         'SANITIZER_MIN_OSX_VERSION=' + deployment_target,
         'COMPILER_RT_ENABLE_MACCATALYST=ON',
         'COMPILER_RT_ENABLE_IOS=ON',
-        'COMPILER_RT_ENABLE_WATCHOS=ON',
-        'COMPILER_RT_ENABLE_TVOS=ON',
-        'COMPILER_RT_ENABLE_XROS=ON',
+        # Only builtin libraries are packaged for watchOS, tvOS, and visionOS;
+        # pass them via BUILTINS_CMAKE_ARGS so runtimes skips their sanitizers.
+        'BUILTINS_CMAKE_ARGS='
+        + ';'.join(
+          [
+            '-DCOMPILER_RT_ENABLE_WATCHOS=ON',
+            '-DCOMPILER_RT_ENABLE_TVOS=ON',
+            '-DCOMPILER_RT_ENABLE_XROS=ON',
+          ]
+        ),
         'DARWIN_ios_ARCHS=arm64',
         'DARWIN_iossim_ARCHS=arm64;x86_64',
         'DARWIN_osx_ARCHS=arm64;x86_64',

@@ -123,7 +123,6 @@ if (is_android) {
       ":native_api_jni",
       ":video_egl_jni",
       "../../rtc_base:checks",
-      "../../rtc_base:logging",
       "../../rtc_base:ssl_adapter",
       "//third_party/jni_zero",
     ]
@@ -575,7 +574,8 @@ if (is_android) {
     deps = [
       ":base_java",
       ":dav1d_java",
-      ":generated_swcodecs_jni_java",
+      ":generated_software_video_decoder_factory_jni_java",
+      ":generated_software_video_encoder_factory_jni_java",
       ":libvpx_vp8_java",
       ":libvpx_vp9_java",
       ":video_api_java",
@@ -1016,28 +1016,55 @@ if (current_os == "linux" || is_android) {
     ]
   }
 
+  rtc_library("software_video_decoder_factory_jni") {
+    visibility = [ "*" ]
+    allow_poison = [
+      "software_video_codecs",
+      "environment_construction",
+    ]
+    sources = [ "src/jni/software_video_decoder_factory.cc" ]
+    deps = [
+      ":base_jni",
+      ":generated_software_video_decoder_factory_jni",
+      ":native_api_jni",
+      ":video_jni",
+      "../../api/environment",
+      "../../api/video_codecs:builtin_video_decoder_factory",
+      "../../api/video_codecs:video_codecs_api",
+      "//third_party/jni_zero",
+    ]
+  }
+
+  rtc_library("software_video_encoder_factory_jni") {
+    visibility = [ "*" ]
+    allow_poison = [
+      "software_video_codecs",
+      "environment_construction",
+    ]
+    sources = [ "src/jni/software_video_encoder_factory.cc" ]
+    deps = [
+      ":base_jni",
+      ":generated_software_video_encoder_factory_jni",
+      ":native_api_jni",
+      ":video_jni",
+      "../../api/environment",
+      "../../api/video_codecs:builtin_video_encoder_factory",
+      "../../api/video_codecs:video_codecs_api",
+      "//third_party/jni_zero",
+    ]
+  }
+
   rtc_library("swcodecs_jni") {
     visibility = [ "*" ]
     allow_poison = [
       "software_video_codecs",
       "environment_construction",
     ]
-    sources = [
-      "src/jni/software_video_decoder_factory.cc",
-      "src/jni/software_video_encoder_factory.cc",
-    ]
     deps = [
-      ":base_jni",
-      ":generated_swcodecs_jni",
       ":libvpx_vp8_jni",
       ":libvpx_vp9_jni",
-      ":native_api_jni",
-      ":video_jni",
-      "../../api/environment",
-      "../../api/video_codecs:builtin_video_decoder_factory",
-      "../../api/video_codecs:builtin_video_encoder_factory",
-      "../../api/video_codecs:video_codecs_api",
-      "//third_party/jni_zero",
+      ":software_video_decoder_factory_jni",
+      ":software_video_encoder_factory_jni",
     ]
   }
 
@@ -1525,12 +1552,13 @@ if (current_os == "linux" || is_android) {
     namespace = "webrtc::jni"
   }
 
-  generate_jni("generated_swcodecs_jni") {
-    sources = [
-      "api/org/webrtc/SoftwareVideoDecoderFactory.java",
-      "api/org/webrtc/SoftwareVideoEncoderFactory.java",
-    ]
+  generate_jni("generated_software_video_decoder_factory_jni") {
+    sources = [ "api/org/webrtc/SoftwareVideoDecoderFactory.java" ]
+    namespace = "webrtc::jni"
+  }
 
+  generate_jni("generated_software_video_encoder_factory_jni") {
+    sources = [ "api/org/webrtc/SoftwareVideoEncoderFactory.java" ]
     namespace = "webrtc::jni"
   }
 
@@ -1728,7 +1756,6 @@ if (is_android) {
         ":libjingle_peerconnection_metrics_default_jni",
         ":native_api_jni",
         "../../rtc_base:checks",
-        "../../rtc_base:logging",
         "../../rtc_base:ssl_adapter",
       ]
       output_extension = "so"
@@ -1769,7 +1796,6 @@ if (is_android) {
       ":native_api_base",
       ":native_api_jni",
       "../../rtc_base:checks",
-      "../../rtc_base:logging",
       "//third_party/jni_zero",
     ]
   }
@@ -1827,14 +1853,17 @@ if (is_android) {
         ":native_api_jni",
         ":video_jni",
         "../../api:make_ref_counted",
+        "../../api:scoped_refptr",
         "../../api/environment",
         "../../api/environment:environment_factory",
         "../../api/video:video_frame",
+        "../../api/video:video_rtp_headers",
         "../../api/video_codecs:video_codecs_api",
         "../../media:media_constants",
         "../../modules/video_coding:video_codec_interface",
         "../../test:create_test_environment",
         "../../test:test_support",
+        "//third_party/jni_zero",
       ]
     }
 
@@ -1887,6 +1916,7 @@ if (is_android) {
         "../../rtc_base:threading",
         "../../rtc_base/synchronization:mutex",
         "../../rtc_base/system:inline",
+        "../../test:scoped_logging_config",
         "../../test:test_support",
         "//third_party/abseil-cpp/absl/strings:string_view",
       ]

@@ -40,9 +40,10 @@ declare_args() {
   # The macro requires //third_party/rust for syn, quote, and proc_macro2.
   # Downstream projects that want to use //build for the rust GN templates but
   # don't want to enable the chromium prelude can disable it here, and should
-  # specify a globally unique `crate_name` in their rust library GN rules
-  # instead. Note that using a `crate_name` is strongly discouraged inside
-  # Chromium, and is also discouraged for downstream projects when possible.
+  # set a globally unique `unsafe_globally_unique_crate_name` in their rust
+  # library GN rules instead. Note that using an explicit crate name is
+  # strongly discouraged inside Chromium, and is also discouraged for
+  # downstream projects when possible.
   #
   # We do not support disabling this flag in Chromium code.
   enable_chromium_prelude = build_with_chromium
@@ -442,6 +443,10 @@ if (toolchain_for_rust_host_build_tools) {
 # compiled, which is typically as unwind.
 rust_prebuilt_stdlib =
     !use_chromium_rust_toolchain || toolchain_for_rust_host_build_tools
+
+# `rust_sysroot` is the toolchain root (and the default sysroot of rustc),
+# but the locally built stdlib uses a different sysroot.
+local_rustc_sysroot = "$root_out_dir/local_rustc_sysroot"
 
 # `cpp_api_from_rust` (aka `cc_bindings_from_rs`) is available when building
 # Chromium, but may be missing or can't be used in some other cases.

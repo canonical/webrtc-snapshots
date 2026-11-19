@@ -31,7 +31,10 @@ source_set("caspian-lib") {
     "//third_party/zlib",
     "//third_party/zlib/google:compression_utils_portable",
   ]
-  public_deps = [ "//third_party/jsoncpp" ]
+  public_deps = [
+    "//third_party/abseil-cpp:absl",
+    "//third_party/jsoncpp",
+  ]
   configs -= [ "//build/config/compiler:default_optimization" ]
   configs += [ "//build/config/compiler:optimize_speed" ]
 }
@@ -39,6 +42,7 @@ source_set("caspian-lib") {
 test("caspian_unittests") {
   sources = [
     "diff_test.cc",
+    "file_format_test.cc",
     "function_signature_test.cc",
     "grouped_path_test.cc",
     "lens_test.cc",
@@ -47,9 +51,12 @@ test("caspian_unittests") {
   deps = [
     ":caspian-lib",
     "//base",
+    "//testing/gmock",
     "//testing/gtest",
     "//testing/gtest:gtest_main",
+    "//third_party/abseil-cpp:test_support",
     "//third_party/re2",
+    "//third_party/zlib/google:compression_utils_portable",
   ]
 }
 
@@ -72,6 +79,12 @@ if (enable_caspian) {
       # enable the diagnostic by removing this line.
       configs += [ "//build/config/compiler:no_exit_time_destructors" ]
       ldflags = [
+        "-pthread",
+        "-Wno-pthreads-mem-growth",
+        "-s",
+        "MALLOC=mimalloc",
+        "-s",
+        "PTHREAD_POOL_SIZE=8",
         "-s",
         "EXPORTED_FUNCTIONS=['_BuildTree','_GetMetadata','_LoadBeforeSizeFile','_LoadSizeFile','_Open','_QueryAncestryById','_QueryProperty','_free','_malloc']",
         "-s",

@@ -42,6 +42,7 @@ public let commonMojoBuiltins: [String: ILType] = [:]
     .merging(mojoBaseMojomBuiltins) { (existing, _) in existing }
     .merging(skiaMojomBuiltins) { (existing, _) in existing }
     .merging(urlMojomBuiltins) { (existing, _) in existing }
+    .merging(webnnMojomBuiltins) { (existing, _) in existing }
 
 public let commonMojoCodeGenerators: [(CodeGenerator, Int)] = [
     (MojoAsyncFunctionGenerator, 5000),
@@ -52,16 +53,19 @@ public let commonMojoCodeGenerators: [(CodeGenerator, Int)] = [
     + mojoBaseMojomCodeGenerators
     + skiaMojomCodeGenerators
     + urlMojomCodeGenerators
+    + webnnMojomCodeGenerators
 
 public let commonMojoObjectGroups: [ObjectGroup] = []
     + mojoCoreObjectGroups
     + mojoBaseMojomObjectGroups
     + skiaMojomObjectGroups
     + urlMojomObjectGroups
+    + webnnMojomObjectGroups
 
 public let commonMojoEnumerations: [ILType] = []
     + networkMojomEnumerations
     + skiaMojomEnumerations
+    + webnnMojomEnumerations
 
 public let commonMojoOptionsBags: [OptionsBag] = []
     + mojoCoreOptionsBags
@@ -77,6 +81,10 @@ extension ILType {
 /// Generate large async functions where Fuzzilli can await Mojo calls and use
 /// the return values in interesting ways. To avoid many nested functions, the
 /// generator only emits one instruction when called in an `.async` context.
+///
+/// The promise returned by each async function is pushed to
+/// `mojoAsyncFunctionPromises`, which every profile declares in `codePrefix`
+/// and awaits in `codeSuffix`, so that the function runs to completion.
 public let MojoAsyncFunctionGenerator = CodeGenerator(
     "MojoAsyncFunctionGenerator"
 ) { b in
@@ -88,7 +96,9 @@ public let MojoAsyncFunctionGenerator = CodeGenerator(
     let asyncFunction = b.buildAsyncArrowFunction(with: .parameters(n: 0)) { _ in
         b.build(n: 40)
     }
-    b.callFunction(asyncFunction, withArgs: [])
+    let promise = b.callFunction(asyncFunction, withArgs: [])
+    let promises = b.createNamedVariable(forBuiltin: "mojoAsyncFunctionPromises")
+    b.callMethod("push", on: promises, withArgs: [promise])
 }
 
 /// Mojo copy of the builtin AwaitGenerator so that its weight can be tuned for

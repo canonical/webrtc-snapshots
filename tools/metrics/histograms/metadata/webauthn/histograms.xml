@@ -39,8 +39,34 @@ chromium-metrics-reviews@google.com.
       summary="recovery_key_store/wrap_pin_and_secret"/>
 </variants>
 
+<histogram name="WebAuthentication.Android.CredManApiCall.{Operation}"
+    enum="WebAuthenticationAndroidApiCallEvent" expires_after="2027-11-01">
+  <owner>derinel@google.com</owner>
+  <owner>kenrb@chromium.org</owner>
+  <owner>chrome-webauthn@google.com</owner>
+  <summary>
+    Records the lifecycle (Started and terminal outcome: Succeeded, Cancelled,
+    TimedOut, or Failed) of {Operation} on Android. Comparing Started against
+    the sum of terminal outcomes surfaces silent hangs or wedged calls.
+    CredentialManager calls never record TimedOut. If Chrome cancels the
+    WebAuthn request (including the immediate mediation timeout) while a call is
+    pending, Cancelled is recorded only once the platform reports back, so a
+    call that never completes remains Started only. GetCredential
+    TYPE_NO_CREDENTIAL errors are recorded as Failed. Succeeded means the
+    platform returned a result, even if Chrome later fails to process it.
+  </summary>
+  <token key="Operation">
+    <variant name="CreateCredential"
+        summary="Android CredentialManager.createCredential calls"/>
+    <variant name="GetCredential"
+        summary="Android CredentialManager.getCredential calls"/>
+    <variant name="PrepareGetCredential"
+        summary="Android CredentialManager.prepareGetCredential calls"/>
+  </token>
+</histogram>
+
 <histogram name="WebAuthentication.Android.CredManAvailability" enum="Boolean"
-    expires_after="2026-12-31">
+    expires_after="2027-11-01">
   <owner>derinel@google.com</owner>
   <owner>kenrb@chromium.org</owner>
   <summary>
@@ -89,13 +115,53 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WebAuthentication.Android.CredManPrepareRequestDuration"
-    units="ms" expires_after="2026-11-15">
+    units="ms" expires_after="2027-11-01">
   <owner>derinel@google.com</owner>
   <owner>kenrb@chromium.org</owner>
   <summary>
     Records the duration of Android Credential Management prepareGetCredential
     API.
   </summary>
+</histogram>
+
+<histogram name="WebAuthentication.Android.GmsCoreApiCall.{Operation}"
+    enum="WebAuthenticationAndroidApiCallEvent" expires_after="2027-11-01">
+  <owner>derinel@google.com</owner>
+  <owner>kenrb@chromium.org</owner>
+  <owner>chrome-webauthn@google.com</owner>
+  <summary>
+    Records the lifecycle (Started and terminal outcome: Succeeded, Cancelled,
+    TimedOut, or Failed) of {Operation} on Android. Comparing Started against
+    the sum of terminal outcomes surfaces silent hangs or wedged calls.
+  </summary>
+  <token key="Operation">
+    <variant name="AppIsUvpaa"
+        summary="GMSCore IFido2AppService UVPAA Binder calls"/>
+    <variant name="AppRegister"
+        summary="GMSCore IFido2AppService register Binder calls"/>
+    <variant name="AppSign"
+        summary="GMSCore IFido2AppService sign Binder calls"/>
+    <variant name="BrowserGetCredentials"
+        summary="GMSCore IFido2PrivilegedService getCredentialList calls"/>
+    <variant name="BrowserHybridSign"
+        summary="GMSCore IFido2PrivilegedService hybrid sign Binder calls"/>
+    <variant name="BrowserIsUvpaa"
+        summary="GMSCore IFido2PrivilegedService UVPAA Binder calls"/>
+    <variant name="BrowserRegister"
+        summary="GMSCore IFido2PrivilegedService register Binder calls"/>
+    <variant name="BrowserSign"
+        summary="GMSCore IFido2PrivilegedService sign Binder calls"/>
+    <variant name="FirstPartyGetLinkInfo"
+        summary="GMSCore IFido2FirstPartyService getLinkInfo Binder calls"/>
+    <variant name="HybridSignPendingIntent"
+        summary="GMSCore FIDO2 hybrid sign PendingIntent UI sessions"/>
+    <variant name="PersistentListPasskeysForRp"
+        summary="GMSCore IFidoPersistentService listPasskeysForRp calls"/>
+    <variant name="RegisterPendingIntent"
+        summary="GMSCore FIDO2 register PendingIntent UI sessions"/>
+    <variant name="SignPendingIntent"
+        summary="GMSCore FIDO2 sign PendingIntent UI sessions"/>
+  </token>
 </histogram>
 
 <histogram name="WebAuthentication.Android.GmsCoreGetCredentialsResult"
@@ -118,6 +184,25 @@ chromium-metrics-reviews@google.com.
     the credential metadata cache is not in use, then this records the reason
     why the cache is not being used.
   </summary>
+</histogram>
+
+<histogram
+    name="WebAuthentication.Android.IdentityCredentialsApiCall.{Operation}"
+    enum="WebAuthenticationAndroidApiCallEvent" expires_after="2027-11-01">
+  <owner>derinel@google.com</owner>
+  <owner>kenrb@chromium.org</owner>
+  <owner>chrome-webauthn@google.com</owner>
+  <summary>
+    Records the lifecycle (Started and terminal outcome: Succeeded, Cancelled,
+    TimedOut, or Failed) of {Operation} on Android. Comparing Started against
+    the sum of terminal outcomes surfaces silent hangs or wedged calls.
+  </summary>
+  <token key="Operation">
+    <variant name="CreateCredential"
+        summary="IdentityCredentialClient.createCredential calls"/>
+    <variant name="SignalCredentialState"
+        summary="IdentityCredentialClient.signalCredentialState calls"/>
+  </token>
 </histogram>
 
 <histogram name="WebAuthentication.Android.NonDiscoverableCredentialsFound"
@@ -448,6 +533,19 @@ chromium-metrics-reviews@google.com.
   <summary>
     Records the net error or HTTP response code when an enclave connection
     fails.
+  </summary>
+</histogram>
+
+<histogram name="WebAuthentication.Enclave.ICloudRecoveryAccountStateUsage"
+    enum="ICloudRecoveryAccountStateUsage" expires_after="2027-08-01">
+  <owner>ammarmk@chromium.org</owner>
+  <owner>ylahodiuk@google.com</owner>
+  <summary>
+    Records whether a caller-supplied security domain state was provided to
+    EnclaveManager::RecoverWithICloudKeychain(), and if so whether it was used
+    by the state machine or discarded because the primary account changed before
+    the recovery step ran (requiring a fresh download). Recorded on macOS when
+    the state machine starts the iCloud Keychain recovery step.
   </summary>
 </histogram>
 
@@ -919,7 +1017,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WebAuthentication.PasskeyCount" units="count"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>izuzic@google.com</owner>
   <owner>ylahodiuk@google.com</owner>
   <owner>chrome-webauthn@google.com</owner>
@@ -930,7 +1028,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WebAuthentication.PasskeyReadiness" enum="Boolean"
-    expires_after="2027-02-28">
+    expires_after="2027-05-02">
   <owner>izuzic@google.com</owner>
   <owner>ylahodiuk@google.com</owner>
   <owner>chrome-webauthn@google.com</owner>
@@ -976,7 +1074,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WebAuthentication.SignalCurrentUserDetailsUpdatedGPMPasskey"
-    enum="SignalCurrentUserDetailsResult" expires_after="2026-11-29">
+    enum="SignalCurrentUserDetailsResult" expires_after="2027-10-17">
   <owner>nsatragno@chromium.org</owner>
   <owner>chrome-webauthn@google.com</owner>
   <summary>
@@ -987,7 +1085,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WebAuthentication.SignalUnknownCredentialRemovedGPMPasskey"
-    enum="SignalUnknownCredentialResult" expires_after="2026-11-29">
+    enum="SignalUnknownCredentialResult" expires_after="2027-10-17">
   <owner>nsatragno@chromium.org</owner>
   <owner>chrome-webauthn@google.com</owner>
   <summary>

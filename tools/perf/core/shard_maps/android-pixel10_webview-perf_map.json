@@ -10,9 +10,6 @@
             "blink_perf.css": {
                 "end": 14,
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -34,9 +31,6 @@
             "blink_perf.layout": {
                 "end": 38,
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -46,14 +40,14 @@
                 "begin": 38,
                 "abridged": false
             },
+            "blink_perf.service_worker": {
+                "abridged": false
+            },
             "blink_perf.owp_storage": {
                 "abridged": false
             },
             "blink_perf.parser": {
                 "end": 24,
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             }
         }
@@ -81,9 +75,6 @@
             },
             "blink_perf.webgpu_compat": {
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -108,11 +99,7 @@
                 ]
             }
         },
-        "benchmarks": {
-            "speedometer3": {
-                "abridged": false
-            }
-        }
+        "benchmarks": {}
     },
     "5": {
         "crossbench": {
@@ -140,18 +127,11 @@
                 ]
             }
         },
-        "benchmarks": {
-            "speedometer3": {
-                "abridged": false
-            }
-        }
+        "benchmarks": {}
     },
     "6": {
         "benchmarks": {
             "media.mobile": {
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             }
         },
@@ -172,9 +152,6 @@
         "benchmarks": {
             "rasterize_and_record_micro.top_25": {
                 "end": 17,
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             }
         },
@@ -210,9 +187,6 @@
             "rendering.mobile": {
                 "end": 56,
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -221,9 +195,6 @@
             "rendering.mobile": {
                 "begin": 56,
                 "end": 114,
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             }
         }
@@ -234,9 +205,6 @@
                 "begin": 114,
                 "end": 174,
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -245,9 +213,6 @@
             "rendering.mobile": {
                 "begin": 174,
                 "end": 232,
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             }
         }
@@ -258,9 +223,6 @@
                 "begin": 232,
                 "end": 302,
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -269,9 +231,6 @@
             "rendering.mobile": {
                 "begin": 302,
                 "end": 347,
-                "abridged": false
-            },
-            "speedometer3": {
                 "abridged": false
             }
         }
@@ -284,17 +243,11 @@
             },
             "rendering.mobile.notracing": {
                 "abridged": false
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
     "15": {
         "benchmarks": {
-            "speedometer3": {
-                "abridged": false
-            },
             "speedometer3-future": {
                 "abridged": false
             },
@@ -332,9 +285,6 @@
                 "end": 8,
                 "abridged": false,
                 "pageset_repeat": 3
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -345,9 +295,6 @@
                 "end": 18,
                 "abridged": false,
                 "pageset_repeat": 3
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -358,9 +305,6 @@
                 "end": 28,
                 "abridged": false,
                 "pageset_repeat": 3
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },
@@ -371,9 +315,6 @@
                 "end": 46,
                 "abridged": false,
                 "pageset_repeat": 3
-            },
-            "speedometer3": {
-                "abridged": false
             }
         }
     },

@@ -43,8 +43,8 @@ TEST_TARGET_ALLOWLIST: list[str] = [
   '//chrome/test:interactive_ui_tests',
   '//chrome/test:unit_tests',
   '//clank/javatests:chrome_apk_baseline_profile_generator',
+  '//clank/javatests:chrome_bundle_smoke_test',
   '//clank/javatests:chrome_smoke_test',
-  '//clank/javatests:trichrome_chrome_google_bundle_smoke_test',
   '//components/chromeos_camera:jpeg_decode_accelerator_unittest',
   '//components/exo/wayland:wayland_client_compatibility_tests',
   '//components/exo/wayland:wayland_client_tests',
@@ -141,11 +141,13 @@ PREF_MAPPING_FILE_PATTERN: str = (
 PREF_MAPPING_FILE_NAME_GLOB: str = (
   '*components/policy/test/data/pref_mapping/*.json'
 )
-GTEST_FILE_NAME_GLOB: str = '*{test,tests}*.{cc,mm,java,rs}'
+GTEST_FILE_NAME_GLOB: str = '*{test,tests}*.{cc,mm,java,kt,rs}'
 
 # Regex version of `(PREF_MAPPING_FILE_GLOB) | (GTEST_FILE_GLOB)`
 TEST_FILE_NAME_REGEX: re.Pattern[str] = re.compile(
-  r'.*(?:tests?.*\.(?:cc|mm|rs)|Test\.java|' + PREF_MAPPING_FILE_PATTERN + ')$',
+  r'.*(?:tests?.*\.(?:cc|mm|rs)|Test\.(?:java|kt)|'
+  + PREF_MAPPING_FILE_PATTERN
+  + ')$',
   flags=re.IGNORECASE,
 )
 

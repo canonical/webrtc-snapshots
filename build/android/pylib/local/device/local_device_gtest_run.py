@@ -16,7 +16,6 @@ import sys
 import threading
 import time
 from devil import base_error
-from devil.android import crash_handler
 from devil.android import device_errors
 from devil.android import device_temp_file
 from devil.android import logcat_monitor
@@ -76,11 +75,7 @@ _GTEST_PRETEST_PREFIX = 'PRE_'
 
 _SECONDS_TO_NANOS = int(1e9)
 
-_ANIMATION_SCALE_SETTINGS = (
-    'window_animation_scale',
-    'transition_animation_scale',
-    'animator_duration_scale',
-)
+_ANIMATION_SCALE_SETTINGS = local_device_environment.ANIMATION_SCALE_SETTINGS
 
 
 # No-op context manager. If we used Python 3, we could change this to
@@ -349,6 +344,7 @@ class _ApkDelegate:
             logging.warning('*' * 80)
 
         with command_line_file, test_list_file, stdout_file:
+            timed_out_error = None
             try:
                 device.StartInstrumentation(
                     self._component, extras=extras, raw=False, **kwargs
@@ -363,6 +359,7 @@ class _ApkDelegate:
                 exception_recorder.register(
                     test_exception.StartInstrumentationTimeoutError(e)
                 )
+                timed_out_error = e
             except device_errors.DeviceUnreachableError as e:
                 exception_recorder.register(e)
                 logging.exception('gtest shard device unreachable.')
@@ -396,10 +393,28 @@ class _ApkDelegate:
                     stdout_file_path, as_root=self._env.force_main_user
                 )
             except device_errors.AdbCommandFailedError as e:
-                exception_recorder.register(
-                    test_exception.StartInstrumentationStdoutError(e)
+                if timed_out_error is not None:
+                    raise timed_out_error from e
+                logging.warning(
+                    'Failed to read gtest stdout file %s; waiting for device '
+                    'readiness and retrying once: %s',
+                    stdout_file_path,
+                    e,
                 )
-                raise
+                local_device_test_run.WaitUntilDeviceReady(
+                    device,
+                    force_main_user=self._env.force_main_user,
+                    packages=[self._package] if self._package else None,
+                )
+                try:
+                    stdout_file_content = device.ReadFile(
+                        stdout_file_path, as_root=self._env.force_main_user
+                    )
+                except base_error.BaseError:
+                    exception_recorder.register(
+                        test_exception.StartInstrumentationStdoutError(e)
+                    )
+                    raise e
 
             return stdout_file_content.splitlines()
 
@@ -552,7 +567,6 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
             self._test_perf_output_filenames = itertools.repeat(None)
         self._crashes = set()
         self._test_locations = {}
-        self._saved_animation_scales = {}
 
     # override
     def TestPackage(self):
@@ -570,29 +584,12 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
             @measures.timed_func('device_setup', 'disable_system_animations')
             @trace_event.traced
             def disable_system_animations(dev):
-                get_cmds = [
-                    f'settings get global {s}'
-                    for s in _ANIMATION_SCALE_SETTINGS
-                ]
                 put_cmds = [
                     f'settings put global {s} 0'
                     for s in _ANIMATION_SCALE_SETTINGS
                 ]
-                cmd = ' && '.join(get_cmds + put_cmds)
-                output = dev.RunShellCommand(cmd, shell=True, check_return=True)
-                if dev.serial not in self._saved_animation_scales:
-                    scales = []
-                    for i in range(len(_ANIMATION_SCALE_SETTINGS)):
-                        val = output[i].strip() if i < len(output) else ''
-                        if not val or val == 'null':
-                            val = '1.0'
-                        else:
-                            try:
-                                float(val)
-                            except ValueError:
-                                val = '1.0'
-                        scales.append(val)
-                    self._saved_animation_scales[dev.serial] = scales
+                cmd = ' && '.join(put_cmds)
+                dev.RunShellCommand(cmd, shell=True, check_return=True)
 
             @measures.timed_func('device_setup', 'install_apk')
             def install_apk(dev):
@@ -600,11 +597,20 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
                 try:
                     self._delegate.Install(dev)
                 except device_errors.CommandFailedError as e:
-                    raise test_exception.InstallationFailedError(e) from e
+                    exception_recorder.register(
+                        test_exception.InstallationFailedError(e)
+                    )
+                    raise
                 except device_errors.CommandTimeoutError as e:
-                    raise test_exception.InstallationTimeoutError(e) from e
+                    exception_recorder.register(
+                        test_exception.InstallationTimeoutError(e)
+                    )
+                    raise
                 except base_error.BaseError as e:
-                    raise test_exception.InstallationError(e) from e
+                    exception_recorder.register(
+                        test_exception.InstallationError(e)
+                    )
+                    raise
 
             @measures.timed_func('device_setup', 'push_test_data')
             def push_test_data(dev):
@@ -665,7 +671,7 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
                 commit_sync()
 
             def bind_crash_handler(step, dev):
-                return lambda: crash_handler.RetryOnSystemCrash(step, dev)
+                return lambda: self._RetryOnSystemCrash(step, dev)
 
             steps = [install_apk, disable_system_animations]
             if not self._test_instance.use_existing_test_data:
@@ -851,11 +857,11 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
                     logging.info('  %s', f)
 
                 with self._ArchiveLogcat(dev, 'list_tests'):
-                    raw_test_list = crash_handler.RetryOnSystemCrash(
+                    raw_test_list = self._RetryOnSystemCrash(
                         lambda d: self._delegate.Run(
                             None, d, flags=flags, timeout=timeout
                         ),
-                        device=dev,
+                        dev,
                     )
 
                 tests = gtest_test_instance.ParseGTestListTests(raw_test_list)
@@ -1325,33 +1331,4 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
 
     # override
     def TearDown(self):
-        # By default, teardown will invoke ADB. When receiving SIGTERM due to a
-        # timeout, there's a high probability that ADB is non-responsive. In
-        # these cases, sending an ADB command will potentially take a long time
-        # to time out. Before this happens, the process will be hard-killed for
-        # not responding to SIGTERM fast enough.
-        if self._received_sigterm or not self._saved_animation_scales:
-            return
-
-        @local_device_environment.handle_shard_failures_with(
-            on_failure=self._env.DenylistDevice
-        )
-        @measures.timed_func('device_teardown')
-        @trace_event.traced
-        def individual_device_tear_down(dev):
-            scales = self._saved_animation_scales.get(dev.serial)
-            if not scales or all(float(v) == 0.0 for v in scales):
-                return
-
-            @measures.timed_func('device_teardown', 'restore_system_animations')
-            @trace_event.traced
-            def restore_system_animations(d):
-                cmd = ' && '.join(
-                    f'settings put global {s} {v}'
-                    for s, v in zip(_ANIMATION_SCALE_SETTINGS, scales)
-                )
-                d.RunShellCommand(cmd, shell=True, check_return=True)
-
-            crash_handler.RetryOnSystemCrash(restore_system_animations, dev)
-
-        self._env.parallel_devices.pMap(individual_device_tear_down)
+        pass

@@ -5,11 +5,14 @@
 """Utilities for demangling C++ symbols."""
 
 import collections
+import concurrent.futures
 import itertools
 import logging
+import os
 import re
 import subprocess
 
+import parallel
 import path_util
 
 _LOWER_HEX_PATTERN = re.compile(r'^[0-9a-f]*$')
@@ -45,6 +48,8 @@ def StripLlvmPromotedGlobalNames(name):
   if '.' not in name:
     return name
   if name.endswith(')'):
+    if ' (.' not in name:
+      return name
     return _PROMOTED_GLOBAL_NAME_DEMANGLED_PATTERN.sub('', name)
   return _PROMOTED_GLOBAL_NAME_RAW_PATTERN.sub('', name)
 
@@ -89,19 +94,35 @@ def _PostProcessDemangledSymbol(old_name, new_name):
 
 def _DemangleNames(names):
   """Uses cxxfilt to demangle a list of names."""
-  proc = subprocess.Popen(
-    [path_util.GetCppFiltPath()],
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    encoding='utf-8',
-  )
-  in_data = '\n'.join(_ExtractDemanglablePart(names))
-  stdout = proc.communicate(in_data)[0]
-  assert proc.returncode == 0
-  ret = [
-    _PostProcessDemangledSymbol(old_name, new_name)
-    for (old_name, new_name) in zip(names, stdout.splitlines())
-  ]
+
+  def _RunChunk(chunk):
+    proc = subprocess.Popen(
+      [path_util.GetCppFiltPath()],
+      stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      encoding='utf-8',
+    )
+    in_data = '\n'.join(_ExtractDemanglablePart(chunk))
+    stdout = proc.communicate(in_data)[0]
+    assert proc.returncode == 0
+    return [
+      _PostProcessDemangledSymbol(old_name, new_name)
+      for (old_name, new_name) in zip(chunk, stdout.splitlines())
+    ]
+
+  if len(names) >= 50000 and not parallel.DISABLE_ASYNC:
+    num_workers = min(8, os.cpu_count() or 4)
+    chunk_size = (len(names) + num_workers - 1) // num_workers
+    chunks = [
+      names[i : i + chunk_size] for i in range(0, len(names), chunk_size)
+    ]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(chunks)) as pool:
+      ret = [
+        name for chunk_ret in pool.map(_RunChunk, chunks) for name in chunk_ret
+      ]
+  else:
+    ret = _RunChunk(names)
+
   if logging.getLogger().isEnabledFor(logging.INFO):
     fail_count = sum(1 for s in ret if _CanDemangle(s))
     if fail_count:
@@ -145,7 +166,8 @@ def DemangleKeysAndMergeLists(name_to_list):
   """Demangles keys of a dict of lists, and returns the result.
 
   Keys may demangle to a common name. When this happens, the corresponding lists
-  are merged in arbitrary order.
+  are merged in arbitrary order. Lists from |name_to_list| may be reused (and
+  modified).
   """
   keys = [key for key in name_to_list if _CanDemangle(key)]
   if not keys:
@@ -155,7 +177,12 @@ def DemangleKeysAndMergeLists(name_to_list):
   key_iter = iter(_DemangleNames(keys))
   ret = collections.defaultdict(list)
   for key, val in name_to_list.items():
-    ret[next(key_iter) if _CanDemangle(key) else key] += val
+    key = next(key_iter) if _CanDemangle(key) else key
+    existing = ret.get(key)
+    if existing is None:
+      ret[key] = val
+    else:
+      existing += val
   assert next(key_iter, None) is None
   logging.info('* %d keys become %d keys' % (len(name_to_list), len(ret)))
   return ret
